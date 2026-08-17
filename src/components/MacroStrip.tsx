@@ -5,8 +5,8 @@ import { isAbortError } from "@/lib/abort";
 import type { FearGreedSnapshot } from "@/lib/market/fear-greed";
 import { fearGreedTone } from "@/lib/market/fear-greed";
 import { cn } from "@/lib/format";
-import { quotePollMs, isQuotePollFresh } from "@/lib/market/session";
-import { loadCachedQuotes } from "@/lib/quote-cache";
+import { quotePollMs, quotesUrl } from "@/lib/market/session";
+import { macroFromQuotesPayload } from "@/lib/market/macro-numbers";
 import {
   loadMacroPaint,
   saveMacroPaint,
@@ -15,6 +15,7 @@ import {
 import { useHydratedCache } from "@/lib/use-hydrated-cache";
 
 type Macro = MacroNumbers;
+type MacroPayload = Parameters<typeof macroFromQuotesPayload>[0];
 
 const EMPTY_MACRO: Macro = {
   vix: null,
@@ -23,36 +24,17 @@ const EMPTY_MACRO: Macro = {
   tenYear: null,
 };
 
+const MACRO_TICKERS = ["^VIX", "EURUSD=X", "BTC-USD", "^TNX"] as const;
+const MACRO_QUOTES_URL = quotesUrl(MACRO_TICKERS);
+
 function readCachedMacro(): Macro {
-  const saved = loadMacroPaint()?.macro;
-  const q = loadCachedQuotes().quotes;
-  return {
-    vix: q["^VIX"]?.price ?? saved?.vix ?? null,
-    eurusd: q["EURUSD=X"]?.price ?? saved?.eurusd ?? null,
-    btc: q["BTC-USD"]?.price ?? saved?.btc ?? null,
-    tenYear: q["^TNX"]?.price ?? saved?.tenYear ?? null,
-  };
+  return loadMacroPaint()?.macro ?? EMPTY_MACRO;
 }
 
-async function fetchMacro(signal?: AbortSignal): Promise<Macro> {
-  try {
-    const res = await fetch(
-      "/api/quotes?tickers=%5EVIX,EURUSD%3DX,BTC-USD,%5ETNX",
-      { signal }
-    );
-    if (!res.ok) throw new Error("macro failed");
-    const data = await res.json();
-    const q = data.quotes ?? {};
-    return {
-      vix: q["^VIX"]?.price ?? null,
-      eurusd: q["EURUSD=X"]?.price ?? null,
-      btc: q["BTC-USD"]?.price ?? null,
-      tenYear: q["^TNX"]?.price ?? null,
-    };
-  } catch (err) {
-    if (isAbortError(err)) throw err;
-    return { vix: null, eurusd: null, btc: null, tenYear: null };
-  }
+async function fetchMacroPayload(signal?: AbortSignal): Promise<MacroPayload> {
+  const res = await fetch(MACRO_QUOTES_URL, { signal });
+  if (!res.ok) throw new Error("macro failed");
+  return (await res.json()) as MacroPayload;
 }
 
 async function fetchFearGreed(signal?: AbortSignal): Promise<FearGreedSnapshot | null> {
@@ -85,12 +67,15 @@ export function MacroStrip() {
   useEffect(() => {
     if (!open) return;
     const ctrl = new AbortController();
-    const applyMacro = (m: Macro) => {
+    const applyMacro = (payload: MacroPayload) => {
       if (ctrl.signal.aborted) return;
-      setMacro(m);
-      saveMacroPaint({
-        macro: m,
-        fearGreed: loadMacroPaint()?.fearGreed ?? null,
+      setMacro((prev) => {
+        const next = macroFromQuotesPayload(payload, prev);
+        saveMacroPaint({
+          macro: next,
+          fearGreed: loadMacroPaint()?.fearGreed ?? null,
+        });
+        return next;
       });
     };
     const applyFear = (fg: FearGreedSnapshot | null) => {
@@ -101,12 +86,9 @@ export function MacroStrip() {
         fearGreed: fg,
       });
     };
-    const quotesFresh = isQuotePollFresh(loadCachedQuotes().savedAt);
-    if (!quotesFresh) {
-      void fetchMacro(ctrl.signal).then(applyMacro).catch((err) => {
-        if (isAbortError(err)) return;
-      });
-    }
+    void fetchMacroPayload(ctrl.signal).then(applyMacro).catch((err) => {
+      if (isAbortError(err)) return;
+    });
     if (!loadMacroPaint()?.fearGreed) {
       void fetchFearGreed(ctrl.signal).then(applyFear).catch((err) => {
         if (isAbortError(err)) return;
@@ -117,7 +99,7 @@ export function MacroStrip() {
       timer = window.setTimeout(
         () => {
           if (!document.hidden && !ctrl.signal.aborted) {
-            void fetchMacro(ctrl.signal).then(applyMacro).catch((err) => {
+            void fetchMacroPayload(ctrl.signal).then(applyMacro).catch((err) => {
               if (isAbortError(err)) return;
             });
             void fetchFearGreed(ctrl.signal).then(applyFear).catch((err) => {

@@ -160,9 +160,12 @@ export async function fetchFxOnly(): Promise<FxRates> {
 function priceToUsd(
   price: number,
   currency: string | undefined,
-  fx: FxRates
+  fx: FxRates,
+  symbol?: string
 ): number {
   const { amount, code } = normalizeListedPrice(price, currency);
+  // FX pairs are the rate. Rounding them to cents freezes EURUSD at 1.16.
+  if (symbol?.endsWith("=X") && code === "USD") return amount;
   return listingAmountToUsd(amount, code, usdPerMapFromFx(fx));
 }
 
@@ -244,8 +247,8 @@ async function quoteOneSymbol(
   const listed = normalizeListedPrice(yahooNative, yahooCurrency);
   const currency = listingCurrency(symbol, listed.code);
   const nativePrice = listed.amount;
-  const price = priceToUsd(yahooNative, yahooCurrency, fx);
-  const previousClose = priceToUsd(mark.previousClose, yahooCurrency, fx);
+  const price = priceToUsd(yahooNative, yahooCurrency, fx, symbol);
+  const previousClose = priceToUsd(mark.previousClose, yahooCurrency, fx, symbol);
   // Derived directly from (current price vs yesterday's close)
   // instead of reusing Yahoo's own change fields — regularMarket*
   // and postMarket* changes are relative to two DIFFERENT baselines
@@ -258,7 +261,7 @@ async function quoteOneSymbol(
       ? chart.quotes
           .map((row) => row.close)
           .filter((c): c is number => typeof c === "number" && isPlausiblePrice(c))
-          .map((c) => priceToUsd(c, yahooCurrency, fx))
+          .map((c) => priceToUsd(c, yahooCurrency, fx, symbol))
       : synthesizeSparkline(price, changePercent * 100);
   const dailyCloses = (chart?.quotes ?? [])
     .map((row) => {
@@ -276,7 +279,7 @@ async function quoteOneSymbol(
       if (Number.isNaN(when.getTime())) return null;
       return {
         date: dateKeyInTz(when, "America/New_York"),
-        close: priceToUsd(close, yahooCurrency, fx),
+        close: priceToUsd(close, yahooCurrency, fx, symbol),
       };
     })
     .filter((b): b is { date: string; close: number } => b != null)

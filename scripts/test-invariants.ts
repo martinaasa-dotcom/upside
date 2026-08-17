@@ -186,6 +186,7 @@ import {
   usdPerMapFromFx,
   usdToListingAmount,
 } from "../src/lib/listing-currency";
+import { macroFromQuotesPayload } from "../src/lib/market/macro-numbers";
 import {
   balticYahooSymbol,
   normalizeYahooTicker,
@@ -2493,7 +2494,7 @@ run("trend story board is Trend full-width then a 2-col grid, not a 5-wide row",
     "utf8"
   );
   assert.match(src, /sm:grid-cols-2/);
-  assert.match(src, /wide=\{s\.key === "trend"\}/);
+  assert.match(src, /story\.signals\.find\(\(s\) => s\.key === "trend"\)/);
   assert.doesNotMatch(src, /cols=\{5\}/);
   assert.doesNotMatch(src, /bullets=\{s\.detail\}/);
 });
@@ -4117,6 +4118,11 @@ run("listing currency chips and FX convert kronor", () => {
   assert.equal(usdToListingAmount(110, "EUR", fx), 100);
   assert.equal(listingAmountToUsd(142.5, "SEK", fx), 14.25);
   assert.equal(
+    listingAmountToUsd(1.1582117, "USD", { USD: 1 }),
+    1.16,
+    "USD quotes round to cents, which is why the strip cannot use quotes[EURUSD=X].price"
+  );
+  assert.equal(
     listingCurrenciesAreMixed([{ ticker: "NVDA" }, { ticker: "AAPL" }]),
     false
   );
@@ -4141,6 +4147,28 @@ run("listing currency chips and FX convert kronor", () => {
   assert.match(chip, /showCurrency/);
   assert.match(chip, /rounded-md/);
   assert.match(chip, /text-xs font-semibold/);
+});
+
+run("macro strip reads live EURUSD, not the cent-rounded quote price", () => {
+  const prev = { vix: 14.2, eurusd: 1.1573, btc: 118000, tenYear: 4.21 };
+  const next = macroFromQuotesPayload(
+    {
+      quotes: {
+        "^VIX": { price: 14.8, nativePrice: 14.8 },
+        "EURUSD=X": { price: 1.16, nativePrice: 1.1582117 },
+        "BTC-USD": { price: 119432.12, nativePrice: 119432.12 },
+        "^TNX": { price: 4.19, nativePrice: 4.19 },
+      },
+      fx: { eurUsd: 1.1582117 },
+    },
+    prev
+  );
+  assert.equal(next.eurusd, 1.1582117);
+  assert.equal(next.vix, 14.8);
+  assert.equal(next.tenYear, 4.19);
+  const kept = macroFromQuotesPayload({ quotes: {}, fx: {} }, prev);
+  assert.equal(kept.eurusd, 1.1573);
+  assert.equal(kept.vix, 14.2);
 });
 
 run("onboarding lets you pick this month's popular names", () => {
@@ -5772,6 +5800,8 @@ run("email and admin RPCs are not callable with a user JWT", () => {
   assert.match(mint, /inviteEmailAllowlist/);
   assert.match(mint, /sendNoteEmail/);
   assert.match(mint, /token_hint/);
+  assert.match(mint, /inviteJoinPath/);
+  assert.match(mint, /token,/);
   assert.match(mint, /communityInviteUses/);
   assert.match(mint, /created_by/);
   const usesMig = readFileSync(
@@ -5798,6 +5828,8 @@ run("email and admin RPCs are not callable with a user JWT", () => {
   assert.match(communityView, /This link stays live/);
   assert.match(communityView, /Emails \(optional, comma between\)/);
   assert.match(communityView, /Retire this link/);
+  assert.match(communityView, /copyInviteLink/);
+  assert.match(communityView, /inv\.path/);
   assert.match(communityView, /inviteUsesLabel/);
   const joinPeek = readFileSync(
     join(process.cwd(), "src/app/api/communities/join/route.ts"),
@@ -6380,7 +6412,7 @@ run("GDPR hard-delete, export engine, and session purge", () => {
     "utf8"
   );
   assert.match(engine, /cash_events/);
-  assert.match(engine, /omitKeys\(row, \["token_hash", "token_hint"\]\)/);
+  assert.match(engine, /omitKeys\(row, \["token_hash", "token_hint", "token"\]\)/);
   assert.match(engine, /sliceSnapshotPayload/);
   assert.doesNotMatch(engine, /select\([^)]*token_hash/);
 });
