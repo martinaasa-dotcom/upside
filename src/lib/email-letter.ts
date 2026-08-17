@@ -24,6 +24,10 @@ export function escapeEmail(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
+export function emailSourceChip(label: string): string {
+  return `<p style="margin:12px 0 0 0"><span style="display:inline-block;padding:5px 11px;border-radius:999px;border:1px solid ${EMAIL.line};background:${EMAIL.app};font-family:${EMAIL.sans};font-size:11px;letter-spacing:0.04em;color:${EMAIL.muted}">${escapeEmail(label)}</span></p>`;
+}
+
 export function emailKicker(text: string): string {
   return `<p style="margin:0;font-family:${EMAIL.sans};font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:${EMAIL.gold}">${escapeEmail(text)}</p>`;
 }

@@ -13,30 +13,38 @@ import {
   withAdvisorFallback,
 } from "@/lib/ai/model";
 import { cashtag } from "@/lib/format";
+import { fetchTickerNews } from "@/lib/market/ticker-context";
 import type { NoteReport } from "@/lib/note-report";
 
 const JOB: Record<NoteReport["kind"], string> = {
-  morning: `This is the morning note. Look ahead, not back. Write like a Slack note to them, you/your, three short paragraphs with a blank line between them.
+  morning: `This is the morning pre-market note. You/your. Four short paragraphs with a blank line between them. Varied sentence length. Candid, like a quick desk note. Never we/us/our.
 
-Paragraph 1. What is doing the work this morning (overnight move beats a later earnings date). Name the cashtag. Let the move play out. Buying more here is how people chase a run. Always your call.
-Paragraph 2. The rest can look fine and the mix still be the real issue. Two sentences. Name the percent once. Name the missing group in kitchen-table words. Do not paste the insight lines.
-Paragraph 3. If that group has a bad year, the whole portfolio has a bad year. You do not need a panic move before the open. Sit with the weight. Plan the mix when you are not in a rush.
+Paragraph 1. The name that's moving overnight. Cashtag. The actual headline if facts give one, or the overnight number if they don't. Why it moved. Two or three sentences.
+Then a blank line, then one line exactly: [[source: Publisher]] using the publisher from facts. Skip that line if facts say no headline. Never invent a publisher.
+Paragraph 2. What that means for you. Tempting to jump in. Buying a gap like this is how people wreck what they paid. The move for you is doing nothing. Let the shares you already have run.
+Paragraph 3. As for the rest of your portfolio. Name the percent once. Name the missing group. You don't need to chase fresh highs today. Do not paste the insight lines.
+Paragraph 4. Nothing you need to do before the open. Enjoy your morning and let it play out.
 
-Never write orders. No "do not buy more", "no trades", "do not add", "sell some", "look to add". Overnight and today's calendar only. Do not recap yesterday's regular session. Never we/us/our.`,
-  close: `This is the after-close note. Recap the day for THIS portfolio in the same voice, you/your, three short paragraphs with a blank line between them.
+Never invent news. Overnight and today's calendar only. Do not recap yesterday's regular session.
+Never write orders. No "do not buy more", "no trades", "no moves", "hands off the buy button", "do not add", "sell some".`,
+  close: `This is the after-the-close note. You/your. Four short paragraphs with a blank line between them. Same voice as the morning letter.
 
-Paragraph 1. Who did the work today. Name the cashtag. Let the move play out. Buying more here is how people chase a run.
-Paragraph 2. The mix if it matters. Two sentences. Name the percent once. Name the missing group. Do not paste the insight lines.
-Paragraph 3. If that group has a bad year, the whole portfolio has a bad year. You do not need a panic move tonight. Sit with the weight.
-
-Never write orders. No new trade plan unless the day's facts changed the story. Never we/us/our.`,
-  sunday: `This is the Sunday note. Same voice as the morning letter, you/your, three short paragraphs with a blank line between them. The loud-mover numbers are already a table in the email. Do not make a second list of those names.
-
-Paragraph 1. The week for your portfolio. What happened, which names did it, what that means from here. Two to four sentences that connect. Do not list the table again.
-Paragraph 2. The mix if it matters. Two sentences. Name the percent once. Name the missing group. Do not paste the insight lines.
-Paragraph 3. If that group has a bad year, the whole portfolio has a bad year. You do not need a new plan this weekend. Sit with the weight.
+Paragraph 1. Who did the work today. Cashtag. The actual headline if facts give one. How much that name did versus the rest. Two or three sentences.
+Then a blank line, then [[source: Publisher]] if facts give a publisher. Skip if none. Never invent it.
+Paragraph 2. What that means for you. Holding off tonight is the smart read. Buying more after a surge is how people chase. Chasing a name that's already down is catching a drop with both hands. The move for you is doing nothing.
+Paragraph 3. As for the rest of your portfolio. Name the percent once. Name the missing group. Do not paste the insight lines.
+Paragraph 4. Your portfolio did its job today. Nothing you need to change tonight. Log off and let it sit.
 
 Never write orders. Never we/us/our.`,
+  sunday: `This is the Sunday weekly recap. You/your. Four short paragraphs with a blank line between them. The loud-mover numbers are already a table. Do not make a second list of those names.
+
+Paragraph 1. Who stole the show this week. Cashtag. The actual headline if facts give one, and what that did to the week's number. Two or three sentences.
+Then a blank line, then [[source: Publisher]] if facts give a publisher. Skip if none.
+Paragraph 2. Looking at the rest of your portfolio. Name the percent once. Name the missing group. What slipped, what held. Do not paste the insight lines.
+Paragraph 3. Holding steady through the headlines was the right read. Buying into a spike is how people chase. The plan for next week does not need a rewrite tonight.
+Paragraph 4. Enjoy the rest of your Sunday. Nothing you need to do tonight.
+
+Never invent news. Never write orders. Never we/us/our.`,
 };
 
 /** Phrases that only show up when the model dumps the prompt instead of the note. */
@@ -79,6 +87,7 @@ const LEAK = [
   /Paragraph 1\./i,
   /Paragraph 2\./i,
   /Paragraph 3\./i,
+  /Paragraph 4\./i,
 ];
 
 export function looksLikePromptLeak(text: string): boolean {
@@ -99,86 +108,99 @@ function mixBody(r: NoteReport): string | null {
   return firstSentences(mix, 2);
 }
 
-function mixClose(when: "open" | "tonight" | "weekend"): string {
-  const rush =
-    when === "open"
-      ? "You don't need a panic move before the open."
-      : when === "tonight"
-        ? "You don't need a panic move tonight."
-        : "You don't need a new plan this weekend.";
-  return `If that group has a bad year, the whole portfolio has a bad year. ${rush} Sit with the weight. Plan the mix when you're not in a rush.`;
+function clipHeadline(title: string): string {
+  const t = title.trim().replace(/[ \t]+/g, " ").replace(/[.,;:]+$/, "");
+  if (t.length <= 160) return t;
+  const cut = t.slice(0, 157);
+  const at = cut.lastIndexOf(" ");
+  return at > 80 ? cut.slice(0, at) : cut;
+}
+
+function sourceLine(r: NoteReport): string | null {
+  const pub = r.news?.publisher?.trim();
+  if (!pub) return null;
+  return `[[source: ${pub}]]`;
+}
+
+function mixParagraph(r: NoteReport): string | null {
+  const mix = mixBody(r);
+  if (!mix) return null;
+  return `As for the rest of your portfolio, ${mix.charAt(0).toLowerCase()}${mix.slice(1)}`;
+}
+
+function chaseParagraph(kind: NoteReport["kind"]): string {
+  if (kind === "close") {
+    return "Holding off tonight is the smart read. Buying more after a surge is how people chase. The move for you is doing nothing.";
+  }
+  if (kind === "sunday") {
+    return "Holding steady through the headlines was the right read. Buying into a spike is how people chase. The plan for next week does not need a rewrite tonight.";
+  }
+  return "It's tempting to jump in on that move. Buying a gap like this is how people wreck what they paid. The move for you is doing nothing. Let the shares you already have run.";
+}
+
+function closeParagraph(kind: NoteReport["kind"]): string {
+  if (kind === "morning") {
+    return "Nothing you need to do before the open. Enjoy your morning and let it play out.";
+  }
+  if (kind === "sunday") {
+    return "Enjoy the rest of your Sunday. Nothing you need to do tonight.";
+  }
+  return "Your portfolio did its job today. Nothing you need to change tonight. Log off and let it sit.";
+}
+
+function leadParagraph(r: NoteReport): string {
+  const gap = r.movers[0];
+  const tag = gap ? cashtag(gap.ticker) : null;
+  const headline = r.news?.title ? clipHeadline(r.news.title) : null;
+  if (r.kind === "morning") {
+    if (tag && headline) {
+      return `${tag} is moving this morning. ${headline}.`;
+    }
+    if (tag && gap && Math.abs(gap.pct) >= 0.02) {
+      return `${tag} is ${pct(gap.pct)} overnight. That's the name doing the work this morning.`;
+    }
+    if (tag) return `${tag} is the name to watch this morning.`;
+    return r.lead;
+  }
+  if (r.kind === "sunday") {
+    const week =
+      r.todayPct != null
+        ? `Your portfolio was ${pct(r.todayPct)} this week, ${money(r.todayDollar)}.`
+        : `Your portfolio moved ${money(r.todayDollar)} this week.`;
+    if (tag && headline) {
+      return `${tag} stole the show this week. ${headline}. ${week}`;
+    }
+    if (tag && gap && gap.pct > 0) {
+      return `${tag} stole the show this week, ${pct(gap.pct)}. ${week}`;
+    }
+    return week;
+  }
+  if (tag && headline) {
+    return `${tag} had the session. ${headline}. That move did most of the day's work in your portfolio.`;
+  }
+  if (tag) {
+    return `${tag} did the work today. Let that sit.`;
+  }
+  return r.lead;
+}
+
+function letter(r: NoteReport): string {
+  const parts = [leadParagraph(r)];
+  const source = sourceLine(r);
+  if (source) parts.push(source);
+  parts.push(chaseParagraph(r.kind));
+  const mix = mixParagraph(r);
+  if (mix) parts.push(mix);
+  parts.push(closeParagraph(r.kind));
+  return parts.join("\n\n");
 }
 
 function fallbackSunday(r: NoteReport): string {
-  const loud = r.loudMovers.length > 0 ? r.loudMovers : r.movers;
-  const best = [...loud].sort((a, b) => b.pct - a.pct)[0];
-  const worst = [...loud].sort((a, b) => a.pct - b.pct)[0];
-  const week =
-    r.todayPct != null
-      ? `Your portfolio was ${pct(r.todayPct)} this week, ${money(r.todayDollar)}.`
-      : `Your portfolio moved ${money(r.todayDollar)} this week.`;
-  const bits = [week];
-  if (
-    best &&
-    best.pct > 0 &&
-    worst &&
-    worst.pct < 0 &&
-    worst.ticker !== best.ticker
-  ) {
-    bits.push(
-      `${cashtag(best.ticker)} led the way up. ${cashtag(worst.ticker)} was the drop.`
-    );
-  } else if (best && best.pct > 0) {
-    bits.push(`${cashtag(best.ticker)} did most of the work.`);
-  } else if (worst && worst.pct < 0) {
-    bits.push(`${cashtag(worst.ticker)} was the drop.`);
-  }
-  const mix = mixBody(r);
-  const p1 = bits.join(" ");
-  const p2 = mix
-    ? `The rest of the week can look fine and the mix still be the real issue. ${mix}`
-    : null;
-  const p3 = mix
-    ? mixClose("weekend")
-    : "You don't need a new plan this weekend. Sit with the weight.";
-  return [p1, p2, p3].filter(Boolean).join("\n\n");
+  return letter(r);
 }
 
 function fallbackWeekday(r: NoteReport): string {
-  const watch = r.watches[0];
-  const ticker = watch?.ticker ? cashtag(watch.ticker) : null;
-  const gap = r.movers[0];
-  let p1: string;
-  if (r.kind === "morning") {
-    if (gap && Math.abs(gap.pct) >= 0.02) {
-      p1 = `${cashtag(gap.ticker)} is the only name doing any real work this morning. Let the move play out. Buying more here is how people chase a run.`;
-    } else if (ticker && watch?.line && /reports today/i.test(watch.line)) {
-      p1 = `${ticker} reports today. That's the thing to watch. Let the rest sit.`;
-    } else if (ticker) {
-      p1 = `${ticker} is the only name doing any real work this morning. Let the move play out. Buying more here is how people chase a run.`;
-    } else {
-      p1 = r.lead;
-    }
-  } else if (gap && Math.abs(gap.pct) >= 0.01) {
-    p1 = `${cashtag(gap.ticker)} did the work today. Let the move play out. Buying more here is how people chase a run.`;
-  } else if (r.thesis) {
-    const pulse = r.thesis.pulseLine
-      ? r.thesis.pulseLine
-      : "The reason you own it still looks like the same story.";
-    p1 = `${cashtag(r.thesis.ticker)} did the work today. ${pulse}`;
-  } else {
-    p1 = r.lead;
-  }
-  const mix = mixBody(r);
-  const p2 = mix
-    ? `The rest of the portfolio looks fine right now, but the mix is the real issue. ${mix}`
-    : null;
-  const p3 = mix
-    ? mixClose(r.kind === "morning" ? "open" : "tonight")
-    : r.kind === "morning"
-      ? "You don't need a panic move before the open. Sit with the weight."
-      : "You don't need a panic move tonight. Sit with the weight.";
-  return [p1, p2, p3].filter(Boolean).join("\n\n");
+  return letter(r);
 }
 
 /** Deterministic stand-in when the model is down or dumps the prompt. */
@@ -258,6 +280,14 @@ function facts(r: NoteReport): string {
   if (r.insights[0]) {
     lines.push("Background only, do not paste:", ...r.insights.map((l) => `  ${l}`));
   }
+  if (r.news) {
+    lines.push(
+      `Headline for ${cashtag(r.news.ticker)}: ${r.news.title}`,
+      `Publisher: ${r.news.publisher}`
+    );
+  } else {
+    lines.push("No headline. Describe the move from the numbers. Skip the source line.");
+  }
   return lines.filter((x): x is string => Boolean(x)).join("\n");
 }
 
@@ -275,9 +305,28 @@ function acceptNote(text: string): string | null {
   return clean.length > 1800 ? clean.slice(0, 1760).trim() : clean;
 }
 
+async function attachNews(report: NoteReport): Promise<void> {
+  if (report.news) return;
+  const lead = report.movers[0]?.ticker ?? report.watches[0]?.ticker;
+  if (!lead) return;
+  try {
+    const items = await fetchTickerNews(lead, 3);
+    const top = items.find((n) => n.title.trim());
+    if (!top) return;
+    report.news = {
+      ticker: lead,
+      title: top.title.trim(),
+      publisher: (top.publisher || "News").trim(),
+    };
+  } catch {
+    // fail open: letter still ships from the numbers
+  }
+}
+
 export async function writeMargusNoteTake(
   report: NoteReport
 ): Promise<string | null> {
+  await attachNews(report);
   if (chatIsBusy()) return fallbackNoteTake(report);
   if (!beginBackgroundLlm()) return fallbackNoteTake(report);
   const chain = buildAdvisorProviderChain();
@@ -301,7 +350,7 @@ ${JOB[report.kind]}
 Write the finished note only. First word is the first word of the note.
 Do not restate these rules. Do not list words to avoid. Do not plan out loud.`,
           prompt: facts(report),
-          maxOutputTokens: report.kind === "sunday" ? 560 : 420,
+          maxOutputTokens: 640,
           abortSignal: signal,
         }),
       { deadlineAt: Date.now() + 22_000 }

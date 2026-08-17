@@ -12,6 +12,7 @@ import {
   emailCard,
   emailKicker,
   emailSection,
+  emailSourceChip,
   escapeEmail,
   wrapEmailLetter,
 } from "@/lib/email-letter";
@@ -78,6 +79,12 @@ export type NoteWatch = {
   line: string;
 };
 
+export type NoteNews = {
+  ticker: string;
+  title: string;
+  publisher: string;
+};
+
 export type NoteReport = {
   kind: NoteKind;
   title: string;
@@ -101,12 +108,13 @@ export type NoteReport = {
   weekNotes: NoteWeekNote[];
   margus: string | null;
   insights: string[];
+  news: NoteNews | null;
 };
 
 const TITLE: Record<NoteKind, string> = {
-  morning: "Before the open",
-  close: "After the close",
-  sunday: "The week",
+  morning: "Morning Pre-Market",
+  close: "After the Close",
+  sunday: "Sunday Weekly Recap",
 };
 
 function groupUs(n: number): string {
@@ -753,6 +761,7 @@ export function buildNoteReport(input: NoteReportInput): NoteReport {
       })),
       input.kind === "sunday" ? "this week" : "today"
     ).lines,
+    news: null,
   };
 }
 
@@ -774,7 +783,7 @@ export function noteReportText(r: NoteReport): string {
     );
   }
   if (r.margus) {
-    lines.push("", "Margus", r.margus, ADVICE_DISCLAIMER_SHORT);
+    lines.push("", "Margus", r.margus.replace(/^\[\[source:\s*(.+?)\]\]$/gim, "$1"), ADVICE_DISCLAIMER_SHORT);
   } else if (r.kind === "morning") {
     lines.push("", r.lead);
   }
@@ -843,7 +852,7 @@ function noteTakeHtml(text: string): string {
     if (prose.length === 0) return;
     const first = chunks.length === 0;
     chunks.push(
-      `<p style="margin:${first ? "12px 0 0 0" : "18px 0 0 0"};font-family:${SANS};font-size:18px;line-height:1.6;font-weight:400;color:${CREAM}">${escapeHtml(prose.join(" "))}</p>`
+      `<p style="margin:${first ? "0" : "18px 0 0 0"};font-family:${SANS};font-size:18px;line-height:1.6;font-weight:400;color:${CREAM}">${escapeHtml(prose.join(" "))}</p>`
     );
     prose = [];
   };
@@ -869,6 +878,13 @@ function noteTakeHtml(text: string): string {
     if (!line) {
       flushProse();
       flushBullets();
+      continue;
+    }
+    const source = line.match(/^\[\[source:\s*(.+?)\]\]$/i);
+    if (source) {
+      flushProse();
+      flushBullets();
+      chunks.push(emailSourceChip(source[1] ?? ""));
       continue;
     }
     const bullet = line.match(/^[-*•]\s+(.*)$/);
@@ -963,7 +979,7 @@ export function noteReportHtml(r: NoteReport): string {
 
   const margusInner = r.margus
     ? emailCard(
-        `${kicker("Margus")}<div style="height:10px;font-size:0;line-height:0">&nbsp;</div>${noteTakeHtml(r.margus)}<p style="margin:16px 0 0 0;font-family:${SANS};font-size:12px;line-height:1.5;color:${MUTED}">${escapeHtml(ADVICE_DISCLAIMER_SHORT)}</p>`
+        `${noteTakeHtml(r.margus)}<p style="margin:16px 0 0 0;font-family:${SANS};font-size:12px;line-height:1.5;color:${MUTED}">${escapeHtml(ADVICE_DISCLAIMER_SHORT)}</p>`
       )
     : "";
 

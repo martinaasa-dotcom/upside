@@ -1257,8 +1257,17 @@ run("note letters are one mix story, not stacked cards", () => {
   assert.doesNotMatch(morning.margus, /do not buy|no trades|sell some|no moves/i);
   assert.doesNotMatch(morning.margus, /\bour portfolio\b|\bwe barely\b|for us this morning/i);
   const html = noteReportHtml(morning);
-  assert.match(html, /Before the open/);
+  assert.match(html, /Morning Pre-Market/);
   assert.doesNotMatch(html, /Worth noticing|What's missing|Look out for/);
+  morning.news = {
+    ticker: "RDDT",
+    title: "Reddit to join the S&P 500",
+    publisher: "TradingView",
+  };
+  morning.margus = fallbackNoteTake(morning);
+  assert.match(morning.margus, /\[\[source: TradingView\]\]/);
+  assert.match(noteReportHtml(morning), /TradingView/);
+  assert.match(noteReportHtml(morning), /border-radius:999px/);
   const close = buildNoteReport({
     kind: "close",
     name: "Test",
@@ -4685,6 +4694,80 @@ run("cash deltas are applied in one atomic statement", () => {
     /portfell_is_portfolio_co_owner\(p_portfolio_id\)/.test(migration),
     "the cash RPC must verify co-ownership itself, not trust its callers"
   );
+});
+
+run("holdings writes retry when a concurrent update wins", () => {
+  const src = readFileSync(
+    join(process.cwd(), "src/app/api/holdings/route.ts"),
+    "utf8"
+  );
+  assert.ok(
+    /readJsonBodyOr400/.test(src),
+    "invalid JSON must 400, not throw into a 500"
+  );
+  assert.ok(
+    /23505/.test(src),
+    "a unique-constraint insert has to retry, not 500"
+  );
+  assert.ok(
+    /\.eq\("shares", existingRow\.shares\)/.test(src),
+    "an update must match the shares it just read so two overlapping buys cannot both compute cash from the same starting count"
+  );
+  assert.ok(
+    /\.eq\("shares", prevShares\)/.test(src),
+    "a share-changing PATCH must compare-and-swap on the shares it priced the cash delta from"
+  );
+  assert.ok(
+    /select\("shares, buy_price, ticker"\)/.test(src),
+    "DELETE must return the row it actually removed so cash uses that count, not a stale pre-read"
+  );
+  assert.ok(
+    /if \(!deletedRaw\)/.test(src),
+    "a second overlapping DELETE must not credit the sale twice"
+  );
+});
+
+run("dashboard book writes are queued and do not clobber in-flight saves", () => {
+  const dash = readFileSync(
+    join(process.cwd(), "src/components/Dashboard.tsx"),
+    "utf8"
+  );
+  assert.ok(
+    /pendingBookWritesRef/.test(dash),
+    "a book reload while a save is in flight must wait, not overwrite the optimistic row"
+  );
+  assert.ok(
+    /enqueueBookWrite/.test(dash),
+    "holdings/cash writes from one tab have to run in order"
+  );
+  assert.ok(
+    /applyCashDelta/.test(dash),
+    "optimistic cash must add a delta, not stamp an absolute number from a stale closure"
+  );
+  assert.ok(
+    /addingSheetRef/.test(dash),
+    "double-submitting new portfolio must not create two sheets"
+  );
+});
+
+run("request JSON is read as unknown", () => {
+  const http = readFileSync(join(process.cwd(), "src/lib/http.ts"), "utf8");
+  assert.ok(/readJsonBody/.test(http));
+  assert.ok(/readJsonBodyOr400/.test(http));
+  const holdings = readFileSync(
+    join(process.cwd(), "src/app/api/holdings/route.ts"),
+    "utf8"
+  );
+  assert.doesNotMatch(
+    holdings,
+    /const body = await req\.json\(\);/,
+    "holdings must not parse JSON as implicit any"
+  );
+  const portfolios = readFileSync(
+    join(process.cwd(), "src/app/api/portfolios/route.ts"),
+    "utf8"
+  );
+  assert.doesNotMatch(portfolios, /const body = await req\.json\(\);/);
 });
 
 run("browser-only caches are not read during render", () => {

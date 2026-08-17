@@ -30,10 +30,12 @@ GOOD: "Modeled scenario, not a target. Margus reasons this per ticker."
 
 ## Skip AI-tell phrases and structures
 
-Avoid: "it's important to note," "whether you're X or Y," "in today's
-fast-paced market," "unlock/leverage/elevate/dive into/harness," "not just X,
-but Y," "seamless/robust/cutting-edge," ending every message with a tidy
-summary paragraph, or excessive symmetrical rule-of-three lists.
+Avoid: "it's important to note," "it's important to remember," "in summary,"
+"whether you're X or Y," "in today's fast-paced market,"
+"unlock/leverage/elevate/dive into/harness/navigating," "delve," "testament,"
+"groundbreaking," "not just X, but Y," "seamless/robust/cutting-edge," ending
+every message with a tidy summary paragraph, or excessive symmetrical
+rule-of-three lists.
 
 Short, plain, slightly opinionated sentences beat balanced, hedge-everything
 ones.

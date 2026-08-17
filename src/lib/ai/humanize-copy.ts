@@ -102,7 +102,6 @@ function scrubMarketJargon(text: string): string {
   s = s.replace(/\brisk-on\b/gi, "when people are buying");
   s = s.replace(/\bhigh-beta\b/gi, "jumpy");
   s = s.replace(/\bdrawdowns?\b/gi, "drops");
-  s = s.replace(/\bcost basis\b/gi, "what you paid");
   s = s.replace(/\bhighest conviction\b/gi, "biggest bet");
   s = s.replace(/\bhigh conviction\b/gi, "a big bet");
   s = s.replace(/\bsector rotation\b/gi, "money moving between groups");
