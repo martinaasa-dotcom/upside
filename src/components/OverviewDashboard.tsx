@@ -172,7 +172,7 @@ function EmptyBook({
 
   return (
     <Panel tone="brand" className="overview-fade">
-      <h2 className="text-lg font-medium tracking-tight text-foreground">
+      <h2 className="text-2xl font-semibold tracking-tight text-foreground">
         {homework ? "Your homework portfolio is empty." : "Your portfolio is empty."}
       </h2>
       {homework ? (
@@ -272,9 +272,9 @@ function MorningStack({
 }) {
   const sunday = morning.sunday;
   return (
-    <div className={cn("flex flex-col gap-4", className)}>
+    <div className={cn("flex flex-col gap-6", className)}>
       {sunday ? (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-6">
           <Reading label="Sunday">
             {morning.sentence}
           </Reading>
@@ -372,7 +372,7 @@ function MorningStack({
       {morning.notices.length > 0 && (
         <div
           className={cn(
-            "grid gap-3",
+            "grid gap-4",
             morning.notices.length > 1 && "sm:grid-cols-2"
           )}
         >
@@ -390,7 +390,7 @@ function MorningStack({
               key={flag.ticker}
               type="button"
               onClick={() => onOpenPulse?.(flag.ticker)}
-              className="w-full rounded-lg bg-muted px-3.5 py-3 text-left"
+              className="w-full rounded-xl bg-card px-4 py-4 text-left ring-1 ring-foreground/10 transition hover:bg-accent"
             >
               <MicroLabel>
                 Pulse · {cashtag(flag.ticker)} · {statusLabel(flag.status)}
@@ -426,7 +426,7 @@ function MoverTile({
       type="button"
       onClick={onOpen}
       title={sheets || undefined}
-      className="relative flex min-h-11 h-full w-full min-w-0 items-center justify-between gap-2 overflow-hidden rounded-lg bg-muted py-3.5 pl-4 pr-3 text-left transition hover:bg-accent sm:gap-3 sm:pr-4"
+      className="relative flex min-h-11 h-full w-full min-w-0 items-center justify-between gap-2 overflow-hidden rounded-xl bg-card py-4 pl-4 pr-3 text-left ring-1 ring-foreground/10 transition hover:bg-accent sm:gap-3 sm:pr-4"
     >
       <span
         className={cn(
@@ -477,7 +477,7 @@ function PortfolioLane({
     <button
       type="button"
       onClick={onOpen}
-      className="group w-full min-h-11 rounded-xl border border-border bg-accent/60 p-4 text-left transition hover:bg-accent"
+      className="group w-full min-h-11 rounded-xl bg-card p-6 text-left ring-1 ring-foreground/10 transition hover:bg-accent"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -691,7 +691,7 @@ export const OverviewDashboard = memo(function OverviewDashboard({
 
   if (bookIsEmpty) {
     return (
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-6">
         <EmptyBook
           onAddHolding={onAddHolding}
           onImportScreenshot={onImportScreenshot}
@@ -705,93 +705,78 @@ export const OverviewDashboard = memo(function OverviewDashboard({
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Desktop: one opening screen. Phone: same parts, one idea per card,
-          so the stack matches Movers / portfolios / Watching. */}
-      <Panel className="overview-fade">
-        <PanelHeader
-          hero
-          title={morning.moveLabel}
-          actions={
-            <>
-              <span
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground"
-                title={sessionLabel(marketState)}
-              >
-                <span
-                  className={cn(
-                    "h-1.5 w-1.5 shrink-0 rounded-full",
-                    kind === "open"
-                      ? "bg-gain"
-                      : kind === "pre" || kind === "ah"
-                        ? "bg-primary"
-                        : "bg-muted"
-                  )}
-                  aria-hidden
-                />
-                {sessionLabel(marketState)}
-              </span>
-              {onAddHolding && (
-                <span className="hidden md:inline-flex">
-                  <Button type="button" onClick={onAddHolding}>
-                    <Plus data-icon="inline-start" />
-                    Add a holding
-                  </Button>
-                </span>
+    <div className="flex flex-col gap-6">
+      <div className="overview-fade flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          {morning.moveLabel}
+        </h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <span
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground"
+            title={sessionLabel(marketState)}
+          >
+            <span
+              className={cn(
+                "size-1.5 shrink-0 rounded-full",
+                kind === "open"
+                  ? "bg-gain"
+                  : kind === "pre" || kind === "ah"
+                    ? "bg-primary"
+                    : "bg-muted"
               )}
-            </>
-          }
-        />
-
-        <Scoreboard className="mt-4">
-          <Score
-            label="Portfolio"
-            value={currency(totals.totalValue, 0)}
-            sub={plural(totals.sheetCount, "portfolio")}
-          />
-          <Score
-            label={morning.moveLabel}
-            value={signedCurrency(totals.todayDollar, 0)}
-            sub={totals.todayPct != null ? percent(totals.todayPct) : "—"}
-            valueClassName={tone(totals.todayDollar)}
-            subClassName={tone(totals.todayDollar)}
-          />
-          <Score
-            label="All time"
-            value={signedCurrency(totals.roiDollar, 0)}
-            sub={percent(totals.roiPct)}
-            valueClassName={tone(totals.roiDollar)}
-            subClassName={tone(totals.roiDollar)}
-          />
-          <Score
-            label="Cash"
-            value={currency(totals.cash, 0)}
-            sub={totals.cash < 0 ? "Borrowed" : undefined}
-            valueClassName={totals.cash < 0 ? "text-loss" : undefined}
-            subClassName={totals.cash < 0 ? "text-loss" : undefined}
-          />
-        </Scoreboard>
-
-        {onAddHolding && (
-          <div className="mt-4 md:hidden">
-            <Button type="button" className="w-full" onClick={onAddHolding}>
+              aria-hidden
+            />
+            {sessionLabel(marketState)}
+          </span>
+          {onAddHolding && (
+            <Button type="button" onClick={onAddHolding}>
               <Plus data-icon="inline-start" />
               Add a holding
             </Button>
-          </div>
-        )}
+          )}
+        </div>
+      </div>
 
-        <MorningStack
-          className="mt-4 hidden md:block"
-          morning={morning}
-          previousAt={visitDiff?.previousAt ?? null}
-          onOpenPulse={onOpenPulse}
+      <Scoreboard className="overview-fade">
+        <Score
+          label="Portfolio"
+          value={currency(totals.totalValue, 0)}
+          sub={plural(totals.sheetCount, "portfolio")}
         />
+        <Score
+          label={morning.moveLabel}
+          value={signedCurrency(totals.todayDollar, 0)}
+          sub={totals.todayPct != null ? percent(totals.todayPct) : "—"}
+          valueClassName={tone(totals.todayDollar)}
+          subClassName={tone(totals.todayDollar)}
+        />
+        <Score
+          label="All time"
+          value={signedCurrency(totals.roiDollar, 0)}
+          sub={percent(totals.roiPct)}
+          valueClassName={tone(totals.roiDollar)}
+          subClassName={tone(totals.roiDollar)}
+        />
+        <Score
+          label="Cash"
+          value={currency(totals.cash, 0)}
+          sub={totals.cash < 0 ? "Borrowed" : undefined}
+          valueClassName={totals.cash < 0 ? "text-loss" : undefined}
+          subClassName={totals.cash < 0 ? "text-loss" : undefined}
+        />
+      </Scoreboard>
 
+      <MorningStack
+        className="overview-fade hidden md:flex"
+        morning={morning}
+        previousAt={visitDiff?.previousAt ?? null}
+        onOpenPulse={onOpenPulse}
+      />
+
+      <Panel className="hidden md:block">
         <OverviewYearChart
           nav={nav}
           liveNav={totals.totalValue}
-          className="mt-4 hidden md:block"
         />
       </Panel>
 
@@ -818,17 +803,15 @@ export const OverviewDashboard = memo(function OverviewDashboard({
         <OverviewYearChart
           nav={nav}
           liveNav={totals.totalValue}
-          className="mt-4"
         />
       </Panel>
 
-      <Panel className="overview-fade md:hidden">
-        <MorningStack
-          morning={morning}
-          previousAt={visitDiff?.previousAt ?? null}
-          onOpenPulse={onOpenPulse}
-        />
-      </Panel>
+      <MorningStack
+        className="overview-fade md:hidden"
+        morning={morning}
+        previousAt={visitDiff?.previousAt ?? null}
+        onOpenPulse={onOpenPulse}
+      />
 
       <CashAlertCard
         className="md:hidden"
@@ -859,7 +842,7 @@ export const OverviewDashboard = memo(function OverviewDashboard({
               Waiting on prices.
             </p>
           ) : (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {movers.map(({ t, mode }) => (
                 <MoverTile
                   key={`${mode}-${t.ticker}`}

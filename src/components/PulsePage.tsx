@@ -347,6 +347,7 @@ function PulseCard({
         <div className="flex flex-col mt-6 gap-4 border-t border-border pt-4">
           {thesisBullets.length > 0 && (
             <Reading
+              nested
               label={
                 <span className="flex w-full items-baseline justify-between gap-2">
                   <span>Thesis</span>
@@ -395,7 +396,7 @@ function PulseCard({
             <p className="text-sm text-muted-foreground">{shown.earningsNote}</p>
           ) : null}
           {shown?.thesisBreak ? (
-            <Reading label="Breaks if">{shown.thesisBreak}</Reading>
+            <Reading nested label="Breaks if">{shown.thesisBreak}</Reading>
           ) : null}
         </div>
       ) : null}

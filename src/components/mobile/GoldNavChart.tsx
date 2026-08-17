@@ -630,7 +630,7 @@ export function GoldNavChart({
                   cy={yAt(hoverPoint.nav)}
                   r={4.5}
                   fill={PALETTE.cream}
-                  stroke={PALETTE.app}
+                  stroke={PALETTE.card}
                   strokeWidth={1.5}
                 />
               </g>

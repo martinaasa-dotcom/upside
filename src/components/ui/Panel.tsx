@@ -34,7 +34,7 @@ import {
  * The rules, so a new surface can't drift again:
  *
  *   Radius     shell rounded-xl · nested muted rounded-lg · control rounded-lg
- *   Shell      nova dark field. Primary is near-white. Nested is muted.
+ *   Shell      black field, lifted cards. Primary is near-white. Nested is muted.
  *              Green is an up number, not a wash.
  *   Stack      field is bg-background. A box on the field is bg-card.
  *              Nested is bg-muted. Never a card inside a card.
@@ -44,21 +44,21 @@ import {
  *              Chart ticks are HTML (ChartYAxis). Never SVG <text>,
  *              which scales with the viewBox and blows up on a wide screen.
  *   text-sm    14  body, chrome, inputs, buttons, nav, reading copy
- *   text-base  16  titles, tickers, Metric figures
- *   text-lg    18  hero panel title, and every scoreboard figure
- *   text-2xl   24  one hero number per page (compound result). Not a row of tiles.
+ *   text-base  16  titles, tickers
+ *   text-lg    18  card titles
+ *   text-2xl   24  page titles and scoreboard figures
  *              No text-[Npx]. No sm:text-xl jumps on titles.
- *              No text-3xl or text-4xl. The logo lockup is the exception.
- *   Headings   text-sm font-medium tracking-tight (hero: text-base) · sentence case
+ *              No text-4xl. The logo lockup is the exception.
+ *   Headings   text-lg font-semibold tracking-tight (hero: text-2xl) · sentence case
  *   Type       Geist for titles, body, labels, and money. Lockup too.
  *   Micro      text-xs font-medium text-muted-foreground · sentence case
  *              Caps stay on the logo only.
- *   Metrics    A row of numbers is ONE box (Scoreboard) with hairline
- *              columns (Score). Do not nest four Stat tiles in a panel.
- *              Stat is the same cell, used alone. Figures are text-lg.
+ *   Metrics    A row of numbers is separate cards (Scoreboard) with air
+ *              between them (Score). Do not nest four Stat tiles in a panel.
+ *              Stat is the same cell, used alone. Figures are text-2xl.
  *              Do not park a paragraph in the sub line.
  *              Do not park unlabeled numbers on the far right of a row.
- *   Reading    a dark card, quiet label, same type as the page. Thesis
+ *   Reading    a bordered card, quiet label, same type as the page. Thesis
  *              and Worth noticing live in a box. Not a cream slab, and
  *              not loose type on the field.
  *   Body       text-sm leading-relaxed text-muted-foreground for chrome
@@ -72,18 +72,19 @@ import {
  *              SPLIT_ACTIONS. Never `flex-wrap` + `min-w-0 flex-1` next to
  *              shrink-0 chrome. On a phone that leftover strip is ~80px
  *              and the sentence wraps one word per line.
- *   Inset      page gutter and panel pad are p-4. Nested
- *              cards are p-4. Score cells use p-4 so the
+ *   Inset      page gutter and panel pad are p-6. Nested
+ *              cards are p-6. Score cells use p-6 so the
  *              figures have air. Same on a phone. Do not invent
  *              a second pad. Label to figure is mt-2. InfoTip must
  *              not stretch that row.
  *              A row of numbers is Scoreboard, never a loose
  *              MicroLabel grid with its own padding.
- *   Hairline   gap-px + bg-border grids (Scoreboard, Segmented fill,
+ *   Hairline   gap-px + bg-border grids (Segmented fill,
  *              HairlineGrid) paint every track. The last row must be
  *              full. Never an empty leftover box. Snap columns with
  *              filledGridColumns / filledCardColumns. Do not hand-roll
- *              grid-cols-N on that pattern.
+ *              grid-cols-N on that pattern. Scoreboard is a gap-4 card
+ *              grid, not a hairline bar.
  *
  * Sentence case is not cosmetic. "Year-by-Year Target Roadmap" reads like a
  * consultant's slide; "Price path" reads like a person wrote it.
@@ -94,12 +95,13 @@ export const BOX =
   "rounded-xl bg-card text-sm text-card-foreground ring-1 ring-foreground/10";
 /** Nested surface inside a box. Not a second card. */
 export const CARD = "rounded-lg bg-muted";
-/** Panel padding. Compact density, same on phone and desktop. */
-export const PANEL_PAD = "p-4";
+/** Panel padding. Comfortable density, same on phone and desktop. */
+export const PANEL_PAD = "p-6";
 /** Nested card / score-cell padding. Same step as the panel. */
-export const NESTED_PAD = "p-4";
-/** A Scoreboard cell. Use this instead of hand-rolling px-4 py-3.5. */
-export const SCORE_CELL = "min-w-0 bg-muted p-4";
+export const NESTED_PAD = "p-6";
+/** A Scoreboard cell. Separate card on the field, not a hairline slice. */
+export const SCORE_CELL =
+  "min-w-0 rounded-xl bg-card p-6 ring-1 ring-foreground/10";
 /** Member / row list on the field. */
 export const LIST =
   "divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10";
@@ -113,9 +115,9 @@ const SHELL_TONES = {
 } as const;
 
 const FIGURE =
-  "mt-2 font-sans text-base font-semibold tabular-nums";
+  "mt-2 font-sans text-2xl font-semibold tabular-nums";
 const DISPLAY =
-  "mt-2 min-w-0 font-sans text-base font-semibold leading-none tabular-nums whitespace-nowrap sm:text-lg";
+  "mt-2 min-w-0 font-sans text-2xl font-semibold leading-none tracking-tight tabular-nums whitespace-nowrap";
 
 export type PanelTone = keyof typeof SHELL_TONES;
 
@@ -150,7 +152,7 @@ export function Panel({
       className={cn(
         "h-full min-w-0 max-w-full rounded-xl text-sm text-card-foreground ring-1",
         SHELL_TONES[tone],
-        padded && "flex flex-col gap-4 p-4",
+        padded && "flex flex-col gap-6 p-6",
         className
       )}
       {...rest}
@@ -220,7 +222,7 @@ export function PanelHeader({
           <h2
             className={cn(
               "font-heading font-semibold tracking-tight text-foreground",
-              hero ? "text-base" : "text-sm"
+              hero ? "text-2xl" : "text-lg"
             )}
           >
             {title}
@@ -308,16 +310,21 @@ export function Reading({
   label,
   children,
   className,
+  nested = false,
 }: {
   label?: ReactNode;
   children: ReactNode;
   className?: string;
+  /** Inside a Panel. No second card ring. */
+  nested?: boolean;
 }) {
   return (
     <div
       className={cn(
-        "rounded-lg bg-muted text-foreground",
-        NESTED_PAD,
+        nested
+          ? "rounded-lg bg-muted text-foreground"
+          : "rounded-xl bg-card text-foreground ring-1 ring-foreground/10",
+        nested ? "p-4" : "p-6",
         className
       )}
     >
@@ -564,7 +571,7 @@ export function HairlineGrid({
   );
 }
 
-/** One box. Hairline columns. Use this for any 2–5 number row. */
+/** Separate cards with air between them. Use this for any 2–5 number row. */
 export function Scoreboard({
   cols = 4,
   className,
@@ -581,7 +588,7 @@ export function Scoreboard({
   return (
     <div
       className={cn(
-        "grid gap-px overflow-hidden rounded-xl bg-border",
+        "grid gap-4",
         HAIRLINE_TRACKS,
         className
       )}

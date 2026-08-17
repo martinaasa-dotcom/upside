@@ -2029,9 +2029,9 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
     join(process.cwd(), "src/components/BookModeDock.tsx"),
     "utf8"
   );
-  assert.match(css, /--background: oklch\(0\.145 0 0\)/);
+  assert.match(css, /--background: oklch\(0 0 0\)/);
   assert.match(css, /--primary: oklch\(0\.922 0 0\)/);
-  assert.match(css, /--card: oklch\(0\.205 0 0\)/);
+  assert.match(css, /--card: oklch\(0\.145 0 0\)/);
   assert.match(css, /--radius: 0\.625rem/);
   assert.match(css, /--gain:/);
   assert.match(css, /--loss:/);
@@ -2070,7 +2070,7 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
   );
   assert.match(panel, /default: "bg-card ring-foreground\/10"/);
   assert.match(panel, /rounded-lg bg-border/);
-  assert.match(panel, /SCORE_CELL = "min-w-0 bg-muted p-4"/);
+  assert.match(panel, /SCORE_CELL =\n  "min-w-0 rounded-xl bg-card p-6 ring-1 ring-foreground\/10"/);
   assert.doesNotMatch(
     panel.slice(panel.indexOf("export function Stat")),
     /h-full rounded-xl/
@@ -2080,9 +2080,9 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
     panel.slice(panel.indexOf("export function Reading")),
     /text-xs font-medium text-muted-foreground/
   );
-  assert.match(panel, /padded && "flex flex-col gap-4 p-4"/);
+  assert.match(panel, /padded && "flex flex-col gap-6 p-6"/);
   assert.match(panel, /export function Scoreboard/);
-  assert.match(panel, /font-sans text-base font-semibold leading-none tabular-nums whitespace-nowrap sm:text-lg/);
+  assert.match(panel, /font-sans text-2xl font-semibold leading-none tracking-tight tabular-nums whitespace-nowrap/);
   assert.match(panel, /bg-primary text-primary-foreground/);
   const segmented = panel.slice(panel.indexOf("export function Segmented"));
   assert.doesNotMatch(segmented, /font-semibold/);
@@ -2094,7 +2094,7 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
     /uppercase tracking-wide/
   );
   assert.match(panel, /const FIGURE/);
-  assert.match(panel, /font-sans text-base font-semibold tabular-nums/);
+  assert.match(panel, /font-sans text-2xl font-semibold tabular-nums/);
   assert.match(header, /bg-background\/95 backdrop-blur/);
   assert.match(header, /border-b border-border/);
   assert.doesNotMatch(header, /border-b border-white\/10/);
@@ -2105,7 +2105,7 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
   assert.doesNotMatch(home, /border-amber-500\/25 bg-amber-950\/20/);
   assert.doesNotMatch(pulse, /border-brand\/30 bg-brand\/\[0\.07\]/);
   assert.doesNotMatch(pulse, /border-amber-500\/30 bg-amber-950\/15/);
-  assert.match(gate, /<Reading className="mt-4" label="Worth noticing">/);
+  assert.match(gate, /<Reading nested className="mt-4" label="Worth noticing">/);
   assert.match(gate, /<Pill>Hold<\/Pill>/);
   assert.match(frame, /bg-background text-foreground/);
   assert.doesNotMatch(frame, /#141614/);
@@ -2165,9 +2165,9 @@ run("boxes sit off the field, never the same color as the page", () => {
     join(process.cwd(), "src/components/ShareSheets.tsx"),
     "utf8"
   );
-  assert.match(css, /--background: oklch\(0\.145 0 0\)/);
-  assert.match(css, /--card: oklch\(0\.205 0 0\)/);
-  assert.notEqual("oklch(0.145 0 0)", "oklch(0.205 0 0)");
+  assert.match(css, /--background: oklch\(0 0 0\)/);
+  assert.match(css, /--card: oklch\(0\.145 0 0\)/);
+  assert.notEqual("oklch(0 0 0)", "oklch(0.145 0 0)");
   assert.match(panel, /export const BOX/);
   assert.match(panel, /export const CARD/);
   assert.match(panel, /export const LIST/);
@@ -2176,7 +2176,7 @@ run("boxes sit off the field, never the same color as the page", () => {
     members,
     /divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-foreground\/10/
   );
-  assert.match(share, /rounded-xl bg-card ring-1 ring-foreground\/10 p-4/);
+  assert.match(share, /rounded-xl bg-card ring-1 ring-foreground\/10 p-6/);
   assert.deepEqual(
     offendersOf(/bg-card\/(?:80|50)\b/),
     [],
@@ -2381,12 +2381,12 @@ run("signed-in pages share one column so rooms do not jump", () => {
     join(process.cwd(), "src/lib/page-shell.ts"),
     "utf8"
   );
-  assert.match(shell, /max-w-\[1080px\]/);
+  assert.match(shell, /max-w-\[1200px\]/);
   assert.match(shell, /w-full/);
   assert.match(shell, /page-frame/);
   assert.match(shell, /\[--dock-pad:10.5rem\]/);
   assert.match(shell, /md:\[--dock-pad:11.5rem\]/);
-  assert.match(shell, /pt-4/);
+  assert.match(shell, /pt-6/);
   assert.match(shell, /pb-\[var\(--dock-pad\)\]/);
   assert.doesNotMatch(shell, /sm:py-8/);
   assert.doesNotMatch(shell, /sm:py-10/);

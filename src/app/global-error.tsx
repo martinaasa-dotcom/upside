@@ -39,7 +39,7 @@ export default function GlobalError({
           gap: "1rem",
           padding: "1rem",
           textAlign: "center",
-          background: "#171717",
+          background: "#000000",
           color: "#fafafa",
         }}
       >

@@ -11,7 +11,7 @@ alwaysApply: true
 
 - Filled toggles: `Segmented` with `columns`. It snaps via `filledGridColumns`.
 - Chip / preset rows: `HairlineGrid`.
-- Number tiles: `Scoreboard` / `Score` (`filledCardColumns`).
+- Number tiles: `Scoreboard` / `Score` (`filledCardColumns`, `gap-4` cards, not a hairline bar).
 - Column count must divide the child count at every breakpoint.
 
 ```

@@ -3,12 +3,12 @@
  * Nova dark field. Primary is near-white. Green / red for up / down only.
  */
 export const PALETTE = {
-  app: "#171717",
-  well: "#404040",
-  card: "#262626",
-  raised: "#404040",
+  app: "#000000",
+  well: "#262626",
+  card: "#171717",
+  raised: "#262626",
   cream: "#fafafa",
-  ink: "#171717",
+  ink: "#000000",
   muted: "#a1a1a1",
   brand: "#e5e5e5",
   brandBright: "#e5e5e5",

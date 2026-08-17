@@ -104,7 +104,7 @@ export function ShareSheets({
   if (sheets && sheets.length === 0) return null;
 
   return (
-    <section className="flex flex-col gap-3 rounded-xl bg-card ring-1 ring-foreground/10 p-4">
+    <section className="flex flex-col gap-3 rounded-xl bg-card ring-1 ring-foreground/10 p-6">
       <div>
         <h2 className="text-sm font-medium text-foreground">
           Portfolios this circle can see

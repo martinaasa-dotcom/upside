@@ -135,7 +135,7 @@ export function SignInGate({ children }: Props) {
                   Invite
                 </p>
               )}
-              <h1 className="font-heading text-lg font-medium tracking-tight leading-snug text-foreground">
+              <h1 className="font-heading text-2xl font-semibold tracking-tight leading-tight text-foreground">
                 {invite ? inviteLandingCopy(invite).title : PRODUCT_SENTENCE}
               </h1>
               <p className="text-sm leading-relaxed text-muted-foreground">
@@ -253,7 +253,7 @@ function BookStill() {
         ))}
       </div>
 
-      <Reading className="mt-4" label="Worth noticing">
+      <Reading nested className="mt-4" label="Worth noticing">
         <InsightText text="$RKLB is up 6.8% today. Amazon and Microsoft barely moved. Check whether cheaper launches still hold, or this is just a bounce." />
       </Reading>
 
@@ -279,7 +279,7 @@ function BookStill() {
             </Pill>
           </div>
         </div>
-        <Reading className="mt-3" label="Thesis">
+        <Reading nested className="mt-3" label="Thesis">
           Cheaper launches. That is why it is in the portfolio. A one-day jump does not change that on its own.
         </Reading>
       </div>

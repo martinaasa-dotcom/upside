@@ -6,13 +6,13 @@
 
 :root,
 .dark {
-  /* shadcn nova dark. One density (compact: 1rem). One accent (primary).
-     Gain/loss are money-only, never a wash on the room. */
-  --background: oklch(0.145 0 0);
+  /* shadcn landing: black field, lifted cards, comfortable density.
+     One accent (primary). Gain/loss are money-only. */
+  --background: oklch(0 0 0);
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
+  --card: oklch(0.145 0 0);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
+  --popover: oklch(0.145 0 0);
   --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.922 0 0);
   --primary-foreground: oklch(0.205 0 0);
@@ -32,7 +32,7 @@
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
   --radius: 0.625rem;
-  --sidebar: oklch(0.205 0 0);
+  --sidebar: oklch(0.145 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.985 0 0);
   --sidebar-primary-foreground: oklch(0.205 0 0);
@@ -60,8 +60,8 @@
   --caution: var(--warning);
   --surface: var(--card);
   --panel: var(--card);
-  --inset-panel: 1rem;
-  --inset-nested: 1rem;
+  --inset-panel: 1.5rem;
+  --inset-nested: 1.5rem;
 }
 
 @theme inline {

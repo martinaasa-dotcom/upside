@@ -467,7 +467,7 @@ function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
                 cx={xAt(i)}
                 cy={yAt(p.value)}
                 r={2.5}
-                fill={PALETTE.app}
+                fill={PALETTE.card}
                 stroke={PALETTE.cream}
                 strokeWidth={1.5}
               />
@@ -487,7 +487,7 @@ function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
                   cy={yAt(hoverPoint.value)}
                   r={4.5}
                   fill={PALETTE.cream}
-                  stroke={PALETTE.app}
+                  stroke={PALETTE.card}
                   strokeWidth={1.5}
                 />
               </g>
@@ -1197,7 +1197,7 @@ export const ForecastPanel = memo(function ForecastPanel({
         {plan && (
           <div className="flex flex-col mt-4 gap-4">
             {(plan.generalAdvice || plan.sectorRotation) && (
-              <Reading>
+              <Reading nested>
                 {plan.generalAdvice && (
                   <p>
                     <InsightText text={plan.generalAdvice} />
@@ -1318,7 +1318,7 @@ export const ForecastPanel = memo(function ForecastPanel({
                   </Card>
                 </div>
                 {activePeriod.notes?.trim() && (
-                  <Reading>
+                  <Reading nested>
                     <InsightText text={activePeriod.notes} />
                   </Reading>
                 )}

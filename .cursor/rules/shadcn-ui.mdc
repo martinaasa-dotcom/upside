@@ -1,23 +1,24 @@
 ---
-description: shadcn nova look: tokens, density, primitives
+description: shadcn landing look: black field, lifted cards, comfortable density
 globs: src/**/*.{ts,tsx,css}
 alwaysApply: false
 ---
 
 # shadcn/ui look (Upside Lab)
 
-Dark nova. Compact density. One accent (`primary` is near-white). Compose primitives. Do not restyle a component with extra colors.
+Black field. Lifted cards. Comfortable density (`gap-6` / `p-6`). One accent (`primary` is near-white). Compose primitives. Do not restyle a component with extra colors.
 
 ## Tokens
 
-`bg-background`, `bg-card`, `text-foreground`, `text-muted-foreground`, `bg-primary`, `border-border`, `ring-ring`. Cards use `rounded-xl ring-1 ring-foreground/10`, not gold borders. Nested surfaces are `bg-muted rounded-lg`, never a card in a card.
+`bg-background` is black. Cards are `bg-card` with `ring-1 ring-foreground/10`. Nested surfaces are `bg-muted rounded-lg`, never a card in a card.
 
 Money up/down is `text-gain` / `text-destructive`. Not a wash.
 
 ## Density
 
-- Primary UI body text: `text-sm`. Captions, labels, and badges: `text-xs` `text-muted-foreground`.
-- Controls are `h-8` / `rounded-lg`. Page gutter is `px-4`. Do not invent `p-5`, `p-panel`, or a tighter mobile pad.
+- Page titles: `text-2xl font-semibold tracking-tight`. Card titles: `text-lg`. Body: `text-sm`. Labels: `text-xs text-muted-foreground`.
+- Scoreboard figures: `text-2xl`. Each Score is its own card with `gap-4` between cards, not a hairline bar.
+- Controls are `h-8` / `rounded-lg`. Page gutter is `px-6`. Panel pad is `p-6`.
 
 ## Primitives
 
