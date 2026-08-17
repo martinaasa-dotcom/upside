@@ -14,6 +14,8 @@ export type InviteAdminStatus = "live" | "expired" | "retired";
 export type InviteAdminRow = {
   id: string;
   hint: string | null;
+  /** Join path when the raw token was kept. Null on older links. */
+  path: string | null;
   email: string | null;
   role: string;
   expires_at: string | null;
@@ -27,6 +29,10 @@ export type InviteAdminRow = {
 
 export function tokenHintFromToken(token: string): string {
   return token.slice(-6);
+}
+
+export function inviteJoinPath(token: string): string {
+  return `/communities/join?token=${token}`;
 }
 
 export function inviteAdminStatus(

@@ -38,7 +38,7 @@ import {
   tableCols,
 } from "@/components/FluidTable";
 import { TickerSymbol } from "@/components/TickerSymbol";
-import { SCORE_CELL, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW, SwatchLegend } from "@/components/ui/Panel";
+import { SCORE_CELL, Score, Scoreboard, SwatchLegend } from "@/components/ui/Panel";
 import {
   Avatar,
   AvatarFallback,
@@ -130,6 +130,7 @@ import { useRouter } from "next/navigation";
 import { quotePollMs, quotesUrl, isQuotePollFresh } from "@/lib/market/session";
 import { quoteAsOfTitle } from "@/lib/market/quote-freshness";
 import { isAbortError, isNetworkError } from "@/lib/abort";
+import { useTimeout } from "@/lib/use-timeout";
 import { useNetworkResume } from "@/lib/use-network-resume";
 import {
   inviteDayLabel,
@@ -382,7 +383,8 @@ export function CommunityView({ communityId }: Props) {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteDays, setInviteDays] = useState("");
   const [busy, setBusy] = useState(false);
-  const [inviteCopied, setInviteCopied] = useState(false);
+  const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
+  const later = useTimeout();
   const [invites, setInvites] = useState<InviteAdminRow[]>([]);
   const [retireTarget, setRetireTarget] = useState<InviteAdminRow | null>(null);
   const [removeTarget, setRemoveTarget] = useState<{
@@ -1183,13 +1185,19 @@ export function CommunityView({ communityId }: Props) {
       setInviteEmailed(
         typeof data.emailed === "number" && data.emailed > 0 ? data.emailed : 0
       );
-      await navigator.clipboard.writeText(url).catch(() => undefined);
+      await copyInviteLink(url, "fresh");
       await loadInvites();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Couldn't send that invite.");
     } finally {
       setBusy(false);
     }
+  }
+
+  async function copyInviteLink(url: string, key: string) {
+    await navigator.clipboard.writeText(url).catch(() => undefined);
+    setCopiedInviteId(key);
+    later(() => setCopiedInviteId((id) => (id === key ? null : id)), 1500);
   }
 
   async function retireInvite(inviteId: string) {
@@ -2409,29 +2417,20 @@ export function CommunityView({ communityId }: Props) {
                             type="button"
                             size="xs"
                             variant="outline"
-                            onClick={async () => {
-                              await navigator.clipboard
-                                .writeText(inviteUrl)
-                                .catch(() => undefined);
-                              setInviteCopied(true);
-                              window.setTimeout(
-                                () => setInviteCopied(false),
-                                1500
-                              );
-                            }}
+                            onClick={() => void copyInviteLink(inviteUrl, "fresh")}
                           >
-                            {inviteCopied ? (
+                            {copiedInviteId === "fresh" ? (
                               <Check data-icon="inline-start" />
                             ) : (
                               <Copy data-icon="inline-start" />
                             )}
-                            {inviteCopied ? "Copied" : "Copy"}
+                            {copiedInviteId === "fresh" ? "Copied" : "Copy"}
                           </Button>
                           </div>
                         </div>
                       )}
                       {invites.length > 0 && (
-                        <ul className="flex flex-col gap-2">
+                        <ItemGroup className="gap-2">
                           {invites.map((inv) => {
                             const you = members.find((m) => m.is_you);
                             const youIds = you?.user_ids ?? (you ? [you.user_id] : []);
@@ -2452,50 +2451,73 @@ export function CommunityView({ communityId }: Props) {
                                 : inv.status === "expired"
                                   ? "Expired"
                                   : "Live";
+                            const live = inv.status === "live";
+                            const url = inv.path
+                              ? `${window.location.origin}${inv.path}`
+                              : null;
+                            const copied = copiedInviteId === inv.id;
                             return (
-                              <li
-                                key={inv.id}
-                                className="rounded-lg border border-border bg-muted px-3 py-2.5"
-                              >
-                                <div className={SPLIT_ROW}>
-                                  <div className={cn(SPLIT_COPY, "flex flex-col gap-0.5")}>
-                                    <p className="text-sm text-foreground">
-                                      {inv.hint ? `Link ···${inv.hint}` : "Invite"}
-                                      <span className="text-muted-foreground">
-                                        {" "}
-                                        · {creatorName}
-                                      </span>
-                                    </p>
-                                    <p className="text-sm text-muted-foreground">
-                                      {inviteLockLabel(inv.email)}
-                                      {" · "}
-                                      {inviteDayLabel(inv.created_at)}
-                                      {" · "}
-                                      {inviteUsesLabel(inv.uses)}
-                                      {" · "}
-                                      {statusLabel}
-                                    </p>
-                                    {usedLine && (
-                                      <p className="text-sm text-foreground/80">
-                                        {usedLine}
-                                      </p>
+                              <Item key={inv.id} variant="outline">
+                                <ItemContent>
+                                  <ItemTitle>
+                                    {creatorName}
+                                  </ItemTitle>
+                                  <ItemDescription>
+                                    {inviteLockLabel(inv.email)}
+                                    {" · "}
+                                    {inviteDayLabel(inv.created_at)}
+                                    {" · "}
+                                    {inviteUsesLabel(inv.uses)}
+                                    {" · "}
+                                    {statusLabel}
+                                  </ItemDescription>
+                                  {usedLine ? (
+                                    <ItemDescription className="text-foreground/80">
+                                      {usedLine}
+                                    </ItemDescription>
+                                  ) : null}
+                                </ItemContent>
+                                <ItemActions>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    disabled={!live || !url}
+                                    title={
+                                      live && !url
+                                        ? "This one was made before we kept the URL. Make a new link."
+                                        : "Copy invite link"
+                                    }
+                                    onClick={() => {
+                                      if (!url) return;
+                                      void copyInviteLink(url, inv.id);
+                                    }}
+                                  >
+                                    {copied ? (
+                                      <Check data-icon="inline-start" />
+                                    ) : (
+                                      <Copy data-icon="inline-start" />
                                     )}
-                                  </div>
-                                  {inv.status === "live" && (
-                                    <button
+                                    {copied
+                                      ? "Copied"
+                                      : inv.hint
+                                        ? `···${inv.hint}`
+                                        : "Copy link"}
+                                  </Button>
+                                  {live ? (
+                                    <Button
                                       type="button"
+                                      variant="outline"
                                       disabled={busy}
                                       onClick={() => setRetireTarget(inv)}
-                                      className="shrink-0 rounded-md border border-border px-2.5 py-1.5 text-sm font-medium text-foreground/80 hover:bg-accent disabled:opacity-50"
                                     >
                                       Retire this link
-                                    </button>
-                                  )}
-                                </div>
-                              </li>
+                                    </Button>
+                                  ) : null}
+                                </ItemActions>
+                              </Item>
                             );
                           })}
-                        </ul>
+                        </ItemGroup>
                       )}
                     </section>
                   )}

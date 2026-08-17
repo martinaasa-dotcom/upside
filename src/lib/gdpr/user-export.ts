@@ -228,7 +228,7 @@ export async function collectUserExport(
   const sunday = Boolean(profile?.note_sunday ?? profile?.morning_note);
 
   const invites = asRows(inviteRes.data).map((row) =>
-    omitKeys(row, ["token_hash", "token_hint"])
+    omitKeys(row, ["token_hash", "token_hint", "token"])
   );
 
   return {

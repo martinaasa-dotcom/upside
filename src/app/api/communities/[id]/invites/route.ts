@@ -4,6 +4,7 @@ import {
   inviteAdminStatus,
   profileLabel,
   tokenHintFromToken,
+  inviteJoinPath,
   type InviteAdminRow,
 } from "@/lib/community-invite-admin";
 import {
@@ -76,6 +77,7 @@ async function handlePOST(req: NextRequest, ctx: Ctx) {
       email: storeInviteEmails(allow.emails),
       token_hash: hashToken(token),
       token_hint: tokenHintFromToken(token),
+      token,
       role: body.role === "admin" ? "admin" : "member",
       created_by: auth.user.id,
       expires_at: expiresAt,
@@ -87,7 +89,7 @@ async function handlePOST(req: NextRequest, ctx: Ctx) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const path = `/communities/join?token=${token}`;
+  const path = inviteJoinPath(token);
   let emailed = 0;
   if (allow.emails.length > 0 && noteEmailConfigured()) {
     const { data: community } = await supabase
@@ -133,6 +135,7 @@ type InviteRow = {
   created_at: string;
   created_by: string | null;
   token_hint: string | null;
+  token: string | null;
 };
 
 type UseRow = {
@@ -165,7 +168,7 @@ async function handleGET(_req: NextRequest, ctx: Ctx) {
   const { data, error } = await supabase
     .from(PORTFELL_TABLES.communityInvites)
     .select(
-      "id, email, role, expires_at, accepted_at, revoked_at, created_at, created_by, token_hint"
+      "id, email, role, expires_at, accepted_at, revoked_at, created_at, created_by, token_hint, token"
     )
     .eq("community_id", id)
     .order("created_at", { ascending: false });
@@ -217,6 +220,7 @@ async function handleGET(_req: NextRequest, ctx: Ctx) {
     return {
       id: row.id,
       hint: row.token_hint,
+      path: row.token ? inviteJoinPath(row.token) : null,
       email: row.email,
       role: row.role,
       expires_at: row.expires_at,
