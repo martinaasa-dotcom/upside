@@ -26,10 +26,8 @@ import {
 } from "@/components/ui/Panel";
 import type { ConvictionMap } from "@/lib/conviction";
 import type { FearGreedSnapshot } from "@/lib/market/fear-greed";
-import { fearGreedTone } from "@/lib/market/fear-greed";
-import { humanizeMargusText } from "@/lib/ai/humanize-copy";
+import { humanizeMargusText, trimSizeLine } from "@/lib/ai/humanize-copy";
 import { isAbortError } from "@/lib/abort";
-import { ADVICE_DISCLAIMER_SHORT } from "@/lib/disclaimer";
 import { readJsonOrThrow } from "@/lib/http";
 import type { OverviewModel } from "@/lib/overview";
 import { formatRelativeTime } from "@/lib/timezone";
@@ -379,7 +377,7 @@ function PulseCard({
           )}
           {trimLine ? (
             <p className="font-medium text-primary">
-              One check: selling about {shown?.trimPct}% into this strength.
+              {trimSizeLine(shown?.trimPct)}
             </p>
           ) : null}
           {shown?.addLevel ? (
@@ -979,102 +977,77 @@ export const PulsePage = memo(function PulsePage({
 
   return (
     <div className="flex flex-col gap-6">
-      <Panel>
+      <Panel className="gap-3">
         <PanelHeader
-          hero
           icon={<Activity className="h-4 w-4" />}
           title="Should you sell, or buy more?"
-          subtitle={ADVICE_DISCLAIMER_SHORT}
+          actions={
+            <form
+              onSubmit={(e) => void submitSearch(e)}
+              className="flex w-full items-center gap-1.5 sm:w-[22rem]"
+            >
+              <div ref={searchRef} className="relative min-w-0 flex-1">
+                <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(sanitizeTickerQuery(e.target.value))}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && suggestions[0]) {
+                      e.preventDefault();
+                      void checkTicker(suggestions[0]!.symbol);
+                    }
+                  }}
+                  placeholder="NVDA, Apple, or SPY5"
+                  aria-label="Ticker or company name to check"
+                  className="pl-8"
+                  autoComplete="off"
+                />
+                {suggestions.length > 0 && searchInput.trim().length > 0 && (
+                  <ul className="absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-lg border border-border bg-muted shadow-sm">
+                    {suggestions.map((row) => (
+                      <li key={row.symbol}>
+                        <button
+                          type="button"
+                          className="flex w-full items-baseline justify-between gap-3 px-3 py-2 text-left text-sm text-foreground hover:bg-muted"
+                          onClick={() => void checkTicker(row.symbol)}
+                        >
+                          <span className="font-medium">{cashtag(row.symbol)}</span>
+                          {row.name && (
+                            <span className="truncate text-muted-foreground">{row.name}</span>
+                          )}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <Button
+                type="submit"
+                disabled={!searchInput.trim() || pinnedLoading}
+                className="shrink-0"
+              >
+                {pinnedLoading ? "Checking …" : "Check"}
+              </Button>
+            </form>
+          }
         />
 
-        <form onSubmit={(e) => void submitSearch(e)} className="flex flex-col gap-2 sm:flex-row">
-          <div ref={searchRef} className="relative min-w-0 flex-1">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={searchInput}
-              onChange={(e) => setSearchInput(sanitizeTickerQuery(e.target.value))}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && suggestions[0]) {
-                  e.preventDefault();
-                  void checkTicker(suggestions[0]!.symbol);
-                }
-              }}
-              placeholder="NVDA, Apple, or SPY5"
-              aria-label="Ticker or company name to check"
-              className="pl-8"
-              autoComplete="off"
-            />
-            {suggestions.length > 0 && searchInput.trim().length > 0 && (
-              <ul className="absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-lg border border-border bg-muted shadow-sm">
-                {suggestions.map((row) => (
-                  <li key={row.symbol}>
-                    <button
-                      type="button"
-                      className="flex w-full items-baseline justify-between gap-3 px-3 py-2 text-left text-sm text-foreground hover:bg-muted"
-                      onClick={() => void checkTicker(row.symbol)}
-                    >
-                      <span className="font-medium">{cashtag(row.symbol)}</span>
-                      {row.name && (
-                        <span className="truncate text-muted-foreground">{row.name}</span>
-                      )}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-          <Button
-            type="submit"
-            disabled={!searchInput.trim() || pinnedLoading}
-            className="w-full shrink-0 sm:w-auto"
-          >
-            {pinnedLoading ? "Checking …" : "Check"}
-          </Button>
-        </form>
-
         {pinnedTicker && (
-          <div>
-            <Badge variant="secondary" className="h-8 gap-1.5 pr-1">
-              {cashtag(pinnedTicker)}
-              <button
-                type="button"
-                onClick={() => setPinnedTicker(null)}
-                className="inline-flex size-5 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
-                aria-label="Clear pinned ticker"
-              >
-                <X className="size-3" />
-              </button>
-            </Badge>
-          </div>
-        )}
-
-        {fearGreed && (
-          <div>
-            <Badge
-              variant="outline"
-              className="h-auto gap-1.5 py-1"
-              title="A widely watched gauge of how nervous or confident the market is overall. 0 is panic, 100 is euphoria."
+          <Badge variant="secondary" className="h-8 w-fit gap-1.5 pr-1">
+            {cashtag(pinnedTicker)}
+            <button
+              type="button"
+              onClick={() => setPinnedTicker(null)}
+              className="inline-flex size-5 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
+              aria-label="Clear pinned ticker"
             >
-              Market mood
-              <span
-                className={cn(
-                  "font-semibold tabular-nums",
-                  fearGreedTone(fearGreed.score) === "fear" && "text-loss",
-                  fearGreedTone(fearGreed.score) === "neutral" && "text-foreground",
-                  fearGreedTone(fearGreed.score) === "greed" && "text-gain"
-                )}
-              >
-                {fearGreed.rating.toLowerCase()}
-              </span>
-              <span className="tabular-nums text-muted-foreground">
-                {fearGreed.score}/100
-              </span>
-            </Badge>
-          </div>
+              <X className="size-3" />
+            </button>
+          </Badge>
         )}
 
         {error && (
-          <div className="mt-3 flex items-start gap-2 rounded-lg border border-loss/30 bg-loss/10 px-3 py-2 text-sm text-loss">
+          <div className="flex items-start gap-2 rounded-lg border border-loss/30 bg-loss/10 px-3 py-2 text-sm text-loss">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
             {error}
           </div>

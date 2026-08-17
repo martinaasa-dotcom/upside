@@ -157,6 +157,21 @@ function scrubMarketJargon(text: string): string {
   return s;
 }
 
+/**
+ * Pulse take-off size. Names why the number exists (the price ran, the
+ * reason didn't, a winner can crowd the rest). Never an order.
+ */
+export function trimSizeClause(pct: number | null | undefined): string {
+  if (pct != null && Number.isFinite(pct)) {
+    return `About ${Math.round(pct)}% of this holding is a size people sometimes sell after a run, so it doesn't crowd the rest`;
+  }
+  return "People sometimes sell a little after a run so a winner doesn't crowd the rest";
+}
+
+export function trimSizeLine(pct: number | null | undefined): string {
+  return `The price ran. The reason you own it didn't. ${trimSizeClause(pct)}.`;
+}
+
 /** Kill leftover buy/sell orders the model still emits. Ban lists may
  * name the phrases. Output must read as a check, never an instruction. */
 function scrubTradeOrders(text: string): string {
@@ -201,9 +216,19 @@ function scrubTradeOrders(text: string): string {
     "A dip is a place people sometimes add"
   );
   s = s.replace(
-    /\bTrim about (\d+)\s*%/gi,
-    "One check: selling about $1%"
+    /\bOne check:\s*selling about (\d+)\s*%(?:\s+into (?:this|the) (?:strength|run(?:-up)?))?\.?/gi,
+    (_, n: string) => trimSizeLine(Number(n))
   );
+  s = s.replace(
+    /\bTrim about (\d+)\s*%(?:\s+into (?:this|the) (?:strength|run(?:-up)?))?\.?/gi,
+    (_, n: string) => trimSizeLine(Number(n))
+  );
+  s = s.replace(
+    /\bOne check:\s*selling a little into the run\.?/gi,
+    trimSizeLine(null)
+  );
+  s = s.replace(/\s+into this strength\.?/gi, ".");
+  s = s.replace(/\s+into the strength\.?/gi, ".");
   s = s.replace(/\bAdd now\s*~?\s*/gi, "A level to think about: around ");
   s = s.replace(
     /\bdo not buy more(?: here)?(?: or chase it)?\.?/gi,
@@ -218,12 +243,21 @@ function scrubTradeOrders(text: string): string {
     "Nothing you need to do before the open."
   );
   s = s.replace(/\bYou should not add\b/gi, "Adding is how a broken story gets bigger");
-  s = s.replace(/\bYou should sell\b/gi, "Selling is one check");
-  s = s.replace(/\bYou should buy\b/gi, "Buying is one check");
-  s = s.replace(/\bYou should add\b/gi, "Adding is one check");
+  s = s.replace(
+    /\bYou should sell\b/gi,
+    "Selling is a thought some people have here"
+  );
+  s = s.replace(
+    /\bYou should buy\b/gi,
+    "Buying is a thought some people have here"
+  );
+  s = s.replace(
+    /\bYou should add\b/gi,
+    "Adding is a thought some people have here"
+  );
   s = s.replace(
     /\bI recommend (buying|selling|adding|trimming)\b/gi,
-    "One check is $1"
+    "$1 is a thought some people have here"
   );
   s = s.replace(/[ \t]{2,}/g, " ");
   return s;

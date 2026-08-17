@@ -1,4 +1,4 @@
-import { humanizeMargusText, humanizeMargusTree } from "@/lib/ai/humanize-copy";
+import { humanizeMargusText, humanizeMargusTree, trimSizeClause } from "@/lib/ai/humanize-copy";
 import { cashtag } from "@/lib/format";
 import { TICKER_SECTORS } from "@/lib/forecast-plan";
 import type { OverviewModel, TickerScore } from "@/lib/overview";
@@ -659,14 +659,10 @@ function composeDistinctScanLine(row: {
   }
 
   if (action === "trim") {
-    const size =
-      check?.trimPct != null && Number.isFinite(check.trimPct)
-        ? `One check: selling about ${check.trimPct}%`
-        : "One check: selling a little into the run";
     lines.push(
       taggedScanLine(
         ticker,
-        `${move} ${when}. ${size}. The price ran, the reason didn't`
+        `${move} ${when}. ${trimSizeClause(check?.trimPct)}. The reason you own it didn't change`
       )
     );
   } else if (action === "add") {
@@ -826,14 +822,27 @@ export function verdictRepeatsTrim(
 ): boolean {
   const v = (verdict ?? "").trim().toLowerCase();
   if (!v || trimPct == null || !Number.isFinite(trimPct)) return false;
-  if (!/\btrim\b/.test(v)) return false;
   if (!new RegExp(`\\b${trimPct}\\s*%`).test(v)) return false;
+  const isTakeOffTalk =
+    /\btrim\b/.test(v) ||
+    /\bselling about\b/.test(v) ||
+    /\bpeople sometimes sell\b/.test(v) ||
+    /\bone check\b/.test(v);
+  if (!isTakeOffTalk) return false;
   const leftover = v
     .replace(/\btrim\b/g, " ")
+    .replace(/\bone check\b/g, " ")
+    .replace(/\bselling (about|a little)\b/g, " ")
     .replace(/\babout\b/g, " ")
     .replace(new RegExp(`\\b${trimPct}\\s*%`, "g"), " ")
-    .replace(/\binto (this|the) strength\b/g, " ")
+    .replace(/\binto (this|the) (strength|run)\b/g, " ")
     .replace(/\bkeep the rest\b/g, " ")
+    .replace(/\bthe price ran\b/g, " ")
+    .replace(/\bthe reason you own it didn'?t(?: change)?\b/g, " ")
+    .replace(/\bpeople sometimes sell\b/g, " ")
+    .replace(/\bafter a run\b/g, " ")
+    .replace(/\bof this holding is a size\b/g, " ")
+    .replace(/\bso (?:a winner|it) doesn'?t crowd the rest\b/g, " ")
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
   return leftover.length < 12;
@@ -862,7 +871,7 @@ export function buildFallbackPulseCheck(candidate: PulseCandidate): PulseCheck {
       action: "trim",
       trimPct,
       addLevel: "",
-      verdict: `One check on ${cashtag(candidate.ticker)}: selling a little into the run. It ran ${movePct}. The reason you own it is the same.`,
+      verdict: `${cashtag(candidate.ticker)} ran ${movePct}. The reason you own it is the same.`,
       thesisBreak: "",
     };
   }

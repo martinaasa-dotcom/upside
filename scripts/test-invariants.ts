@@ -1083,6 +1083,13 @@ run("trim verdict that restates the size line is dropped", () => {
     verdictRepeatsTrim("Trim about 20% so it isn't a third of the book.", 20),
     false
   );
+  assert.equal(
+    verdictRepeatsTrim(
+      "The price ran. The reason you own it didn't. About 20% of this holding is a size people sometimes sell after a run, so it doesn't crowd the rest.",
+      20
+    ),
+    true
+  );
 });
 
 run("Home Pulse flags every thesis that actually moved", () => {
@@ -1259,7 +1266,15 @@ run("humanize kills leftover market slang", () => {
   );
   assert.match(
     humanizeMargusText("Trim about 15% into this strength."),
-    /One check: selling about 15%/
+    /people sometimes sell/i
+  );
+  assert.doesNotMatch(
+    humanizeMargusText("Trim about 15% into this strength."),
+    /one check|into this strength|trim about/i
+  );
+  assert.doesNotMatch(
+    humanizeMargusText("One check: selling about 20% into this strength."),
+    /one check|into this strength/i
   );
   assert.match(
     humanizeMargusText("Add now ~$80"),
@@ -3368,7 +3383,7 @@ run("Pulse Breaks-if hides the copy-paste kill switch", () => {
   assert.equal(next.thesisBreak, "");
 });
 
-run("Pulse scan sits in its own card, not under the mood line", () => {
+run("Pulse scan sits in its own card, not under the lookup bar", () => {
   const page = readFileSync(
     join(process.cwd(), "src/components/PulsePage.tsx"),
     "utf8"
@@ -3380,6 +3395,9 @@ run("Pulse scan sits in its own card, not under the mood line", () => {
   assert.match(page, /Today's scan/);
   assert.match(page, /<ScanList/);
   assert.match(page, /scanRows\.map/);
+  assert.doesNotMatch(page, /Market mood/);
+  assert.doesNotMatch(page, /ADVICE_DISCLAIMER/);
+  assert.match(page, /actions=\{/);
   assert.doesNotMatch(
     page,
     /skippedTickers\.length > 0[\s\S]{0,400}humanizeMargusText\(summary\)/
@@ -4926,6 +4944,9 @@ run("Margus never writes trade orders to a person", () => {
     assert.doesNotMatch(src, /Add now ~/);
   }
   assert.doesNotMatch(pulseUi, /Trim about \{/);
+  assert.doesNotMatch(pulseUi, /into this strength/);
+  assert.doesNotMatch(pulseUi, /One check: selling/);
+  assert.match(pulseUi, /trimSizeLine\(/);
   assert.doesNotMatch(notes, /If it runs, sell some/);
   assert.doesNotMatch(insights, /Own it on purpose or cut it/);
   assert.match(persona, /Never write trade orders/);
