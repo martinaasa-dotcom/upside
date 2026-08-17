@@ -29,7 +29,6 @@ import {
   Panel,
   PanelHeader,
   Pill,
-  Reading,
   ScanList,
   SUGGEST_MENU,
 } from "@/components/ui/Panel";
@@ -210,15 +209,15 @@ function PulseCard({
   const status = shown?.thesisStatus ?? "intact";
   const action = shown?.action ?? "hold";
   const writtenThesis = thesisDisplayBullets(convictionThesis);
-  const situation = shown ? normalizePulseSituation(shown.situation) : [];
-  const thesisBullets = writtenThesis.length > 0 ? writtenThesis : situation;
   const suggestion = shown ? pulseSuggestion(shown) : "";
+  const extraVerdict =
+    shown?.verdict && !verdictRepeatsSuggestion(shown.verdict, shown)
+      ? humanizeMargusText(shown.verdict)
+      : "";
   const hasBody =
-    thesisBullets.length > 0 ||
+    writtenThesis.length > 0 ||
     Boolean(suggestion) ||
-    Boolean(
-      shown?.verdict && !verdictRepeatsSuggestion(shown.verdict, shown)
-    ) ||
+    Boolean(extraVerdict) ||
     Boolean(shown?.earningsNote) ||
     Boolean(shown?.thesisBreak);
 
@@ -234,7 +233,17 @@ function PulseCard({
       >
       <CardHeader>
         <CardTitle className="flex flex-wrap items-center gap-2">
-          {cashtag(c.ticker)}
+          {onWriteThesis ? (
+            <button
+              type="button"
+              onClick={onWriteThesis}
+              className="rounded-md text-left hover:underline"
+            >
+              {cashtag(c.ticker)}
+            </button>
+          ) : (
+            cashtag(c.ticker)
+          )}
           {pinned ? <Badge variant="secondary">Your check</Badge> : null}
           {!c.inBook ? <Badge variant="secondary">Lookup</Badge> : null}
           {leftHold ? <Badge variant="secondary">Was Hold</Badge> : null}
@@ -339,54 +348,29 @@ function PulseCard({
       <PulseHistory ticker={c.ticker} />
 
       {hasBody ? (
-        <div className="flex flex-col gap-4 border-t border-border pt-4">
-          {thesisBullets.length > 0 && (
-            <Reading
-              nested
-              label={
-                <span className="flex w-full items-baseline justify-between gap-2">
-                  <span>Thesis</span>
-                  {onWriteThesis ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={onWriteThesis}
-                      className="h-auto px-0 text-muted-foreground hover:bg-transparent hover:text-foreground"
-                    >
-                      {writtenThesis.length > 0 ? "Edit" : "Add yours"}
-                    </Button>
-                  ) : null}
-                </span>
-              }
-            >
-              <ul className="flex flex-col gap-1.5">
-                {thesisBullets.slice(0, 3).map((point, i) => (
-                  <li key={i} className="flex gap-2">
-                    <span
-                      aria-hidden
-                      className="mt-[9px] h-1.5 w-1.5 shrink-0 rounded-full bg-primary"
-                    />
-                    <span className="leading-snug">{point}</span>
-                  </li>
-                ))}
-              </ul>
-            </Reading>
-          )}
+        <div className="flex flex-col gap-3">
           {suggestion ? (
-            <p className="font-medium text-primary">{suggestion}</p>
+            <p className="text-base font-medium leading-relaxed text-foreground">
+              {suggestion}
+            </p>
           ) : null}
-          {shown?.verdict &&
-          !verdictRepeatsSuggestion(shown.verdict, shown) ? (
-            <p className="text-base leading-relaxed text-foreground">
-              {humanizeMargusText(shown.verdict)}
+          {extraVerdict ? (
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              {extraVerdict}
+            </p>
+          ) : null}
+          {writtenThesis.length > 0 ? (
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              {writtenThesis.join(" ")}
             </p>
           ) : null}
           {shown?.earningsNote ? (
             <p className="text-sm text-muted-foreground">{shown.earningsNote}</p>
           ) : null}
           {shown?.thesisBreak ? (
-            <Reading nested label="Breaks if">{shown.thesisBreak}</Reading>
+            <p className="text-sm leading-relaxed text-muted-foreground">
+              Breaks if {shown.thesisBreak}
+            </p>
           ) : null}
         </div>
       ) : null}

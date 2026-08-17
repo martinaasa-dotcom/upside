@@ -412,7 +412,7 @@ function MoverTile({
       type="button"
       onClick={onOpen}
       title={sheets || undefined}
-      className="relative flex h-full w-full min-w-0 items-center justify-between gap-2 overflow-hidden rounded-xl bg-card p-6 text-left ring-1 ring-foreground/10 transition hover:bg-accent sm:gap-3"
+      className="relative flex h-full w-full min-w-0 items-center justify-between gap-2 overflow-hidden rounded-lg bg-muted p-6 text-left transition hover:bg-accent sm:gap-3"
     >
       <span
         className={cn(
@@ -463,7 +463,7 @@ function PortfolioLane({
     <button
       type="button"
       onClick={onOpen}
-      className="group w-full min-h-11 rounded-xl bg-card p-6 text-left ring-1 ring-foreground/10 transition hover:bg-accent"
+      className="group min-h-11 w-full rounded-lg bg-muted p-6 text-left transition hover:bg-accent"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -852,7 +852,7 @@ export const OverviewDashboard = memo(function OverviewDashboard({
             Waiting on prices.
           </p>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             {movers.map(({ t, mode }) => (
               <MoverTile
                 key={`${mode}-${t.ticker}`}
@@ -868,7 +868,7 @@ export const OverviewDashboard = memo(function OverviewDashboard({
       {multiSheet && (
         <Panel className="overview-fade">
           <PanelHeader title="Your portfolios" />
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-6">
             {sheets.map((sheet) => (
               <PortfolioLane
                 key={sheet.portfolio.id}

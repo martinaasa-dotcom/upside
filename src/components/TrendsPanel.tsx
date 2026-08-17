@@ -391,11 +391,13 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
 
       {rows != null && rows.length > 0 && (
         <>
-          <p className="text-sm text-muted-foreground">
-            {attentionCount === 0
-              ? "Nothing below is diverging or rolling over right now. Sorted by who's beating the S&P."
-              : `${attentionCount} name${attentionCount === 1 ? "" : "s"} below ${attentionCount === 1 ? "has" : "have"} something actually changing, those come first.`}
-          </p>
+          <Alert>
+            <AlertDescription>
+              {attentionCount === 0
+                ? "Nothing below is diverging or rolling over right now. Sorted by who is beating the S&P."
+                : `${attentionCount} name${attentionCount === 1 ? "" : "s"} below ${attentionCount === 1 ? "has" : "have"} something actually changing. Those come first.`}
+            </AlertDescription>
+          </Alert>
 
           <div className="flex flex-col gap-6">
             {stories.map(({ row }) => (

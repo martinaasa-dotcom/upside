@@ -7,14 +7,27 @@ import { useFeedback } from "@/components/FeedbackHost";
 import { SignInGate } from "@/components/SignInGate";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemMedia,
+  ItemTitle,
+} from "@/components/ui/item";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { cn } from "@/lib/format";
 import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
-import { SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
 import { plainError } from "@/lib/plain-error";
 import {
   last7DaysStrip,
@@ -383,29 +396,28 @@ export function AccountPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 rounded-lg bg-muted px-3 py-3">
-              {avatarUrl && !avatarBroken ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={avatarUrl}
-                  alt=""
-                  onError={() => setAvatarBroken(true)}
-                  className="h-12 w-12 rounded-full object-cover"
-                />
-              ) : (
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-accent text-sm font-semibold text-foreground">
-                  {(displayName || "?").slice(0, 1).toUpperCase()}
-                </div>
-              )}
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-foreground">
-                  {displayName || "Your name"}
-                </p>
-                <p className="truncate text-sm text-muted-foreground">
+            <Item className="px-0">
+              <ItemMedia>
+                <Avatar className="size-12">
+                  {avatarUrl && !avatarBroken ? (
+                    <AvatarImage
+                      src={avatarUrl}
+                      alt=""
+                      onError={() => setAvatarBroken(true)}
+                    />
+                  ) : null}
+                  <AvatarFallback>
+                    {(displayName || "?").slice(0, 1).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+              </ItemMedia>
+              <ItemContent>
+                <ItemTitle>{displayName || "Your name"}</ItemTitle>
+                <ItemDescription className="line-clamp-none">
                   {bio || "Add a short bio for the community scoreboard."}
-                </p>
-              </div>
-            </div>
+                </ItemDescription>
+              </ItemContent>
+            </Item>
 
             <form onSubmit={(e) => void saveProfile(e)} className="flex flex-col gap-3">
               <label className="flex flex-col gap-1">
@@ -590,50 +602,51 @@ export function AccountPage() {
               </div>
             </div>
 
-            <div className={cn(SPLIT_ROW, "sm:items-center rounded-lg bg-muted px-3 py-3")}>
-              <div className={SPLIT_COPY}>
-                <p className="text-sm font-medium text-foreground">
-                  Download everything
-                </p>
-                <p className="text-sm text-muted-foreground">
+            <Item className="px-0">
+              <ItemContent>
+                <ItemTitle>Download everything</ItemTitle>
+                <ItemDescription>
                   One JSON file: profile, sheets, holdings, Lab state.
-                </p>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => void exportData()}
-                disabled={exporting}
-              >
-                <Download data-icon="inline-start" />
-                {exporting ? "Preparing …" : "Export my data"}
-              </Button>
-            </div>
-            {exportErr && <p className="text-sm text-loss">{exportErr}</p>}
+                </ItemDescription>
+              </ItemContent>
+              <ItemActions>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => void exportData()}
+                  disabled={exporting}
+                >
+                  <Download data-icon="inline-start" />
+                  {exporting ? "Preparing …" : "Export my data"}
+                </Button>
+              </ItemActions>
+            </Item>
+            {exportErr && (
+              <Alert variant="destructive">
+                <AlertDescription>{exportErr}</AlertDescription>
+              </Alert>
+            )}
 
-            <div className={cn(SPLIT_ROW, "sm:items-center rounded-xl border border-loss/40 bg-loss/10 px-3 py-3")}>
-              <div className={SPLIT_COPY}>
-                <p className="text-sm font-medium text-loss">
-                  Delete my account
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Removes your profile, deletes sheets only you own, and steps
-                  you off any shared ones. Cannot be undone.
-                </p>
-              </div>
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={() => {
-                  setDeleteErr(null);
-                  setDeleteText("");
-                  setDeleteOpen(true);
-                }}
-              >
-                <AlertTriangle data-icon="inline-start" />
-                Delete account
-              </Button>
-            </div>
+            <Alert variant="destructive">
+              <AlertTriangle />
+              <AlertTitle>Delete my account</AlertTitle>
+              <AlertDescription>
+                Removes your profile, deletes sheets only you own, and steps
+                you off any shared ones. Cannot be undone.
+                <Button
+                  type="button"
+                  variant="destructive"
+                  className="mt-2"
+                  onClick={() => {
+                    setDeleteErr(null);
+                    setDeleteText("");
+                    setDeleteOpen(true);
+                  }}
+                >
+                  Delete account
+                </Button>
+              </AlertDescription>
+            </Alert>
 
             <p className="text-center text-sm text-muted-foreground">
               <Link href="/privacy" className="underline hover:text-muted-foreground">

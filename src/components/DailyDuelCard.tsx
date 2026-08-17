@@ -304,7 +304,7 @@ export function DailyDuelCard({
         ) : (
           !communityId &&
           stats.totalPlayed > 0 && (
-            <div className="rounded-lg bg-muted px-3 py-2 text-right">
+            <div className="text-right">
               <p className="text-sm text-muted-foreground">
                 Record
               </p>

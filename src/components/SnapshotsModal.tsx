@@ -2,6 +2,14 @@
 
 import { Button } from "@/components/ui/button";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemTitle,
+} from "@/components/ui/item";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { plainError } from "@/lib/plain-error";
 import { History, Loader2, X } from "lucide-react";
@@ -193,53 +201,48 @@ export function SnapshotsModal({
               No snapshots yet.
             </p>
           ) : (
-            <ul className="flex flex-col gap-1">
+            <ItemGroup>
               {snapshots.map((s) => (
-                <li
-                  key={s.id}
-                  className="rounded-lg border border-border bg-muted px-3 py-2"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm text-foreground">{s.label}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {s.kind} · {formatWhen(s.created_at)}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 flex-col gap-1">
+                <Item key={s.id} className="items-start px-0">
+                  <ItemContent>
+                    <ItemTitle>{s.label}</ItemTitle>
+                    <ItemDescription>
+                      {s.kind} · {formatWhen(s.created_at)}
+                    </ItemDescription>
+                  </ItemContent>
+                  <ItemActions className="flex-col items-stretch">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={busyId !== null}
+                      onClick={() =>
+                        setPendingRestore({ kind: "book", id: s.id, label: s.label })
+                      }
+                    >
+                      {busyId === s.id ? "…" : "All portfolios"}
+                    </Button>
+                    {activePortfolioId && (
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
                         disabled={busyId !== null}
                         onClick={() =>
-                          setPendingRestore({ kind: "book", id: s.id, label: s.label })
+                          setPendingRestore({
+                            kind: "sheet",
+                            id: s.id,
+                            label: s.label,
+                          })
                         }
                       >
-                        {busyId === s.id ? "…" : "All portfolios"}
+                        {busyId === `${s.id}:sheet` ? "…" : "This portfolio"}
                       </Button>
-                      {activePortfolioId && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          disabled={busyId !== null}
-                          onClick={() =>
-                            setPendingRestore({
-                              kind: "sheet",
-                              id: s.id,
-                              label: s.label,
-                            })
-                          }
-                        >
-                          {busyId === `${s.id}:sheet` ? "…" : "This portfolio"}
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </li>
+                    )}
+                  </ItemActions>
+                </Item>
               ))}
-            </ul>
+            </ItemGroup>
           )}
         </div>
       </div>

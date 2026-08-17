@@ -5,6 +5,14 @@ import { plainError } from "@/lib/plain-error";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemTitle,
+} from "@/components/ui/item";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { track } from "@vercel/analytics";
 import { Check, Copy, UserMinus, X } from "lucide-react";
@@ -183,46 +191,54 @@ export function InvitePartnerModal({
         {err && <p className="mt-2 text-sm text-loss">{err}</p>}
         {msg && <p className="mt-2 text-sm text-gain">{msg}</p>}
         {(link || code) && (
-          <div className="flex flex-col mt-3 gap-2 rounded-lg bg-muted p-3">
-            {code && (
-              <div className="flex items-center justify-between gap-2">
-                <p className="font-mono text-sm text-primary">{code}</p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => void copy(code, "code")}
-                >
-                  {copied === "code" ? (
-                    <Check data-icon="inline-start" />
-                  ) : (
-                    <Copy data-icon="inline-start" />
-                  )}
-                  Copy code
-                </Button>
-              </div>
-            )}
-            {link && (
-              <div className="flex items-center justify-between gap-2">
-                <p className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
-                  {link}
-                </p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => void copy(link, "link")}
-                >
-                  {copied === "link" ? (
-                    <Check data-icon="inline-start" />
-                  ) : (
-                    <Copy data-icon="inline-start" />
-                  )}
-                  Copy link
-                </Button>
-              </div>
-            )}
-          </div>
+          <ItemGroup className="mt-3">
+            {code ? (
+              <Item className="px-0">
+                <ItemContent>
+                  <ItemTitle className="font-mono">{code}</ItemTitle>
+                </ItemContent>
+                <ItemActions>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void copy(code, "code")}
+                  >
+                    {copied === "code" ? (
+                      <Check data-icon="inline-start" />
+                    ) : (
+                      <Copy data-icon="inline-start" />
+                    )}
+                    Copy code
+                  </Button>
+                </ItemActions>
+              </Item>
+            ) : null}
+            {link ? (
+              <Item className="px-0">
+                <ItemContent>
+                  <ItemDescription className="line-clamp-none truncate">
+                    {link}
+                  </ItemDescription>
+                </ItemContent>
+                <ItemActions>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void copy(link, "link")}
+                  >
+                    {copied === "link" ? (
+                      <Check data-icon="inline-start" />
+                    ) : (
+                      <Copy data-icon="inline-start" />
+                    )}
+                    Copy link
+                  </Button>
+                </ItemActions>
+              </Item>
+            ) : null}
+          </ItemGroup>
         )}
 
         {owners.length > 0 && (

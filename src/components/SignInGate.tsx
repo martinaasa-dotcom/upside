@@ -3,16 +3,19 @@
 import { useAuth } from "@/components/AuthProvider";
 import { DashboardLoading } from "@/components/DashboardLoading";
 import { UpsideLogo } from "@/components/UpsideLogo";
-import {
-  InsightText,
-  MicroLabel,
-  Panel,
-  Pill,
-  Reading,
-} from "@/components/ui/Panel";
-import { cn } from "@/lib/format";
+import { InsightText, MicroLabel, Panel, Pill, Reading } from "@/components/ui/Panel";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemGroup,
+  ItemTitle,
+} from "@/components/ui/item";
 import { Spinner } from "@/components/ui/spinner";
+import { cn } from "@/lib/format";
 import { CheckCircle2 } from "lucide-react";
 import {
   inviteFromLocation,
@@ -117,11 +120,13 @@ export function SignInGate({ children }: Props) {
             <UpsideLogo variant="icon" className="signin-rise-1 text-lg" />
 
             {deletedNotice && (
-              <p className="signin-rise-2 mt-8 max-w-md rounded-lg border border-gain/30 bg-gain/10 px-3 py-2 text-sm leading-relaxed text-gain">
-                {deletedNotice === "full"
-                  ? "Account deleted. Your data and sign-in are both gone."
-                  : `Your ${PRODUCT_NAME} data has been deleted. Signing in again starts a brand-new account.`}
-              </p>
+              <Alert className="signin-rise-2 mt-8 max-w-md">
+                <AlertDescription>
+                  {deletedNotice === "full"
+                    ? "Account deleted. Your data and sign-in are both gone."
+                    : `Your ${PRODUCT_NAME} data has been deleted. Signing in again starts a brand-new account.`}
+                </AlertDescription>
+              </Alert>
             )}
 
             <div className="flex flex-col signin-rise-2 mt-10 max-w-md gap-4">
@@ -225,52 +230,46 @@ function BookStill() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-1.5">
+      <ItemGroup className="gap-0 has-data-[size=sm]:gap-0">
         {SAMPLE_MOVERS.map((row) => (
-          <div
-            key={row.ticker}
-            className="relative flex items-center justify-between gap-3 overflow-hidden rounded-lg bg-muted py-2 pl-4 pr-3"
-          >
-            <span
-              className={cn(
-                "absolute inset-y-0 left-0 w-0.5",
-                row.up ? "bg-gain" : "bg-loss"
-              )}
-              aria-hidden
-            />
-            <span className="font-heading text-sm font-semibold text-foreground">
-              ${row.ticker}
-            </span>
-            <span
-              className={cn(
-                "text-sm font-semibold tabular-nums",
-                row.up ? "text-gain" : "text-loss"
-              )}
-            >
-              {row.pct}{" "}
-              <span className="font-normal">{row.dollar}</span>
-            </span>
-          </div>
+          <Item key={row.ticker} size="sm" className="px-0">
+            <ItemContent>
+              <ItemTitle>${row.ticker}</ItemTitle>
+            </ItemContent>
+            <ItemActions>
+              <span
+                className={cn(
+                  "text-sm font-semibold tabular-nums",
+                  row.up ? "text-gain" : "text-loss"
+                )}
+              >
+                {row.pct}{" "}
+                <span className="font-normal">{row.dollar}</span>
+              </span>
+            </ItemActions>
+          </Item>
         ))}
-      </div>
+      </ItemGroup>
 
       <Reading nested label="Worth noticing">
         <InsightText text="$RKLB is up 6.8% today. Amazon and Microsoft barely moved. Check whether cheaper launches still hold, or this is just a bounce." />
       </Reading>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-muted px-3 py-2">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="text-sm font-semibold text-foreground">$RKLB</span>
-          <span className="rounded-lg bg-gain/15 px-1.5 py-0.5 text-sm font-medium text-gain">
-            Up ≥5%
-          </span>
-        </div>
-        <Pill>Hold</Pill>
-        <Pill tone="good">
-          <CheckCircle2 className="h-3.5 w-3.5 text-gain" />
-          Thesis intact
-        </Pill>
-      </div>
+      <Item className="px-0">
+        <ItemContent>
+          <ItemTitle>
+            $RKLB
+            <Badge variant="secondary">Up ≥5%</Badge>
+          </ItemTitle>
+        </ItemContent>
+        <ItemActions>
+          <Pill>Hold</Pill>
+          <Pill tone="good">
+            <CheckCircle2 className="size-3.5 text-gain" />
+            Thesis intact
+          </Pill>
+        </ItemActions>
+      </Item>
     </Panel>
   );
 }

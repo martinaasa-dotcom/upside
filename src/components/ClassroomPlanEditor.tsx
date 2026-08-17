@@ -9,10 +9,17 @@ import {
   type ClassPlan,
   type ClassroomTrade,
 } from "@/lib/classroom";
-import { cn } from "@/lib/format";
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemGroup,
+  ItemTitle,
+} from "@/components/ui/item";
 import {
   NativeSelect,
   NativeSelectOption,
@@ -104,20 +111,16 @@ export function ClassroomPlanEditor({
       ) : null}
       <div className="mt-4 grid grid-cols-2 gap-2.5">
         {KINDS.map((k) => (
-          <button
+          <Button
             key={k.id}
             type="button"
+            variant={trade?.kind === k.id ? "secondary" : "outline"}
             disabled={busy || trade?.kind === k.id}
             onClick={() => onStart(k.id)}
-            className={cn(
-              "rounded-lg border px-3 py-2.5 text-sm font-medium transition disabled:opacity-50",
-              trade?.kind === k.id
-                ? "border-border bg-muted text-primary"
-                : "border-border text-muted-foreground hover:border-border hover:text-foreground"
-            )}
+            className="h-auto py-2.5"
           >
             {k.label}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -127,15 +130,12 @@ export function ClassroomPlanEditor({
           Nothing dated. Use the buttons above, or add a stretch with dates.
         </p>
       ) : (
-        <ul className="flex flex-col mt-3 gap-2.5">
+        <ItemGroup>
           {scheduled.map((p) => (
-            <li
-              key={p.id}
-              className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted px-3 py-2.5"
-            >
-              <span className="min-w-0 text-sm text-muted-foreground">
-                {classPeriodLabel(p.kind)}
-                <span className="block text-muted-foreground">
+            <Item key={p.id} className="px-0">
+              <ItemContent>
+                <ItemTitle>{classPeriodLabel(p.kind)}</ItemTitle>
+                <ItemDescription className="line-clamp-none">
                   {new Date(p.startsAt).toLocaleString(undefined, {
                     month: "short",
                     day: "numeric",
@@ -150,21 +150,23 @@ export function ClassroomPlanEditor({
                         minute: "2-digit",
                       })}`
                     : ""}
-                </span>
-              </span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                disabled={busy}
-                onClick={() => remove(p.id)}
-                title="Remove"
-              >
-                <Trash2 />
-              </Button>
-            </li>
+                </ItemDescription>
+              </ItemContent>
+              <ItemActions>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  disabled={busy}
+                  onClick={() => remove(p.id)}
+                  title="Remove"
+                >
+                  <Trash2 />
+                </Button>
+              </ItemActions>
+            </Item>
           ))}
-        </ul>
+        </ItemGroup>
       )}
 
       <div className="flex flex-col mt-6 gap-3 rounded-lg bg-muted p-6">

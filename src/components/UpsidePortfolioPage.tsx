@@ -19,6 +19,8 @@ import {
   Item,
   ItemContent,
   ItemDescription,
+  ItemGroup,
+  ItemSeparator,
   ItemTitle,
 } from "@/components/ui/item";
 import { plainError } from "@/lib/plain-error";
@@ -74,7 +76,7 @@ import {
   NativeSelect,
   NativeSelectOption,
 } from "@/components/ui/native-select";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 const BENCHMARK_STORAGE_KEY = "portfell-upside-portfolio-benchmark";
 const FEED_CHUNK = 7;
@@ -1381,21 +1383,23 @@ export function UpsidePortfolioPage() {
                   <div className="mt-4 border-t border-border pt-4">
                     <MicroLabel>Watching</MicroLabel>
                     {fundWatchlist.length > 0 ? (
-                      <ul className="flex flex-col mt-2 gap-2">
-                        {fundWatchlist.map((w) => (
-                          <li
-                            key={w.ticker}
-                            className="flex items-start justify-between gap-3 rounded-lg border border-border bg-muted px-3 py-2"
-                          >
-                            <span className="shrink-0 text-sm font-semibold text-foreground">
-                              {cashtag(w.ticker)}
-                            </span>
-                            <span className="min-w-0 text-right text-sm leading-relaxed text-muted-foreground">
-                              {w.waitFor}
-                            </span>
-                          </li>
+                      <ItemGroup className="mt-2 gap-0 has-data-[size=sm]:gap-0">
+                        {fundWatchlist.map((w, i) => (
+                          <Fragment key={w.ticker}>
+                            {i > 0 ? (
+                              <ItemSeparator className="my-0" />
+                            ) : null}
+                            <Item size="sm" className="items-start px-0">
+                              <ItemContent>
+                                <ItemTitle>{cashtag(w.ticker)}</ItemTitle>
+                                <ItemDescription className="line-clamp-none">
+                                  {w.waitFor}
+                                </ItemDescription>
+                              </ItemContent>
+                            </Item>
+                          </Fragment>
                         ))}
-                      </ul>
+                      </ItemGroup>
                     ) : (
                       <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
                         {watchingNote ??

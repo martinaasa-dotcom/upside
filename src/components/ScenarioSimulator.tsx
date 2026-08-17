@@ -19,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { CARD, Card, EmptyState, MicroLabel, Panel, PanelHeader, Pill, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
+import { CARD, Card, EmptyState, Panel, PanelHeader, Pill, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW } from "@/components/ui/Panel";
 import {
   Activity,
   ChevronDown,
@@ -170,58 +170,56 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
           </div>
         </div>
 
-        <div>
-          <MicroLabel>Portfolio after this</MicroLabel>
-          <p className="mt-1 break-all text-2xl font-bold tabular-nums text-foreground">
-            {currency(analysis.shockedTotalVal, 0)}
-          </p>
-          <p className="mt-2 text-sm leading-relaxed">
-            <span
-              className={cn(
-                "font-semibold tabular-nums",
-                signedTone(analysis.deltaVal)
-              )}
-            >
-              {signedPercent(analysis.deltaPct)}
-            </span>
-            <span className="text-muted-foreground">
-              {" "}
-              · {signedCurrency(analysis.deltaVal, 0)} from today&apos;s{" "}
-              {currency(analysis.liveTotalVal, 0)}
-            </span>
-          </p>
-          {analysis.margin.isUsingMargin ? (
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              {analysis.margin.marginCallRisk === "critical" ? (
-                <Pill tone="bad">Broker could force a sale</Pill>
-              ) : analysis.margin.marginCallRisk === "caution" ? (
-                <Pill tone="warn">Getting tight</Pill>
-              ) : (
-                <Pill tone="good">Comfortable</Pill>
-              )}
-              <p className="text-sm text-muted-foreground">
-                {analysis.margin.shockedLeverage.toFixed(2)}x borrowed. Room
-                before a forced sale:{" "}
+        <Scoreboard cols={1}>
+          <Score
+            label="Portfolio after this"
+            value={currency(analysis.shockedTotalVal, 0)}
+            sub={
+              <>
                 <span
                   className={cn(
                     "font-semibold tabular-nums",
-                    analysis.margin.shockedEquityCushion > 0
-                      ? "text-foreground"
-                      : "text-loss"
+                    signedTone(analysis.deltaVal)
                   )}
                 >
-                  {currency(analysis.margin.shockedEquityCushion, 0)}
+                  {signedPercent(analysis.deltaPct)}
                 </span>
-              </p>
-            </div>
-          ) : (
-            <p className="mt-3 text-sm text-muted-foreground">
-              {analysis.cash > 0
-                ? `Cash ${currency(analysis.cash, 0)} · ${analysis.margin.shockedCashPct.toFixed(1)}% of the book after this.`
-                : "No cash sitting out as a buffer."}
+                {` · ${signedCurrency(analysis.deltaVal, 0)} from today's ${currency(analysis.liveTotalVal, 0)}`}
+              </>
+            }
+          />
+        </Scoreboard>
+        {analysis.margin.isUsingMargin ? (
+          <div className="flex flex-wrap items-center gap-2">
+            {analysis.margin.marginCallRisk === "critical" ? (
+              <Pill tone="bad">Broker could force a sale</Pill>
+            ) : analysis.margin.marginCallRisk === "caution" ? (
+              <Pill tone="warn">Getting tight</Pill>
+            ) : (
+              <Pill tone="good">Comfortable</Pill>
+            )}
+            <p className="text-sm text-muted-foreground">
+              {analysis.margin.shockedLeverage.toFixed(2)}x borrowed. Room
+              before a forced sale:{" "}
+              <span
+                className={cn(
+                  "font-semibold tabular-nums",
+                  analysis.margin.shockedEquityCushion > 0
+                    ? "text-foreground"
+                    : "text-loss"
+                )}
+              >
+                {currency(analysis.margin.shockedEquityCushion, 0)}
+              </span>
             </p>
-          )}
-        </div>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            {analysis.cash > 0
+              ? `Cash ${currency(analysis.cash, 0)} · ${analysis.margin.shockedCashPct.toFixed(1)}% of the book after this.`
+              : "No cash sitting out as a buffer."}
+          </p>
+        )}
 
         <Scoreboard cols={2}>
           <Score
