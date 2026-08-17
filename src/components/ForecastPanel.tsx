@@ -1094,7 +1094,7 @@ export const ForecastPanel = memo(function ForecastPanel({
               </FluidRow>
 
               {model.rows.map((r) => (
-                <FluidRow key={r.ticker} className="min-h-[2.75rem] hover:bg-well/50">
+                <FluidRow key={r.ticker} className="hover:bg-well/50">
                   <div
                     className={cn(
                       tickerCell,
@@ -1134,21 +1134,20 @@ export const ForecastPanel = memo(function ForecastPanel({
               ))}
 
               <FluidRow footer className="border-t border-border font-semibold">
-                <div className={cn(tickerCell, "py-2.5 text-foreground")}>
+                <div className={cn(tickerCell, "text-foreground")}>
                   Portfolio
                 </div>
-                <div className={cn(cellBase, "py-2.5 tabular-nums text-foreground")}>
+                <div className={cn(cellBase, "tabular-nums text-foreground")}>
                   {currency(model.currentTotal)}
                 </div>
                 {yearCols.map((y) => (
-                  <div key={y} className={cn(cellBase, "py-2.5 tabular-nums text-foreground")}>
+                  <div key={y} className={cn(cellBase, "tabular-nums text-foreground")}>
                     {currency(model.eoyTotals[y])}
                   </div>
                 ))}
                 <div
                   className={cn(
                     cellBase,
-                    "py-2.5",
                     model.gainPct != null
                       ? signedTone(model.gainPct)
                       : "text-muted"

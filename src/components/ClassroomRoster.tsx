@@ -174,7 +174,7 @@ export function ClassroomRoster({
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={6} className={cn(htmlCell, "py-8 text-muted")}>
+                <td colSpan={6} className={cn(htmlCell, "h-auto py-8 text-muted")}>
                   Nobody in the class yet.
                 </td>
               </tr>

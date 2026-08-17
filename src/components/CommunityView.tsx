@@ -3216,7 +3216,7 @@ function ReadOnlyHoldings({
             })}
             {holdings.length === 0 && (
               <tr>
-                <td className={cn(htmlCell, "py-6 text-muted")} colSpan={6}>
+                <td className={cn(htmlCell, "h-auto py-6 text-muted")} colSpan={6}>
                   No holdings in this portfolio.
                 </td>
               </tr>

@@ -495,7 +495,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                 <tr>
                   <td
                     colSpan={8}
-                    className={cn(htmlCell, "py-6 text-muted")}
+                    className={cn(htmlCell, "h-auto py-6 text-muted")}
                   >
                     Nothing held in this scope yet.
                   </td>

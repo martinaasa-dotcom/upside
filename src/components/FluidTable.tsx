@@ -16,6 +16,8 @@ export function tableCols(count: number, tickerFit: boolean): string {
  * Full-width CSS grid. `px-1.5` plus each cell's `px-1.5` makes the side
  * gutter match the gap between columns. Rows break out of that pad so
  * hover and footer fills reach the card edge.
+ *
+ * Every row is a fixed `h-10`. Do not add min-h or extra py on cells.
  */
 export function FluidTable({
   template,
@@ -55,7 +57,7 @@ export function FluidRow({
   return (
     <div
       className={cn(
-        "col-span-full -mx-1.5 box-border grid min-h-[2.75rem] w-full grid-cols-subgrid items-center justify-items-stretch px-1.5",
+        "col-span-full -mx-1.5 box-border grid h-10 w-full grid-cols-subgrid items-center justify-items-stretch px-1.5",
         footer ? "bg-well/60" : "border-b border-border/50",
         className
       )}
@@ -66,18 +68,18 @@ export function FluidRow({
 }
 
 export const cellBase =
-  "flex min-w-0 w-full items-center justify-center whitespace-nowrap px-1.5 py-2 text-center";
+  "flex h-full min-w-0 w-full items-center justify-center whitespace-nowrap px-1.5 py-1.5 text-center";
 
 /** Left-aligned ticker + chip. Pair with `tableCols(n, true)` so leftover does not sit after the chip. */
 export const cellTicker =
-  "flex w-max max-w-full items-center justify-start whitespace-nowrap px-1.5 py-2 text-left";
+  "flex h-full w-max max-w-full items-center justify-start whitespace-nowrap px-1.5 py-1.5 text-left";
 export const cellLast = cellBase;
 
 export const htmlTable = "w-full table-fixed border-collapse text-sm";
 export const htmlCell =
-  "whitespace-nowrap px-1.5 py-2 text-center align-middle first:pl-3 last:pr-3";
+  "h-10 whitespace-nowrap px-1.5 py-1.5 text-center align-middle first:pl-3 last:pr-3";
 /** Shrink-wrap the ticker column when a listing chip is showing. */
 export const htmlCellTicker =
-  "w-[1%] whitespace-nowrap py-2 pl-3 pr-1.5 text-left align-middle";
+  "h-10 w-[1%] whitespace-nowrap py-1.5 pl-3 pr-1.5 text-left align-middle";
 export const htmlCellFirst = htmlCell;
 export const htmlCellLast = htmlCell;

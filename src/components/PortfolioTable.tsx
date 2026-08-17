@@ -704,7 +704,7 @@ export const PortfolioTable = memo(function PortfolioTable({
                 <div className={cn(cellBase, "tabular-nums text-muted")}>
                   {percent(h.pctOfTotal)}
                 </div>
-                <div className={cn(cellBase, "py-1")}>
+                <div className={cellBase}>
                   <InlineNumber
                     value={h.shares}
                     digits={4}
@@ -712,7 +712,7 @@ export const PortfolioTable = memo(function PortfolioTable({
                     onCommit={(shares) => onPatch({ id: h.id, shares })}
                   />
                 </div>
-                <div className={cn(cellBase, "py-1")}>
+                <div className={cellBase}>
                   <InlineNumber
                     value={listed.nativeBuy}
                     digits={listed.digits}
@@ -750,7 +750,7 @@ export const PortfolioTable = memo(function PortfolioTable({
                   <Sparkline
                     points={h.quote?.sparkline ?? []}
                     width={56}
-                    height={24}
+                    height={18}
                   />
                 </div>
                 <div
@@ -794,42 +794,42 @@ export const PortfolioTable = memo(function PortfolioTable({
             })}
 
             <FluidRow footer className="border-t border-border font-semibold">
-              <div className={cn(tickerCell, "py-2.5 text-foreground")}>PORTFOLIO</div>
-              <div className={cn(cellBase, "py-2.5 tabular-nums text-muted")}>
+              <div className={cn(tickerCell, "text-foreground")}>PORTFOLIO</div>
+              <div className={cn(cellBase, "tabular-nums text-muted")}>
                 100%
               </div>
-              <div className={cn(cellBase, "py-2.5")} />
-              <div className={cn(cellBase, "py-2.5")} />
-              <div className={cn(cellBase, "py-2.5")} />
+              <div className={cellBase} />
+              <div className={cellBase} />
+              <div className={cellBase} />
               <div
                 className={cn(
                   cellBase,
-                  "py-2.5 tabular-nums",
+                  "tabular-nums",
                   signedTone(totals.roiPct)
                 )}
               >
                 {percent(totals.roiPct)}
               </div>
-              <div className={cn(cellBase, "py-2.5 tabular-nums text-foreground/80")}>
+              <div className={cn(cellBase, "tabular-nums text-foreground/80")}>
                 {money(totals.buyValue, 0)}
               </div>
-              <div className={cn(cellBase, "py-2.5 tabular-nums text-foreground")}>
+              <div className={cn(cellBase, "tabular-nums text-foreground")}>
                 {money(totals.currentValue, 0)}
               </div>
               <div
                 className={cn(
                   cellBase,
-                  "py-2.5 tabular-nums",
+                  "tabular-nums",
                   signedTone(totals.roiDollar)
                 )}
               >
                 {money(totals.roiDollar, 0)}
               </div>
-              <div className={cn(cellBase, "py-2.5")} />
+              <div className={cellBase} />
               <div
                 className={cn(
                   cellBase,
-                  "py-2.5 tabular-nums font-medium",
+                  "tabular-nums font-medium",
                   today.pct != null ? signedTone(today.pct) : "text-muted"
                 )}
               >
@@ -838,7 +838,7 @@ export const PortfolioTable = memo(function PortfolioTable({
               <div
                 className={cn(
                   cellBase,
-                  "py-2.5 tabular-nums font-medium",
+                  "tabular-nums font-medium",
                   today.pct != null ? signedTone(today.dollar) : "text-muted"
                 )}
               >

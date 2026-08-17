@@ -349,7 +349,7 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
           )}
 
           {rows.map((r) => (
-            <FluidRow key={r.holding.id} className="min-h-10 hover:bg-well/50">
+            <FluidRow key={r.holding.id} className="hover:bg-well/50">
               <div
                 className={cn(
                   tickerCell,
@@ -364,13 +364,13 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
               <div className={cn(cellBase, "tabular-nums text-foreground")}>
                 {currency(r.spot)}
               </div>
-              <div className={cn(cellBase, "py-1")}>
+              <div className={cellBase}>
                 <InlineTargetCall
                   value={r.targetCall}
                   onCommit={(pct) => onPatchTargetCall(r.holding.id, pct)}
                 />
               </div>
-              <div className={cn(cellBase, "py-1")}>
+              <div className={cellBase}>
                 <InlineStockTarget
                   value={r.stockTarget}
                   onCommit={(price) => onPatchStockTarget(r.holding.id, price)}
@@ -425,19 +425,19 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
 
           {rows.length > 0 && (
             <FluidRow footer className="border-t border-border font-semibold">
-              <div className={cn(tickerCell, "py-2.5")} />
-              <div className={cn(cellBase, "py-2.5")} />
-              <div className={cn(cellBase, "py-2.5")} />
-              <div className={cn(cellBase, "py-2.5")} />
-              <div className={cn(cellBase, "py-2.5")} />
-              <div className={cn(cellBase, "py-2.5")} />
-              <div className={cn(cellBase, "py-2.5")} />
-              <div className={cn(cellBase, "py-2.5")} />
-              <div className={cn(cellBase, "py-2.5")} />
-              <div className={cn(cellBase, "py-2.5 tabular-nums text-brand-bright")}>
+              <div className={tickerCell} />
+              <div className={cellBase} />
+              <div className={cellBase} />
+              <div className={cellBase} />
+              <div className={cellBase} />
+              <div className={cellBase} />
+              <div className={cellBase} />
+              <div className={cellBase} />
+              <div className={cellBase} />
+              <div className={cn(cellBase, "tabular-nums text-brand-bright")}>
                 {percent(yield2wAvg)}
               </div>
-              <div className={cn(cellBase, "py-2.5 tabular-nums text-foreground")}>
+              <div className={cn(cellBase, "tabular-nums text-foreground")}>
                 {currency(premiumTotal)}
               </div>
             </FluidRow>
