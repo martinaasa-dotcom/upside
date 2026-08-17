@@ -10,12 +10,17 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Item,
+  ItemContent,
+  ItemDescription,
+  ItemTitle,
+} from "@/components/ui/item";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import {
-  NESTED_PAD,
+  InsightText,
   Panel,
   PanelHeader,
-  InsightText,
   Reading,
   Score,
   Scoreboard,
@@ -208,29 +213,29 @@ function EmptyBook({
       {routes.length > 0 && (
         <div className="grid gap-4 sm:grid-cols-3">
           {routes.map((r) => (
-            <button
+            <Item
               key={r.key}
-              type="button"
-              onClick={r.onClick}
-              className={cn(
-                "group rounded-lg text-left transition active:scale-[0.99]",
-                NESTED_PAD,
-                r.primary
-                  ? "bg-accent hover:bg-accent"
-                  : "bg-muted hover:bg-muted/70"
-              )}
+              variant={r.primary ? "default" : "muted"}
+              asChild
+              className={cn("group h-full items-start", r.primary && "bg-accent")}
             >
-              <p className="flex items-center gap-1.5 text-base font-semibold text-foreground">
-                {r.label}
-                <ArrowRight
-                  className="h-3.5 w-3.5 opacity-0 transition group-hover:translate-x-0.5 group-hover:opacity-100"
-                  aria-hidden
-                />
-              </p>
-              {"hint" in r && r.hint ? (
-                <p className="mt-1 text-sm text-muted-foreground">{r.hint}</p>
-              ) : null}
-            </button>
+              <button type="button" onClick={r.onClick}>
+                <ItemContent>
+                  <ItemTitle className="text-base font-semibold">
+                    {r.label}
+                    <ArrowRight
+                      className="h-3.5 w-3.5 opacity-0 transition group-hover:translate-x-0.5 group-hover:opacity-100"
+                      aria-hidden
+                    />
+                  </ItemTitle>
+                  {"hint" in r && r.hint ? (
+                    <ItemDescription className="line-clamp-3">
+                      {r.hint}
+                    </ItemDescription>
+                  ) : null}
+                </ItemContent>
+              </button>
+            </Item>
           ))}
         </div>
       )}

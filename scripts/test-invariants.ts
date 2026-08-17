@@ -2000,7 +2000,7 @@ run("product UI stays on shadcn tokens, not palette leftovers", () => {
     `use destructive/loss tokens, not Tailwind red-N. Offenders: ${red.join(", ")}`
   );
   const leftover = offendersOf(
-    /ring-offset-app|hover:border-foreground\/20|text-foreground\/80|focus:ring-white|bg-card\/95|stroke="#2b2b2b"/
+    /ring-offset-app|hover:border-foreground\/20|text-foreground\/80|text-ink|focus:ring-white|bg-card\/95|stroke="#2b2b2b"/
   );
   assert.deepEqual(
     leftover,
@@ -2651,7 +2651,6 @@ run("sheets sit in the visible viewport so the keyboard cannot cover them", () =
     "CostBasisModal.tsx",
     "SnapshotsModal.tsx",
     "ExperienceOnboardingModal.tsx",
-    "CommandPalette.tsx",
     "TickerDrawer.tsx",
     "AccountPage.tsx",
     "CommunityView.tsx",
@@ -2667,6 +2666,13 @@ run("sheets sit in the visible viewport so the keyboard cannot cover them", () =
   );
   assert.match(confirm, /AlertDialog/);
   assert.doesNotMatch(confirm, /fixed inset-0/);
+  const commandPalette = readFileSync(
+    join(process.cwd(), "src/components/CommandPalette.tsx"),
+    "utf8"
+  );
+  assert.match(commandPalette, /CommandDialog/);
+  assert.doesNotMatch(commandPalette, /ViewportOverlay/);
+  assert.doesNotMatch(commandPalette, /fixed inset-0/);
 });
 
 run("Compound controls sit on one panel, not nested cards", () => {

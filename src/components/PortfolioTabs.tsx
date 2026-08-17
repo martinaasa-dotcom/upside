@@ -2,9 +2,14 @@
 
 import { BookModeDock } from "@/components/BookModeDock";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { cn } from "@/lib/format";
 import { PAGE_COLUMN_CLASS } from "@/lib/page-shell";
 import { useDockPad } from "@/lib/use-dock-pad";
@@ -51,7 +56,6 @@ export function PortfolioTabs({
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
   const [menu, setMenu] = useState<OpenMenu | null>(null);
-  const [mounted, setMounted] = useState(false);
   const dockRef = useRef<HTMLElement>(null);
   const longPressRef = useRef<number | null>(null);
   useEffect(
@@ -66,10 +70,6 @@ export function PortfolioTabs({
   useDockPad(dockRef);
   const sheetRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const sheetActive = portfolios.some((p) => p.id === activeId);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // The sheet rail scrolls once you have more than a few sheets, so keep
   // the active one visible. Switching sheets from the command palette or a
@@ -91,31 +91,6 @@ export function PortfolioTabs({
     setName("");
     setAdding(false);
   }
-
-  useEffect(() => {
-    if (!menu) return;
-    function onDoc(e: MouseEvent) {
-      const target = e.target as HTMLElement | null;
-      if (target?.closest("[data-sheet-menu]")) return;
-      setMenu(null);
-    }
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setMenu(null);
-    }
-    function onScroll() {
-      setMenu(null);
-    }
-    document.addEventListener("mousedown", onDoc);
-    document.addEventListener("keydown", onKey);
-    window.addEventListener("resize", onScroll);
-    document.addEventListener("scroll", onScroll, true);
-    return () => {
-      document.removeEventListener("mousedown", onDoc);
-      document.removeEventListener("keydown", onKey);
-      window.removeEventListener("resize", onScroll);
-      document.removeEventListener("scroll", onScroll, true);
-    };
-  }, [menu]);
 
   function openContextMenu(
     e: React.MouseEvent,
@@ -298,21 +273,23 @@ export function PortfolioTabs({
         </div>
       </div>
 
-      {mounted &&
-        menu &&
-        !guest &&
-        createPortal(
-          <div
-            data-sheet-menu
-            role="menu"
-            className="fixed z-[100] min-w-[9rem] rounded-lg border border-border bg-muted py-1 shadow-sm"
-            style={{ left: menu.x, top: menu.y }}
-          >
-            <button
-              type="button"
-              role="menuitem"
-              className="block w-full px-3 py-3 text-left text-sm text-foreground hover:bg-muted sm:py-2"
-              onClick={() => {
+      {menu && !guest && (
+        <DropdownMenu
+          open
+          onOpenChange={(open) => {
+            if (!open) setMenu(null);
+          }}
+        >
+          <DropdownMenuTrigger asChild>
+            <span
+              aria-hidden
+              className="pointer-events-none fixed size-px"
+              style={{ left: menu.x, top: menu.y }}
+            />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="min-w-36">
+            <DropdownMenuItem
+              onSelect={() => {
                 const id = menu.id;
                 const sheetName = menu.name;
                 setMenu(null);
@@ -320,13 +297,11 @@ export function PortfolioTabs({
               }}
             >
               Rename
-            </button>
-            {onDeleteRequest && portfolios.length > 1 && (
-              <button
-                type="button"
-                role="menuitem"
-                className="block w-full px-3 py-3 text-left text-sm text-loss hover:bg-muted sm:py-2"
-                onClick={() => {
+            </DropdownMenuItem>
+            {onDeleteRequest && portfolios.length > 1 ? (
+              <DropdownMenuItem
+                variant="destructive"
+                onSelect={() => {
                   const id = menu.id;
                   const sheetName = menu.name;
                   setMenu(null);
@@ -334,11 +309,11 @@ export function PortfolioTabs({
                 }}
               >
                 Delete
-              </button>
-            )}
-          </div>,
-          document.body
-        )}
+              </DropdownMenuItem>
+            ) : null}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
     </nav>
   );
 }

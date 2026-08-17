@@ -29,6 +29,11 @@ import { StaleQuotesBanner } from "@/components/StaleQuotesBanner";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import { TickerDrawer } from "@/components/TickerDrawer";
 import { useAuth } from "@/components/AuthProvider";
+import {
+  Alert,
+  AlertAction,
+  AlertDescription,
+} from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { SnapshotsModal } from "@/components/SnapshotsModal";
@@ -971,9 +976,13 @@ export function Dashboard() {
           first instanceof Error &&
           /Sign in required/i.test(first.message)
         ) {
-          await refresh();
-          await new Promise((r) => window.setTimeout(r, 400));
-          data = await fetchBook();
+          if (!userId) {
+            data = {};
+          } else {
+            await refresh();
+            await new Promise((r) => window.setTimeout(r, 400));
+            data = await fetchBook();
+          }
         } else {
           throw first;
         }
@@ -1066,9 +1075,18 @@ export function Dashboard() {
             setLocked(hasLockedSave());
           }
         } else if (!hasCache) {
-          setSource(userId ? "supabase" : "demo");
-          setPortfolios([]);
-          setHoldings([]);
+          if (userId) {
+            setSource("supabase");
+            setPortfolios([]);
+            setHoldings([]);
+          } else {
+            const demo = loadDemoStore();
+            setSource("demo");
+            setPortfolios(demo.portfolios);
+            setHoldings(demo.holdings);
+            setActiveId(() => pickInitialSheet(demo.portfolios));
+            setLocked(hasLockedSave());
+          }
         }
       }
     } finally {
@@ -3415,18 +3433,20 @@ export function Dashboard() {
         ) : null}
 
         {loadError && (
-          <div className="flex flex-col gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-destructive">{loadError}</p>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => void loadPortfolios()}
-            >
-              <RefreshCw data-icon="inline-start" />
-              Retry
-            </Button>
-          </div>
+          <Alert variant="destructive">
+            <AlertDescription>{loadError}</AlertDescription>
+            <AlertAction>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void loadPortfolios()}
+              >
+                <RefreshCw data-icon="inline-start" />
+                Retry
+              </Button>
+            </AlertAction>
+          </Alert>
         )}
 
         {isAlerts ? (

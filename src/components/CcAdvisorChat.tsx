@@ -329,17 +329,17 @@ function ChatMarkdown({ children }: { children: string }) {
         remarkPlugins={[remarkGfm]}
         components={{
           h1: ({ children: c }) => (
-            <h3 className="mb-1.5 mt-3 text-base font-semibold text-ink first:mt-0">
+            <h3 className="mb-1.5 mt-3 text-base font-semibold text-foreground first:mt-0">
               {c}
             </h3>
           ),
           h2: ({ children: c }) => (
-            <h3 className="mb-1.5 mt-3 text-base font-semibold text-ink first:mt-0">
+            <h3 className="mb-1.5 mt-3 text-base font-semibold text-foreground first:mt-0">
               {c}
             </h3>
           ),
           h3: ({ children: c }) => (
-            <h4 className="mb-1 mt-2.5 text-base font-semibold text-ink first:mt-0">
+            <h4 className="mb-1 mt-2.5 text-base font-semibold text-foreground first:mt-0">
               {c}
             </h4>
           ),
