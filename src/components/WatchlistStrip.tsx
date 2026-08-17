@@ -254,10 +254,10 @@ export function WatchlistStrip({
           <button
             type="submit"
             disabled={!draft.trim()}
-            className="rounded-md p-1 text-muted-foreground hover:text-foreground disabled:opacity-40"
+            className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-40 lg:size-9"
             aria-label="Add to watchlist"
           >
-            <Plus className="h-3.5 w-3.5" />
+            <Plus className="size-4" />
           </button>
           {open && suggestions.length > 0 && (
             <ul
@@ -273,7 +273,7 @@ export function WatchlistStrip({
                     role="option"
                     aria-selected={i === active}
                     className={cn(
-                      "flex w-full items-baseline justify-between gap-3 px-3 py-2 text-left",
+                      "flex min-h-11 w-full items-center justify-between gap-3 px-3 text-left lg:min-h-9",
                       i === active ? "bg-muted" : "hover:bg-muted"
                     )}
                     onMouseDown={(e) => e.preventDefault()}
@@ -309,28 +309,26 @@ export function WatchlistStrip({
                 <li
                   key={ticker}
                   className={cn(
-                    "flex flex-col rounded-lg border bg-muted p-6",
+                    "relative flex flex-col rounded-lg border bg-muted p-6",
                     lookBorder(look?.kind)
                   )}
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm font-semibold text-foreground">
-                      {cashtag(ticker)}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => setList(removeWatchlistTicker(list, ticker))}
-                      className="shrink-0 rounded p-1 text-muted-foreground hover:text-foreground/80"
-                      aria-label={`Remove ${ticker}`}
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setList(removeWatchlistTicker(list, ticker))}
+                    className="absolute right-2 top-2 z-10 inline-flex size-11 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50 lg:size-9"
+                    aria-label={`Remove ${ticker}`}
+                  >
+                    <X className="size-4" />
+                  </button>
                   <button
                     type="button"
                     onClick={() => onOpenPulse?.(ticker)}
-                    className="flex flex-1 flex-col text-left"
+                    className="flex flex-1 flex-col pr-12 text-left lg:pr-10"
                   >
+                    <p className="text-sm font-semibold text-foreground">
+                      {cashtag(ticker)}
+                    </p>
                     <p
                       className="mt-1 text-sm font-semibold tabular-nums text-foreground"
                       title={quoteAsOfTitle(q)}
@@ -363,7 +361,7 @@ export function WatchlistStrip({
                       </>
                     )}
                     {onOpenPulse && (
-                      <span className="mt-4 text-sm font-medium text-primary">
+                      <span className="mt-4 inline-flex min-h-11 items-center text-sm font-medium text-primary lg:min-h-9">
                         Check in Pulse
                       </span>
                     )}
