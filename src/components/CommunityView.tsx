@@ -30,9 +30,15 @@ import {
 } from "@/lib/classroom";
 import { currency, percent, signedCurrency, signedPercent, cn, cashtag, signedTone } from "@/lib/format";
 import { listingCurrenciesAreMixed, listingCurrency, listingPriceDigits } from "@/lib/listing-currency";
-import { htmlCell, htmlCellTicker, htmlTable } from "@/components/FluidTable";
+import {
+  FluidRow,
+  FluidTable,
+  cellBase,
+  cellTicker,
+  tableCols,
+} from "@/components/FluidTable";
 import { TickerSymbol } from "@/components/TickerSymbol";
-import { Card, SCORE_CELL, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW, SwatchLegend } from "@/components/ui/Panel";
+import { SCORE_CELL, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW, SwatchLegend } from "@/components/ui/Panel";
 import {
   Avatar,
   AvatarFallback,
@@ -3136,7 +3142,10 @@ function ReadOnlyHoldings({
       currency: quotes[h.ticker]?.currency,
     }))
   );
-  const tickerTd = mixedListings ? htmlCellTicker : htmlCell;
+  const tickerCell = mixedListings ? cellTicker : cellBase;
+  const todayCell = mixedListings
+    ? "flex h-full w-full items-center justify-end whitespace-nowrap px-1.5 py-1.5 text-right tabular-nums"
+    : cellBase;
 
   // Biggest position first by default — matches the default sort in My
   // book, and is far more useful at a glance than raw creation order.
@@ -3145,6 +3154,21 @@ function ReadOnlyHoldings({
       (quotes[b.ticker]?.price ?? 0) * b.shares -
       (quotes[a.ticker]?.price ?? 0) * a.shares
   );
+
+  function holdingRow(h: Holding) {
+    const listed = listingCurrency(h.ticker, quotes[h.ticker]?.currency);
+    const digits = listingPriceDigits(listed);
+    const native =
+      quotes[h.ticker]?.nativePrice != null &&
+      quotes[h.ticker]!.nativePrice! > 0
+        ? quotes[h.ticker]!.nativePrice!
+        : quotes[h.ticker]?.price ?? 0;
+    const priceUsd = quotes[h.ticker]?.price ?? 0;
+    const value = priceUsd * h.shares;
+    const rowTodayPct = quotes[h.ticker]?.changePercent ?? null;
+    const pctBook = totalValue > 0 ? value / totalValue : 0;
+    return { listed, digits, native, value, rowTodayPct, pctBook };
+  }
 
   return (
     <div className="flex flex-col gap-3">
@@ -3158,133 +3182,148 @@ function ReadOnlyHoldings({
         <Score label="Total value" value={currency(totalValue)} />
         <Score label="Cash" value={currency(cash)} />
       </Scoreboard>
-      <div className="flex flex-col gap-3 md:hidden">
-        {sortedHoldings.map((h) => {
-          const listed = listingCurrency(h.ticker, quotes[h.ticker]?.currency);
-          const digits = listingPriceDigits(listed);
-          const native =
-            quotes[h.ticker]?.nativePrice != null &&
-            quotes[h.ticker]!.nativePrice! > 0
-              ? quotes[h.ticker]!.nativePrice!
-              : quotes[h.ticker]?.price ?? 0;
-          const priceUsd = quotes[h.ticker]?.price ?? 0;
-          const value = priceUsd * h.shares;
-          const rowTodayPct = quotes[h.ticker]?.changePercent ?? null;
-          const pctBook = totalValue > 0 ? value / totalValue : 0;
-          return (
-            <Card key={h.id}>
-              <div className="flex items-baseline justify-between gap-2">
-                <p className="text-base font-semibold text-foreground">
-                  <TickerSymbol
-                    ticker={h.ticker}
-                    currency={listed}
-                    showCurrency={mixedListings}
-                  />
-                </p>
-                <p
+      {holdings.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-border bg-muted px-4 py-6 text-center text-sm text-muted-foreground">
+          No holdings in this portfolio.
+        </p>
+      ) : (
+        <>
+          <div className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 md:hidden">
+            <FluidTable template={tableCols(2, mixedListings)}>
+              <FluidRow>
+                <div
                   className={cn(
-                    "text-sm font-semibold tabular-nums",
-                    signedTone(rowTodayPct, "text-muted-foreground")
+                    tickerCell,
+                    "text-sm font-medium text-muted-foreground"
                   )}
                 >
-                  {rowTodayPct != null ? signedPercent(rowTodayPct) : "—"}
-                </p>
-              </div>
-              <p className="mt-1 text-sm text-muted-foreground" title={quoteAsOfTitle(quotes[h.ticker])}>
-                {percent(pctBook)} of portfolio · {h.shares} sh · {currency(native, digits, listed)} · {currency(value)}
-              </p>
-            </Card>
-          );
-        })}
-        {holdings.length === 0 && (
-          <p className="rounded-xl border border-dashed border-border bg-muted px-4 py-6 text-center text-sm text-muted-foreground">
-            No holdings in this portfolio.
-          </p>
-        )}
-        <Card>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Cash</span>
-            <span className="tabular-nums text-foreground">{currency(cash)}</span>
+                  Ticker
+                </div>
+                <div
+                  className={cn(
+                    todayCell,
+                    "text-sm font-medium text-muted-foreground"
+                  )}
+                >
+                  Today
+                </div>
+              </FluidRow>
+              {sortedHoldings.map((h) => {
+                const row = holdingRow(h);
+                return (
+                  <FluidRow key={h.id}>
+                    <div className={cn(tickerCell, "font-medium")}>
+                      <TickerSymbol
+                        ticker={h.ticker}
+                        currency={row.listed}
+                        showCurrency={mixedListings}
+                      />
+                    </div>
+                    <div
+                      className={cn(
+                        todayCell,
+                        "font-semibold",
+                        signedTone(row.rowTodayPct, "text-muted-foreground")
+                      )}
+                    >
+                      {row.rowTodayPct != null
+                        ? signedPercent(row.rowTodayPct)
+                        : "—"}
+                    </div>
+                  </FluidRow>
+                );
+              })}
+              <FluidRow footer>
+                <div className={cn(tickerCell, "text-muted-foreground")}>
+                  Cash
+                </div>
+                <div className={cn(todayCell)}>{currency(cash)}</div>
+              </FluidRow>
+            </FluidTable>
           </div>
-        </Card>
-      </div>
-      <div className="hidden overflow-x-auto rounded-xl bg-card ring-1 ring-foreground/10 md:block">
-        <table className={cn(htmlTable, "min-w-[36rem]")}>
-          <thead className="border-b border-border text-sm text-muted-foreground">
-            <tr>
-              <th className={cn(tickerTd, "font-medium")}>Ticker</th>
-              <th className={cn(htmlCell, "font-medium")}>Today</th>
-              <th className={cn(htmlCell, "font-medium")}>%</th>
-              <th className={cn(htmlCell, "font-medium")}>Shares</th>
-              <th className={cn(htmlCell, "font-medium")}>Price</th>
-              <th className={cn(htmlCell, "font-medium")}>Value</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedHoldings.map((h) => {
-              const listed = listingCurrency(h.ticker, quotes[h.ticker]?.currency);
-              const digits = listingPriceDigits(listed);
-              const native =
-                quotes[h.ticker]?.nativePrice != null &&
-                quotes[h.ticker]!.nativePrice! > 0
-                  ? quotes[h.ticker]!.nativePrice!
-                  : quotes[h.ticker]?.price ?? 0;
-              const priceUsd = quotes[h.ticker]?.price ?? 0;
-              const value = priceUsd * h.shares;
-              const rowTodayPct = quotes[h.ticker]?.changePercent ?? null;
-              const pctBook = totalValue > 0 ? value / totalValue : 0;
-              return (
-                <tr key={h.id} className="border-b border-border">
-                  <td className={cn(tickerTd, "font-medium")}>
-                    <TickerSymbol
-                      ticker={h.ticker}
-                      currency={listed}
-                      showCurrency={mixedListings}
-                    />
-                  </td>
-                  <td
-                    className={cn(
-                      htmlCell,
-                      "font-semibold tabular-nums",
-                      signedTone(rowTodayPct, "text-muted-foreground")
-                    )}
-                  >
-                    {rowTodayPct != null ? signedPercent(rowTodayPct) : "—"}
-                  </td>
-                  <td className={cn(htmlCell, "tabular-nums text-muted-foreground")}>
-                    {percent(pctBook)}
-                  </td>
-                  <td className={cn(htmlCell, "tabular-nums text-muted-foreground")}>
-                    {h.shares}
-                  </td>
-                  <td
-                    className={cn(htmlCell, "tabular-nums text-muted-foreground")}
-                    title={quoteAsOfTitle(quotes[h.ticker])}
-                  >
-                    {currency(native, digits, listed)}
-                  </td>
-                  <td className={cn(htmlCell, "tabular-nums text-muted-foreground")}>
-                    {currency(value)}
-                  </td>
-                </tr>
-              );
-            })}
-            {holdings.length === 0 && (
-              <tr>
-                <td className={cn(htmlCell, "h-auto py-6 text-muted-foreground")} colSpan={6}>
-                  No holdings in this portfolio.
-                </td>
-              </tr>
-            )}
-            <tr>
-              <td className={cn(htmlCell, "text-muted-foreground")} colSpan={5}>
-                Cash
-              </td>
-              <td className={cn(htmlCell, "tabular-nums")}>{currency(cash)}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+          <div className="hidden overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 md:block">
+            <FluidTable template={tableCols(6, mixedListings)}>
+              <FluidRow>
+                <div
+                  className={cn(
+                    tickerCell,
+                    "text-sm font-medium text-muted-foreground"
+                  )}
+                >
+                  Ticker
+                </div>
+                <div className={cn(cellBase, "text-sm font-medium text-muted-foreground")}>
+                  Today
+                </div>
+                <div className={cn(cellBase, "text-sm font-medium text-muted-foreground")}>
+                  %
+                </div>
+                <div className={cn(cellBase, "text-sm font-medium text-muted-foreground")}>
+                  Shares
+                </div>
+                <div className={cn(cellBase, "text-sm font-medium text-muted-foreground")}>
+                  Price
+                </div>
+                <div className={cn(cellBase, "text-sm font-medium text-muted-foreground")}>
+                  Value
+                </div>
+              </FluidRow>
+              {sortedHoldings.map((h) => {
+                const row = holdingRow(h);
+                return (
+                  <FluidRow key={h.id}>
+                    <div className={cn(tickerCell, "font-medium")}>
+                      <TickerSymbol
+                        ticker={h.ticker}
+                        currency={row.listed}
+                        showCurrency={mixedListings}
+                      />
+                    </div>
+                    <div
+                      className={cn(
+                        cellBase,
+                        "font-semibold tabular-nums",
+                        signedTone(row.rowTodayPct, "text-muted-foreground")
+                      )}
+                    >
+                      {row.rowTodayPct != null
+                        ? signedPercent(row.rowTodayPct)
+                        : "—"}
+                    </div>
+                    <div className={cn(cellBase, "tabular-nums text-muted-foreground")}>
+                      {percent(row.pctBook)}
+                    </div>
+                    <div className={cn(cellBase, "tabular-nums text-muted-foreground")}>
+                      {h.shares}
+                    </div>
+                    <div
+                      className={cn(cellBase, "tabular-nums text-muted-foreground")}
+                      title={quoteAsOfTitle(quotes[h.ticker])}
+                    >
+                      {currency(row.native, row.digits, row.listed)}
+                    </div>
+                    <div className={cn(cellBase, "tabular-nums text-muted-foreground")}>
+                      {currency(row.value)}
+                    </div>
+                  </FluidRow>
+                );
+              })}
+              <FluidRow footer>
+                <div className={cn(tickerCell, "text-muted-foreground")}>
+                  Cash
+                </div>
+                <div className={cellBase} />
+                <div className={cellBase} />
+                <div className={cellBase} />
+                <div className={cellBase} />
+                <div className={cn(cellBase, "tabular-nums")}>
+                  {currency(cash)}
+                </div>
+              </FluidRow>
+            </FluidTable>
+          </div>
+        </>
+      )}
     </div>
   );
 }

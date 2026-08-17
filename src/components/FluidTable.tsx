@@ -78,8 +78,9 @@ export const cellLast = cellBase;
 export const htmlTable = "w-full table-fixed border-collapse text-sm";
 export const htmlCell =
   "h-10 whitespace-nowrap px-1.5 py-1.5 text-center align-middle first:pl-3 last:pr-3";
-/** Shrink-wrap the ticker column when a listing chip is showing. */
+/** Shrink-wrap the ticker column when a listing chip is showing.
+ * `min-w-max` keeps table-fixed from crushing the cashtag into the next cell. */
 export const htmlCellTicker =
-  "h-10 w-[1%] whitespace-nowrap py-1.5 pl-3 pr-1.5 text-left align-middle";
+  "h-10 w-[1%] min-w-max whitespace-nowrap py-1.5 pl-3 pr-3 text-left align-middle";
 export const htmlCellFirst = htmlCell;
 export const htmlCellLast = htmlCell;
