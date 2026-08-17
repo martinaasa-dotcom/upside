@@ -572,7 +572,7 @@ export const LabSheet = memo(function LabSheet({
                   <div
                     className="grid w-max gap-1"
                     style={{
-                      gridTemplateColumns: `auto repeat(${corrHeat.tickers.length}, 2.5rem)`,
+                      gridTemplateColumns: `auto repeat(${corrHeat.tickers.length}, minmax(2.5rem, max-content))`,
                     }}
                   >
                     <div className="h-8" />
@@ -580,9 +580,9 @@ export const LabSheet = memo(function LabSheet({
                       <div
                         key={`h-${t}`}
                         title={cashtag(t)}
-                        className="flex h-8 items-end justify-center pb-0.5 text-xs font-medium leading-none text-muted-foreground"
+                        className="flex h-8 items-end justify-center px-0.5 pb-0.5 text-xs font-medium leading-none text-muted-foreground"
                       >
-                        <span className="max-w-full truncate">{cashtag(t)}</span>
+                        <span className="whitespace-nowrap">{cashtag(t)}</span>
                       </div>
                     ))}
                     {corrHeat.tickers.map((row, i) => (
@@ -598,7 +598,7 @@ export const LabSheet = memo(function LabSheet({
                                 ? "—"
                                 : `${row} ↔ ${corrHeat.tickers[j]}: ${c.toFixed(2)}`
                             }
-                            className="flex h-10 w-10 items-center justify-center rounded-md tabular-nums text-xs font-medium text-foreground"
+                            className="flex h-10 min-w-10 w-full items-center justify-center rounded-md tabular-nums text-xs font-medium text-foreground"
                             style={{
                               background:
                                 c == null

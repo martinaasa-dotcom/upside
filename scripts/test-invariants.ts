@@ -5496,6 +5496,9 @@ run("dashboard modules sit behind an error boundary", () => {
     "utf8"
   );
   assert.ok(lab.includes(`<WidgetErrorBoundary name="Allocation">`));
+  assert.match(lab, /Do these move together/);
+  assert.match(lab, /minmax\(2\.5rem, max-content\)/);
+  assert.doesNotMatch(lab, /max-w-full truncate/);
   const strip = readFileSync(
     join(process.cwd(), "src/components/AppStatusStrip.tsx"),
     "utf8"
