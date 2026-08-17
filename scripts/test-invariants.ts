@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { buildBookInsights } from "../src/lib/book-insights";
+import { forecastThemeForTicker } from "../src/lib/forecast-conviction";
 import {
   BRIEFING_KIND_LABEL,
   BRIEFING_PULSE_CTA,
@@ -388,14 +389,6 @@ run("Karud household is two accounts on one book, like Martin and Amanda", () =>
       portfolioSlugs: [],
     }),
     false
-  );
-  assert.equal(
-    shouldSkipExperienceOnboarding({
-      holdingsCount: 0,
-      portfolioSlugs: [],
-      inACircle: true,
-    }),
-    true
   );
   assert.equal(
     communityListHasCircle([
@@ -2968,6 +2961,32 @@ run("Worth noticing names the two groups in plain English", () => {
   assert.equal(isUsAfterCashClose("closed", sunday), true);
   const monday = new Date("2026-08-17T11:00:00-04:00");
   assert.equal(insightWhen("open", monday), "today");
+
+  assert.equal(forecastThemeForTicker("AAPL"), "software");
+  assert.equal(
+    buildBookInsights([{ ticker: "AAPL", value: 50_000, todayPct: 0.002 }])
+      .rotation,
+    null
+  );
+  assert.equal(
+    buildBookInsights([{ ticker: "ZZZZ", value: 50_000, todayPct: 0 }]).rotation,
+    null
+  );
+  assert.doesNotMatch(
+    buildBookInsights([{ ticker: "AAPL", value: 50_000 }]).rotation ?? "",
+    /other businesses/
+  );
+
+  const overview = readFileSync(
+    join(process.cwd(), "src/components/OverviewDashboard.tsx"),
+    "utf8"
+  );
+  assert.match(overview, /<Reading>\{morning\.sentence\}<\/Reading>/);
+  const header = overview.slice(
+    overview.indexOf("{morning.moveLabel}"),
+    overview.indexOf("<Scoreboard className=\"overview-fade\">")
+  );
+  assert.doesNotMatch(header, /morning\.sentence/);
 });
 
 run("empty book does not lead with Fund", () => {

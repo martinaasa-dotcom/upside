@@ -206,13 +206,18 @@ export function buildMorningRead(
     when
   );
   const notices: MorningNotice[] = [];
-  if (insights.rotation) {
+  if (insights.dayMove) {
+    notices.push({
+      label: when === "friday" ? "Friday's close" : "Worth noticing",
+      text: insights.dayMove,
+    });
+  } else if (!quiet && insights.rotation) {
     notices.push({
       label: when === "friday" ? "Friday's close" : "Worth noticing",
       text: insights.rotation,
     });
   }
-  if (insights.idea) {
+  if (!quiet && insights.idea) {
     notices.push({ label: "What's missing", text: insights.idea });
   }
   return {

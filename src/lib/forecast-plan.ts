@@ -47,6 +47,8 @@ export const TICKER_SECTORS: Record<string, string> = {
   ASML: "Semiconductors / lithography",
   "ASML.AS": "Semiconductors / lithography",
   GOOGL: "Big tech / AI spend",
+  AAPL: "Consumer tech / software",
+  NFLX: "Consumer internet / streaming",
   UNH: "Healthcare / managed care",
   LLY: "Healthcare / biopharma",
   ISRG: "Healthcare / medtech",

@@ -45,6 +45,8 @@ export type InsightWhen = "today" | "friday" | "this week";
 export type BookInsights = {
   idea: string | null;
   rotation: string | null;
+  /** Same-day group move. Null when nothing actually diverged. */
+  dayMove: string | null;
   lines: string[];
   promptBlock: string;
 };
@@ -167,10 +169,18 @@ function ideaFor(
 }
 
 function structuralRotation(
-  slices: ReturnType<typeof themeBreakdown>
+  slices: ReturnType<typeof themeBreakdown>,
+  holdings: InsightHolding[]
 ): string | null {
   const top = slices[0];
   if (!top || top.pct < 0.55) return null;
+  // Unclassified names are not a real group. One ticker is not a group
+  // either. Both used to print "other businesses (100%)" on an Apple book.
+  if (top.theme === "other") return null;
+  const inTheme = holdings.filter(
+    (h) => h.value > 0 && forecastThemeForTicker(h.ticker) === top.theme
+  ).length;
+  if (inTheme < 2) return null;
   const label = THEME_LABEL[top.theme];
   return `Most of your portfolio is ${label} (${sharePct(top.pct)}). A bad year in that group is a bad year for you, not a dip in one name. If you did not mean to take that much in one place, that is the thing to fix.`;
 }
@@ -261,7 +271,8 @@ export function buildBookInsights(
     holdings.map((h) => ({ ticker: h.ticker, currentValue: h.value }))
   );
   const idea = ideaFor(slices);
-  const rotation = dayRotation(holdings, when) ?? structuralRotation(slices);
+  const dayMove = dayRotation(holdings, when);
+  const rotation = dayMove ?? structuralRotation(slices, holdings);
   const lines = [rotation, idea].filter((x): x is string => Boolean(x));
   const promptBlock =
     lines.length === 0
@@ -270,7 +281,7 @@ export function buildBookInsights(
 ${lines.map((l) => `- ${l}`).join("\n")}
 Talk about groups of similar businesses, not a shopping list of new tickers, unless the user asks for names. Name the weight and what to check. Do not write a vibe. Educational scenario, not an order to buy. Use plain words a grandma would get. Never say sleeve, marks, conviction, digestion, beta, or rotation. Thesis is fine.`;
 
-  return { idea, rotation, lines, promptBlock };
+  return { idea, rotation, dayMove, lines, promptBlock };
 }
 
 export function insightsPromptBlock(holdings: InsightHolding[]): string {

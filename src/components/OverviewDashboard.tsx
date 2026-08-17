@@ -288,6 +288,7 @@ function MorningStack({
         </div>
       ) : (
         <>
+          <Reading>{morning.sentence}</Reading>
           {!morning.quiet && morning.drivers.length > 0 && (
             <Scoreboard
               cols={
@@ -691,11 +692,6 @@ export const OverviewDashboard = memo(function OverviewDashboard({
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             {morning.moveLabel}
           </h1>
-          {!morning.sunday ? (
-            <p className="text-sm text-muted-foreground">
-              {morning.sentence}
-            </p>
-          ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Badge

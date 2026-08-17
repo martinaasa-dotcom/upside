@@ -141,7 +141,7 @@ const THEME_TICKERS: [ForecastTheme, string[]][] = [
     ["PLTR", "NOW", "GOOGL", "GOOG", "CRM", "DDOG", "SNOW", "MSFT", "ORCL",
      "ADBE", "TEAM", "WDAY", "ZS", "CRWD", "PANW", "NET", "MDB", "HUBS",
      "SHOP", "TTD", "APP", "U", "RBLX", "META", "AMZN", "IBM", "SAP",
-     "QQQ", "QQQM", "XLK"],
+     "AAPL", "NFLX", "QQQ", "QQQM", "XLK"],
   ],
   [
     "healthcare",
