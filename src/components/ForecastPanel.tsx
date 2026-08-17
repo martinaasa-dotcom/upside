@@ -1,7 +1,7 @@
 "use client";
 
 import { track } from "@vercel/analytics";
-import { FluidRow, FluidTable, cellLast, cellTicker } from "@/components/FluidTable";
+import { FluidRow, FluidTable, cellBase, cellLast, cellTicker } from "@/components/FluidTable";
 import { TickerSymbol } from "@/components/TickerSymbol";
 import {
   Card,
@@ -276,9 +276,6 @@ function EoyPriceInput({
     />
   );
 }
-
-const cellNum =
-  "flex min-w-0 w-full items-center justify-center whitespace-nowrap px-3 py-2 text-center tabular-nums";
 
 type SheetPathPoint = { label: string; value: number };
 
@@ -559,7 +556,7 @@ export const ForecastPanel = memo(function ForecastPanel({
   const mobileYears = yearCols.filter((y) => y !== 2030);
   // Ticker | Price now | End-year cols | Change. Numbers only in the grid.
   // Rationale lives under the table so a sentence cannot blow a row open.
-  const template = `repeat(${yearCols.length + 3}, minmax(0, 1fr))`;
+  const template = `minmax(9rem, 1.2fr) repeat(${yearCols.length + 2}, minmax(0, 1fr))`;
 
   const [plan, setPlan] = useState<ForecastPlan | null>(null);
   const [busy, setBusy] = useState(false);
@@ -1070,13 +1067,14 @@ export const ForecastPanel = memo(function ForecastPanel({
           <div className="hidden overflow-x-auto md:block">
             <FluidTable template={template}>
               <FluidRow className="text-xs font-medium text-muted">
-                <div className={cn(cellTicker, "px-3")}>Ticker</div>
-                <div className={cellNum}>Price now</div>
+                <div className={cellTicker}>Ticker</div>
+                <div className={cn(cellBase, "tabular-nums")}>Price now</div>
                 {yearCols.map((y) => (
                   <div
                     key={y}
                     className={cn(
-                      cellNum,
+                      cellBase,
+                      "tabular-nums",
                       isCurrentYear(y) && "text-foreground"
                     )}
                     title={isCurrentYear(y) ? "Year-end, not today's price" : undefined}
@@ -1089,7 +1087,7 @@ export const ForecastPanel = memo(function ForecastPanel({
 
               {model.rows.map((r) => (
                 <FluidRow key={r.ticker} className="min-h-[2.75rem] hover:bg-well/50">
-                  <div className={cn(cellTicker, "flex-col items-end px-3 font-semibold tracking-wide text-foreground")}>
+                  <div className={cn(cellTicker, "flex-col items-start font-semibold tracking-wide text-foreground")}>
                     <TickerSymbol ticker={r.ticker} />
                     {!r.hasTargets && (
                       <span className="mt-0.5 text-xs font-normal tracking-normal text-muted">
@@ -1097,11 +1095,11 @@ export const ForecastPanel = memo(function ForecastPanel({
                       </span>
                     )}
                   </div>
-                  <div className={cn(cellNum, "text-foreground")}>
+                  <div className={cn(cellBase, "tabular-nums text-foreground")}>
                     {currency(r.currentPrice)}
                   </div>
                   {yearCols.map((y) => (
-                    <div key={y} className={cellNum}>
+                    <div key={y} className={cn(cellBase, "tabular-nums")}>
                       <EoyPriceInput
                         value={r.eoyPrices[y]}
                         targeted={r.targetedYears[y]}
@@ -1124,14 +1122,14 @@ export const ForecastPanel = memo(function ForecastPanel({
               ))}
 
               <FluidRow className="border-t border-border bg-well/60 font-semibold">
-                <div className={cn(cellTicker, "px-3 py-2.5 text-foreground")}>
+                <div className={cn(cellTicker, "py-2.5 text-foreground")}>
                   Portfolio
                 </div>
-                <div className={cn(cellNum, "py-2.5 text-foreground")}>
+                <div className={cn(cellBase, "py-2.5 tabular-nums text-foreground")}>
                   {currency(model.currentTotal)}
                 </div>
                 {yearCols.map((y) => (
-                  <div key={y} className={cn(cellNum, "py-2.5 text-foreground")}>
+                  <div key={y} className={cn(cellBase, "py-2.5 tabular-nums text-foreground")}>
                     {currency(model.eoyTotals[y])}
                   </div>
                 ))}

@@ -201,7 +201,7 @@ export function CsvImportModal({
                 <table className="w-full text-left text-sm">
                   <thead className="sticky top-0 bg-well text-sm text-muted">
                     <tr>
-                      <th className="px-3 py-1.5 text-right font-medium">Ticker</th>
+                      <th className="px-3 py-1.5 text-left font-medium">Ticker</th>
                       <th className="px-3 py-1.5 font-medium">Shares</th>
                       <th className="px-3 py-1.5 font-medium">Buy price</th>
                       {!hideCallPct && (
@@ -212,7 +212,7 @@ export function CsvImportModal({
                   <tbody>
                     {rows.map((r) => (
                       <tr key={r.ticker} className="border-t border-border">
-                        <td className="px-3 py-1.5 text-right font-medium text-foreground">
+                        <td className="px-3 py-1.5 text-left font-medium text-foreground">
                           <TickerSymbol ticker={r.ticker} />
                         </td>
                         <td className="px-3 py-1.5 tabular-nums text-foreground/80">

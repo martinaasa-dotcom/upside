@@ -375,9 +375,9 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
               <tr className="border-b border-border text-xs text-muted">
                   <th
                     onClick={() => handleSort("ticker")}
-                    className="cursor-pointer py-2 pr-2 text-right font-medium hover:text-foreground"
+                    className="cursor-pointer px-3 py-2 text-left font-medium hover:text-foreground"
                   >
-                    <span className="flex items-center justify-end gap-1">
+                    <span className="flex items-center justify-start gap-1">
                       Ticker
                       {sortField === "ticker" && (
                         <ChevronDown className="h-3 w-3" aria-hidden />
@@ -429,7 +429,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
                   key={r.ticker}
                   className="border-b border-border transition hover:bg-hover/30"
                 >
-                  <td className="py-2 pr-2 text-right font-semibold text-foreground">
+                  <td className="px-3 py-2 text-left font-semibold text-foreground">
                     <TickerSymbol ticker={r.ticker} />
                   </td>
                   <td className="max-w-[11rem] truncate py-2 pr-2 text-muted">

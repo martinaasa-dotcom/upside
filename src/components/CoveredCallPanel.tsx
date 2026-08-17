@@ -123,7 +123,8 @@ function InlineStockTarget({
   );
 }
 
-const TEMPLATE = "repeat(11, minmax(0, 1fr))";
+const TEMPLATE =
+  "minmax(9rem, 1.2fr) repeat(9, minmax(0, 1fr)) minmax(5.5rem, 1fr)";
 
 const HEADERS = [
   "Ticker",
@@ -421,7 +422,7 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
 
           {rows.length > 0 && (
             <FluidRow className="border-t border-border bg-well/60 font-semibold">
-              <div className={cn(cellTicker, "py-2.5 text-foreground")}>All</div>
+              <div className={cn(cellTicker, "py-2.5")} />
               <div className={cn(cellBase, "py-2.5")} />
               <div className={cn(cellBase, "py-2.5")} />
               <div className={cn(cellBase, "py-2.5")} />

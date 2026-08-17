@@ -262,8 +262,9 @@ function sortValue(h: EnrichedHolding, key: SortKey): number | string {
   }
 }
 
-/** Same even-spread as Covered calls: leftover width goes into every column. */
-const TEMPLATE = "repeat(12, minmax(0, 1fr))";
+/** Ticker keeps room for cashtag + chip. The rest share leftover width equally. */
+const TEMPLATE =
+  "minmax(9rem, 1.2fr) repeat(10, minmax(0, 1fr)) minmax(4.75rem, 1fr)";
 
 export const PortfolioTable = memo(function PortfolioTable({
   portfolio,

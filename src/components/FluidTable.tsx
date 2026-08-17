@@ -2,8 +2,8 @@ import { cn } from "@/lib/format";
 import type { ReactNode } from "react";
 
 /**
- * Full-width CSS grid. Columns share leftover width so the last track
- * sits on the right edge of the card, not floating in empty space.
+ * Full-width CSS grid. Side padding is the safety gutter so cashtags
+ * and last-column figures never run into the card border.
  */
 export function FluidTable({
   template,
@@ -22,7 +22,7 @@ export function FluidTable({
       )}
     >
       <div
-        className="grid w-full min-w-0 text-sm"
+        className="grid w-full min-w-0 px-3 text-sm"
         style={{ gridTemplateColumns: template }}
       >
         {children}
@@ -53,10 +53,10 @@ export function FluidRow({
 export const cellBase =
   "flex min-w-0 w-full items-center justify-center whitespace-nowrap px-1.5 py-2 text-center";
 
-/** Ticker column: cashtag + listing chip, right-aligned toward the numbers. */
+/** Ticker column: sit on the padded left edge, never clip the cashtag. */
 export const cellTicker =
-  "flex min-w-0 w-full items-center justify-end whitespace-nowrap py-2 pl-3 pr-1.5 text-right";
+  "flex w-full min-w-max items-center justify-start whitespace-nowrap py-2 pr-2 text-left";
 
-/** Last data column: keep the figure on the card's right edge. */
+/** Last data column: right-aligned, table px-3 is the right gutter. */
 export const cellLast =
-  "flex min-w-0 w-full items-center justify-end whitespace-nowrap py-2 pl-1.5 pr-3 text-right";
+  "flex min-w-0 w-full items-center justify-end whitespace-nowrap py-2 pl-1.5 text-right";
