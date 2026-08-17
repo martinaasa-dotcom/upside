@@ -108,9 +108,9 @@ import {
   isBookFetchFresh,
 } from "@/lib/book-cache";
 import {
-  cacheIsFamilyDemoLeak,
-  isLocalFamilyDemoSheet,
-  stripLocalFamilyDemoBook,
+  isLiveSheetId,
+  isUnsignedLocalCache,
+  keepLiveSheetsOnly,
 } from "@/lib/book-isolation";
 import {
   GO_HOME_EVENT,
@@ -450,9 +450,9 @@ export function Dashboard() {
     const uid = user?.id ?? loadLastUser()?.id ?? null;
     const cached = readBookCache(uid);
     const signedIn = Boolean(user?.id);
-    if (cached && !(signedIn && cacheIsFamilyDemoLeak(cached))) {
+    if (cached && !(signedIn && isUnsignedLocalCache(cached))) {
       const book = signedIn
-        ? stripLocalFamilyDemoBook(cached.portfolios, cached.holdings)
+        ? keepLiveSheetsOnly(cached.portfolios, cached.holdings)
         : { portfolios: cached.portfolios, holdings: cached.holdings };
       setSource(signedIn ? "supabase" : cached.source);
       setPortfolios(book.portfolios);
@@ -502,9 +502,9 @@ export function Dashboard() {
       const cached = readBookCache(uid);
       if (!cached || bookFetchedAtRef.current > 0) return;
       const signedIn = Boolean(user?.id);
-      if (signedIn && cacheIsFamilyDemoLeak(cached)) return;
+      if (signedIn && isUnsignedLocalCache(cached)) return;
       const book = signedIn
-        ? stripLocalFamilyDemoBook(cached.portfolios, cached.holdings)
+        ? keepLiveSheetsOnly(cached.portfolios, cached.holdings)
         : { portfolios: cached.portfolios, holdings: cached.holdings };
       setSource(signedIn ? "supabase" : cached.source);
       setPortfolios(book.portfolios);
@@ -978,7 +978,7 @@ export function Dashboard() {
       const payload = isRecord(data) ? data : {};
       const sourceName = typeof payload.source === "string" ? payload.source : "";
       if (sourceName === "supabase" || userId) {
-        const parsed = stripLocalFamilyDemoBook(
+        const parsed = keepLiveSheetsOnly(
           parsePortfolioList(payload.portfolios),
           parseHoldingList(payload.holdings)
         );
@@ -1290,13 +1290,12 @@ export function Dashboard() {
   }, [loadPortfolios, refreshMarkets, allTickers, holdings]);
 
   // Keep session cache warm so My book remounts paint instantly.
-  // Never persist the family demo book, or another person's sheets,
-  // under a signed-in user. Empty supabase books must still write so a
-  // poisoned MaryAnn/Karud cache cannot come back on the next paint.
+  // Signed-in users only persist live sheets they co-own. Empty books
+  // still write so a leftover local seed cannot come back on the next paint.
   useEffect(() => {
     if (loading || !user?.id) return;
     if (source !== "supabase") return;
-    if (portfolios.some(isLocalFamilyDemoSheet)) return;
+    if (portfolios.some((p) => !isLiveSheetId(p.id))) return;
     writeBookCache({
       userId: user.id,
       source: "supabase",
@@ -2603,8 +2602,8 @@ export function Dashboard() {
   ): Promise<Portfolio | undefined> {
     if (addingSheetRef.current) return addingSheetRef.current;
     const run = (async () => {
-    const isFirstSheet = bookRef.current.portfolios.filter(
-      (p) => !isLocalFamilyDemoSheet(p)
+    const isFirstSheet = bookRef.current.portfolios.filter((p) =>
+      isLiveSheetId(p.id)
     ).length === 0;
     const trimmed = sanitizeSheetName(name);
     if (!trimmed) return undefined;
@@ -2629,12 +2628,10 @@ export function Dashboard() {
       }
       setSource("supabase");
       setPortfolios((prev) => {
-        const own = prev.filter((p) => !isLocalFamilyDemoSheet(p));
+        const own = prev.filter((p) => isLiveSheetId(p.id));
         return own.some((p) => p.id === created.id) ? own : [...own, created];
       });
-      setHoldings((prev) =>
-        prev.filter((h) => !isLocalFamilyDemoSheet({ id: h.portfolio_id }))
-      );
+      setHoldings((prev) => prev.filter((h) => isLiveSheetId(h.portfolio_id)));
       seedNewSheetPanelDefaults(created);
       setActiveId(created.id);
       track("sheet_created", { first_sheet: isFirstSheet });
@@ -2659,7 +2656,7 @@ export function Dashboard() {
   }
 
   async function ensureFirstSheet(): Promise<Portfolio | undefined> {
-    const own = portfolios.filter((p) => !isLocalFamilyDemoSheet(p));
+    const own = portfolios.filter((p) => isLiveSheetId(p.id));
     if (own[0]) return own[0];
     if (creatingFirstSheetRef.current) return creatingFirstSheetRef.current;
     const pending = handleAddSheet(FIRST_SHEET_NAME, { silent: true });

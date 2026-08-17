@@ -1,36 +1,30 @@
-import { DEMO_PORTFOLIOS } from "@/lib/demo-store";
 import type { Holding, Portfolio } from "@/lib/types";
 
-/** Local demo ids only. Live family sheets use UUIDs. */
-export const LOCAL_FAMILY_DEMO_IDS = new Set(
-  DEMO_PORTFOLIOS.map((p) => p.id)
-);
+/** Live sheet ids are postgres UUIDs. Local unsigned seed uses ids like `p-aasad`. */
+const LIVE_SHEET_ID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-export function isLocalFamilyDemoSheet(row: {
-  id?: string | null;
-}): boolean {
-  return Boolean(row.id && LOCAL_FAMILY_DEMO_IDS.has(row.id));
+export function isLiveSheetId(id: string | null | undefined): boolean {
+  return Boolean(id && LIVE_SHEET_ID.test(id));
 }
 
-export function cacheIsFamilyDemoLeak(cache: {
-  source: string;
-  portfolios: { id: string }[];
-}): boolean {
-  return (
-    cache.source === "demo" ||
-    cache.portfolios.some(isLocalFamilyDemoSheet)
-  );
+/** `source: "demo"` is unsigned local state. Never apply it to a signed-in user. */
+export function isUnsignedLocalCache(cache: { source: string }): boolean {
+  return cache.source === "demo";
 }
 
-/** Drop Aasad / Anu / MaryAnn / Karud local demo rows from a signed-in book. */
-export function stripLocalFamilyDemoBook<
+/**
+ * Signed-in books only keep live sheets (UUID ids from the server).
+ * Permission is co-ownership on those rows, not a name allowlist.
+ */
+export function keepLiveSheetsOnly<
   T extends { id: string },
   H extends { portfolio_id: string },
 >(
   portfolios: T[],
   holdings: H[]
 ): { portfolios: T[]; holdings: H[] } {
-  const nextPortfolios = portfolios.filter((p) => !isLocalFamilyDemoSheet(p));
+  const nextPortfolios = portfolios.filter((p) => isLiveSheetId(p.id));
   const keep = new Set(nextPortfolios.map((p) => p.id));
   return {
     portfolios: nextPortfolios,
@@ -42,5 +36,5 @@ export function ownSheetsOnly(
   portfolios: Portfolio[],
   holdings: Holding[]
 ): { portfolios: Portfolio[]; holdings: Holding[] } {
-  return stripLocalFamilyDemoBook(portfolios, holdings);
+  return keepLiveSheetsOnly(portfolios, holdings);
 }

@@ -65,9 +65,10 @@ export const DEMO_PORTFOLIOS: Portfolio[] = [
 ];
 
 /**
- * Aasad = Martin's sheet (cash −7000, NBIS/CRWV/RKLB/BMNR/VST).
- * Anu / MaryAnn / Karud = separate imports.
- * Prefer the user Save lock (`portfell-locked`) over this seed.
+ * Canonical holdings so agents do not invent a different Aasad/Anu/MaryAnn/Karud book.
+ * These are real people's sheets. They are not a starter pack. Never paint them
+ * as a signed-in user's book. Unsigned local mode starts empty; a Save lock
+ * on this device (`portfell-locked`) is the only local copy.
  */
 export const DEMO_HOLDINGS: Holding[] = [
   // —— Aasad (sheet + confirmed Call % / stock-target baselines) ——
@@ -138,10 +139,7 @@ function normalizeStore(parsed: DemoStore): DemoStore {
 }
 
 function defaultStore(): DemoStore {
-  return {
-    portfolios: structuredClone(DEMO_PORTFOLIOS),
-    holdings: structuredClone(DEMO_HOLDINGS),
-  };
+  return { portfolios: [], holdings: [] };
 }
 
 function readJson(key: string): DemoStore | null {

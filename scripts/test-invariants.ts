@@ -6055,14 +6055,14 @@ run("GDPR hard-delete, export engine, and session purge", () => {
   assert.doesNotMatch(engine, /select\([^)]*token_hash/);
 });
 
-run("signed-in users never receive the family demo book", () => {
+run("signed-in users only see sheets they co-own", () => {
   const dash = readFileSync(
     join(process.cwd(), "src/components/Dashboard.tsx"),
     "utf8"
   );
-  assert.match(dash, /cacheIsFamilyDemoLeak/);
-  assert.match(dash, /stripLocalFamilyDemoBook/);
-  assert.match(dash, /isLocalFamilyDemoSheet/);
+  assert.match(dash, /isUnsignedLocalCache/);
+  assert.match(dash, /keepLiveSheetsOnly/);
+  assert.match(dash, /isLiveSheetId/);
   assert.match(dash, /user \? "supabase" : "demo"/);
   const addSheet = dash.slice(
     dash.indexOf("async function handleAddSheet"),
@@ -6083,14 +6083,21 @@ run("signed-in users never receive the family demo book", () => {
   );
   assert.doesNotMatch(api, /DEMO_PORTFOLIOS/);
   assert.doesNotMatch(api, /DEMO_HOLDINGS/);
-  assert.match(api, /Authenticated users never receive the local family demo book/);
+  assert.match(api, /A signed-in book is only sheets this user co-owns/);
 
   const runtime = readFileSync(
     join(process.cwd(), "src/lib/offline/runtime.ts"),
     "utf8"
   );
-  assert.match(runtime, /cacheIsFamilyDemoLeak/);
+  assert.match(runtime, /isUnsignedLocalCache/);
   assert.match(runtime, /book\.userId === uid/);
+
+  const demo = readFileSync(
+    join(process.cwd(), "src/lib/demo-store.ts"),
+    "utf8"
+  );
+  assert.match(demo, /portfolios: \[\], holdings: \[\]/);
+  assert.match(demo, /They are not a starter pack/);
 });
 
 if (failed > 0) {

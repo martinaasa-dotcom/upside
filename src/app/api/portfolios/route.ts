@@ -42,9 +42,8 @@ async function handleGET(req: NextRequest) {
 
   const supabase = await getSupabaseDataClient();
 
-  // Authenticated users never receive the local family demo book
-  // (Aasad / Anu / MaryAnn / Karud). Missing Supabase is an empty
-  // owned book, not someone else's sheets.
+  // A signed-in book is only sheets this user co-owns. Missing
+  // Supabase is an empty book, never someone else's sheets.
   if (!supabase) {
     return NextResponse.json({
       source: "supabase",
