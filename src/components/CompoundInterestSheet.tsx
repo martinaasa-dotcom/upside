@@ -1226,7 +1226,8 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
           <Segmented
             ariaLabel="Year to read"
             className="mt-3"
-            columns={3}
+            columns={storyOpts.length}
+            look="buttons"
             options={storyOpts.map((y) => ({
               id: String(y),
               label: `Year ${y}`,

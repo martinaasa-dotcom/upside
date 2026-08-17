@@ -2600,6 +2600,9 @@ run("Compound controls sit on one panel, not nested cards", () => {
   assert.doesNotMatch(src, /If it starts badly/);
   assert.doesNotMatch(src, /Crash first|Slow start|Even years/);
   assert.doesNotMatch(src, /drawdown30|flat2y|calculateWithShock|ShockKind/);
+  const yearWords = src.slice(src.indexOf("Any single year, in words"));
+  assert.match(yearWords, /look="buttons"/);
+  assert.doesNotMatch(yearWords, /columns=\{3\}/);
 });
 
 run("every tier's default surface uses the shared Panel shell", () => {
