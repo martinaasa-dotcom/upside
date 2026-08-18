@@ -54,7 +54,7 @@ import {
   type VisitDiff,
 } from "@/lib/visit-diff";
 import { finiteNumber } from "@/lib/money";
-import { ArrowRight, Plus } from "lucide-react";
+import { ArrowRight, Plus, TrendingDown, TrendingUp } from "lucide-react";
 import {
   memo,
   useEffect,
@@ -449,7 +449,10 @@ function MoverTile({
       type="button"
       onClick={onOpen}
       title={sheets || undefined}
-      className="relative flex h-full w-full min-w-0 items-center justify-between gap-2 overflow-hidden rounded-lg border border-border bg-card p-6 text-left transition hover:bg-accent sm:gap-3"
+      className={cn(
+        "card-sheen group relative flex h-full w-full min-w-0 items-center justify-between gap-2 overflow-hidden rounded-lg bg-card p-6 text-left ring-1 transition hover:scale-[1.01] hover:bg-accent sm:gap-3",
+        isUp ? "ring-gain/20 hover:ring-gain/40" : "ring-loss/20 hover:ring-loss/40"
+      )}
     >
       <span
         className={cn(
@@ -469,10 +472,15 @@ function MoverTile({
       <span className="shrink-0 whitespace-nowrap text-right">
         <span
           className={cn(
-            "block font-mono text-base font-semibold tabular-nums",
+            "flex items-center justify-end gap-1 font-mono text-lg font-semibold tabular-nums",
             tone(pct)
           )}
         >
+          {isUp ? (
+            <TrendingUp className="size-4 shrink-0" />
+          ) : (
+            <TrendingDown className="size-4 shrink-0" />
+          )}
           {pct != null ? percent(pct, lifetime ? 1 : 2) : "—"}
         </span>
         <span className={cn("mt-0.5 block font-mono text-sm tabular-nums", tone(dollars))}>
@@ -500,7 +508,7 @@ function PortfolioLane({
     <button
       type="button"
       onClick={onOpen}
-      className="group min-h-11 w-full rounded-lg bg-muted p-6 text-left transition hover:bg-accent"
+      className="card-sheen group min-h-11 w-full rounded-lg bg-muted p-6 text-left ring-1 ring-foreground/10 transition hover:scale-[1.01] hover:bg-accent hover:ring-primary/25"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
