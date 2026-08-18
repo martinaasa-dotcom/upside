@@ -67,6 +67,7 @@ import { useRouter } from "next/navigation";
 import { useTimeout } from "@/lib/use-timeout";
 import { useCallback, useEffect, useState } from "react";
 import { useHydratedCache } from "@/lib/use-hydrated-cache";
+import { UpgradeButton } from "@/components/billing/UpgradeButton";
 
 function VisitStreakCard() {
   const [streak] = useHydratedCache<VisitStreakState | null>(
@@ -128,6 +129,7 @@ export function AccountPage() {
   const [morningCanSend, setMorningCanSend] = useState(false);
   const [analyticsConsent, setAnalyticsConsent] =
     useState<AnalyticsConsent | null>(null);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
 
   useEffect(() => {
     const sync = () => setAnalyticsConsent(loadAnalyticsConsent());
@@ -161,6 +163,15 @@ export function AccountPage() {
           }
         }
       )
+      .catch(() => {});
+    void fetch("/api/billing/status", { signal: ctrl.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { subscriptionStatus?: string | null } | null) => {
+        if (ctrl.signal.aborted) return;
+        if (data && "subscriptionStatus" in data) {
+          setSubscriptionStatus(data.subscriptionStatus ?? null);
+        }
+      })
       .catch(() => {});
     void fetch("/api/account/morning-note", { signal: ctrl.signal })
       .then((r) => (r.ok ? r.json() : null))
@@ -344,6 +355,18 @@ export function AccountPage() {
               </a>
               .
             </p>
+          </section>
+
+          <section className="flex flex-col gap-3 rounded-xl glass ring-1 ring-foreground/10 p-6">
+            <h2 className="text-base font-medium tracking-tight text-foreground">Billing</h2>
+            <p className="text-sm text-muted-foreground">
+              {subscriptionStatus === "active" || subscriptionStatus === "trialing"
+                ? "Your subscription is active. Manage your card, invoices, or cancel anytime."
+                : "Free for now. Upgrade to unlock everything, whenever it's ready."}
+            </p>
+            <div>
+              <UpgradeButton subscriptionStatus={subscriptionStatus} />
+            </div>
           </section>
 
           <VisitStreakCard />
