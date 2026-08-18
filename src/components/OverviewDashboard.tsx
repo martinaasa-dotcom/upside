@@ -523,9 +523,10 @@ function PortfolioLane({
         value={width}
         className={cn(
           // bg-secondary matches this card's own bg-muted exactly, so the
-          // track would be invisible against its own container — darken it
-          // instead so the fill reads as "X% of a whole," not a floating bar.
-          "mt-4 h-2 bg-background/40 [&_[data-slot=progress-indicator]]:bg-primary",
+          // track would be invisible against its own container — use the
+          // darker bg-card token instead so the fill reads as "X% of a
+          // whole," not a floating bar.
+          "mt-4 h-2 bg-card [&_[data-slot=progress-indicator]]:bg-primary",
           hot
             ? "[&_[data-slot=progress-indicator]]:bg-gain"
             : "[&_[data-slot=progress-indicator]]:bg-loss"

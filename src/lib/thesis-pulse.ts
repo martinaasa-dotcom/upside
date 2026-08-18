@@ -913,7 +913,7 @@ export function buildFallbackPulseCheck(candidate: PulseCandidate): PulseCheck {
       action: "trim",
       trimPct,
       addLevel: "",
-      verdict: pulseSuggestion({ action: "trim", trimPct }),
+      verdict: pulseSuggestion({ action: "trim", trimPct, ticker: candidate.ticker }),
       thesisBreak: "",
     };
   }
@@ -935,6 +935,7 @@ export function buildFallbackPulseCheck(candidate: PulseCandidate): PulseCheck {
       verdict: pulseSuggestion({
         action: "add",
         addLevel: `around $${price}`,
+        ticker: candidate.ticker,
       }),
       thesisBreak: "",
     };
@@ -952,7 +953,7 @@ export function buildFallbackPulseCheck(candidate: PulseCandidate): PulseCheck {
     action: "hold",
     trimPct: null,
     addLevel: "",
-    verdict: pulseSuggestion({ action: "hold" }),
+    verdict: pulseSuggestion({ action: "hold", ticker: candidate.ticker }),
     thesisBreak: "",
   };
 }
