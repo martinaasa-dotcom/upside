@@ -3603,7 +3603,7 @@ export function Dashboard() {
                   key={a.id}
                   type="button"
                   onClick={() => setActiveId(OVERVIEW_TAB_ID)}
-                  className="w-full rounded-xl glass ring-1 ring-foreground/10 p-6 text-left"
+                  className="w-full rounded-xl glass ring-1 ring-foreground/18 p-6 text-left"
                 >
                   <p className="text-sm font-semibold text-foreground">{a.title}</p>
                   <p className="mt-1 text-sm leading-relaxed text-muted-foreground">

@@ -146,7 +146,7 @@ export function InvitePartnerModal({
         aria-label="Close"
         onClick={onClose}
       />
-      <div className="relative max-h-full w-full overflow-y-auto rounded-t-xl bg-popover ring-1 ring-foreground/10 p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:max-w-md sm:rounded-xl sm:pb-6">
+      <div className="relative max-h-full w-full overflow-y-auto rounded-t-xl bg-popover ring-1 ring-foreground/18 p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:max-w-md sm:rounded-xl sm:pb-6">
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="text-base font-semibold text-foreground">
@@ -242,7 +242,7 @@ export function InvitePartnerModal({
         )}
 
         {owners.length > 0 && (
-          <ul className="mt-4 divide-y divide-border overflow-hidden rounded-xl glass ring-1 ring-foreground/10">
+          <ul className="mt-4 divide-y divide-border overflow-hidden rounded-xl glass ring-1 ring-foreground/18">
             {owners.map((o) => (
               <li
                 key={o.user_id}

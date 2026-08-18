@@ -48,7 +48,7 @@ export function ClassroomRoster({
   });
 
   return (
-    <section className="overflow-hidden rounded-xl glass ring-1 ring-foreground/10">
+    <section className="overflow-hidden rounded-xl glass ring-1 ring-foreground/18">
       <div className="border-b border-border px-6 py-6">
         <h2 className="text-sm font-semibold text-foreground">Roster</h2>
         <p className="mt-1.5 text-sm text-muted-foreground">

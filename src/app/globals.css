@@ -226,12 +226,13 @@ body {
    * fine over the mostly-flat black field.
    */
   .glass {
-    background-color: color-mix(in oklch, var(--card), transparent 58%);
+    background-color: color-mix(in oklch, var(--card), transparent 48%);
     backdrop-filter: blur(28px);
     -webkit-backdrop-filter: blur(28px);
+    box-shadow: 0 12px 32px -16px color-mix(in oklch, black, transparent 15%);
   }
   .glass-well {
-    background-color: color-mix(in oklch, var(--muted), transparent 60%);
+    background-color: color-mix(in oklch, var(--muted), transparent 50%);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
   }
