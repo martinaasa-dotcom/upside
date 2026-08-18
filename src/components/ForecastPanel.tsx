@@ -403,7 +403,7 @@ function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
         <div className="relative">
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-11 bg-gradient-to-r from-card/85 to-transparent"
+            className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-11 bg-gradient-to-r from-card/85 to-card/0"
           />
           <ChartYAxis
             overlay

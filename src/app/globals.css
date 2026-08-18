@@ -193,31 +193,44 @@ body {
 }
 
 /*
- * Card sheen — a hairline top highlight, the way a pane of glass catches
- * light along its top edge rather than glowing all over. Deliberately
- * subtle: an inset box-shadow, not a gradient fill, so it reads as an
- * edge detail and composes cleanly with `.glass`'s translucent
- * background-color underneath instead of a visible banded wash.
+ * These three live in `@layer utilities` on purpose. Tailwind v4's own
+ * utilities (including every `hover:bg-*`/`hover:ring-*` variant used
+ * alongside `.glass`/`.glass-well` throughout the app) are emitted inside
+ * that same cascade layer. An un-layered rule beats a layered one
+ * regardless of specificity or source order, so leaving these three
+ * outside any `@layer` silently pinned `background-color` on every
+ * `.glass`/`.glass-well` card and made `hover:bg-accent` etc. a no-op
+ * everywhere they were combined — the fix for a whole family of "hover
+ * does nothing" reports across cards, not just one component.
  */
-.card-sheen {
-  box-shadow: inset 0 1px 0 0 color-mix(in oklch, white, transparent 88%);
-}
+@layer utilities {
+  /*
+   * Card sheen — a hairline top highlight, the way a pane of glass catches
+   * light along its top edge rather than glowing all over. Deliberately
+   * subtle: an inset box-shadow, not a gradient fill, so it reads as an
+   * edge detail and composes cleanly with `.glass`'s translucent
+   * background-color underneath instead of a visible banded wash.
+   */
+  .card-sheen {
+    box-shadow: inset 0 1px 0 0 color-mix(in oklch, white, transparent 88%);
+  }
 
-/*
- * Glass surface — the standard treatment for every top-level card/panel.
- * Translucent instead of a flat opaque fill so the ambient glow
- * (`.page-frame::before`) shows through, blurred, instead of stopping dead
- * at the card edge. Backdrop-filter with no fallback is fine: browsers
- * without support just render the translucent fill, which still reads
- * fine over the mostly-flat black field.
- */
-.glass {
-  background-color: color-mix(in oklch, var(--card), transparent 40%);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-}
-.glass-well {
-  background-color: color-mix(in oklch, var(--muted), transparent 45%);
+  /*
+   * Glass surface — the standard treatment for every top-level card/panel.
+   * Translucent instead of a flat opaque fill so the ambient glow
+   * (`.page-frame::before`) shows through, blurred, instead of stopping dead
+   * at the card edge. Backdrop-filter with no fallback is fine: browsers
+   * without support just render the translucent fill, which still reads
+   * fine over the mostly-flat black field.
+   */
+  .glass {
+    background-color: color-mix(in oklch, var(--card), transparent 40%);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+  }
+  .glass-well {
+    background-color: color-mix(in oklch, var(--muted), transparent 45%);
+  }
 }
 
 h1,

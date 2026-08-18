@@ -554,9 +554,16 @@ export function GoldNavChart({
         </div>
 
         <div className="relative">
+          {/* `to-transparent` interpolates toward transparent BLACK, not
+              "this color at 0 alpha" — CSS mixes all four channels, so
+              partway through the fade the RGB drifts toward black and
+              shows as a visible dark band/seam, no matter how the start
+              opacity is tuned. `to-card/0` keeps the hue constant and
+              only ramps alpha, which is the actual fix (previous passes
+              only touched the opacity number and never fixed this). */}
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-11 bg-gradient-to-r from-card/85 to-transparent"
+            className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-11 bg-gradient-to-r from-card/85 to-card/0"
           />
           <ChartYAxis
             overlay

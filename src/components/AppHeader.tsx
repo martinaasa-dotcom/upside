@@ -6,6 +6,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { useFeedback } from "@/components/FeedbackHost";
 import { AppStatusStrip, type AppStatusProps } from "@/components/AppStatusStrip";
 import { HeaderBrand } from "@/components/HeaderBrand";
+import { UpgradeNudge } from "@/components/billing/UpgradeNudge";
 import { WorkspaceSwitcher } from "@/components/WorkspaceSwitcher";
 import { cn } from "@/lib/format";
 import { PAGE_CHROME_SPACER_CLASS, PAGE_COLUMN_CLASS } from "@/lib/page-shell";
@@ -106,6 +107,7 @@ export function AppHeader({
             </div>
             <div className="flex min-w-0 shrink items-center justify-end gap-2">
               {children}
+              <UpgradeNudge />
               <FeedbackHeaderButton />
               {showWorkspaceNav && <WorkspaceSwitcher />}
               {end ?? <DefaultAccountEnd />}

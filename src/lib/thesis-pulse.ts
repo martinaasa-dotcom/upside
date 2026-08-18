@@ -183,6 +183,13 @@ export function pulseLeftHold(
   return false;
 }
 
+/** Add / trim / sell ask you to actually do something. Hold and watch don't. */
+export function isActionablePulse(
+  action: PulseAction | string | null | undefined
+): boolean {
+  return action === "add" || action === "trim" || action === "sell";
+}
+
 export function sortPulseCandidates<
   T extends {
     ticker: string;
@@ -192,13 +199,23 @@ export function sortPulseCandidates<
   },
 >(
   candidates: readonly T[],
-  opts?: { leftHoldTickers?: ReadonlySet<string> }
+  opts?: {
+    leftHoldTickers?: ReadonlySet<string>;
+    /** Current Pulse call per ticker, when known. A name with an add/trim/
+     * sell call outranks a plain hold even on a quieter day — the whole
+     * point of scanning is to surface what needs a decision. */
+    actionByTicker?: Readonly<Record<string, PulseAction | undefined>>;
+  }
 ): T[] {
   const left = opts?.leftHoldTickers ?? new Set<string>();
+  const actions = opts?.actionByTicker ?? {};
   return [...candidates].sort((a, b) => {
     const aLeft = left.has(a.ticker.toUpperCase());
     const bLeft = left.has(b.ticker.toUpperCase());
     if (aLeft !== bLeft) return aLeft ? -1 : 1;
+    const aActionable = isActionablePulse(actions[a.ticker.toUpperCase()]);
+    const bActionable = isActionablePulse(actions[b.ticker.toUpperCase()]);
+    if (aActionable !== bActionable) return aActionable ? -1 : 1;
     const aBig = isBigPulseMove(a.effectivePct);
     const bBig = isBigPulseMove(b.effectivePct);
     if (aBig !== bBig) return aBig ? -1 : 1;

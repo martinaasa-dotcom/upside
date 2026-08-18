@@ -3026,7 +3026,7 @@ function PowerAnimalCard({
     <button
       type="button"
       onClick={onOpen}
-      className="relative flex flex-col gap-4 overflow-hidden rounded-xl border border-border bg-card p-6 pl-6 text-left transition hover:bg-accent lg:grid lg:h-auto lg:grid-rows-subgrid lg:row-span-6"
+      className="relative flex flex-col gap-4 overflow-hidden rounded-xl border border-border bg-card p-6 pl-6 text-left transition hover:scale-[1.01] hover:bg-accent hover:border-primary/30 active:scale-[0.995] lg:grid lg:h-auto lg:grid-rows-subgrid lg:row-span-6"
     >
       <span
         className={cn("absolute inset-y-0 left-0 w-1.5", tone.bar)}
