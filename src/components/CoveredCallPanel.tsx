@@ -159,7 +159,7 @@ function writeProximity(distance: number | null): {
     return { label: "—", className: "text-muted-foreground" };
   }
   if (distance <= 0) {
-    return { label: "At write level", className: "text-primary" };
+    return { label: "At write level", className: "text-primary/60" };
   }
   if (distance < 0.04) {
     return { label: "Close", className: "text-caution" };
@@ -269,13 +269,13 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
                 </div>
                 <div>
                   <p className="text-muted-foreground">Strike</p>
-                  <p className="tabular-nums font-semibold text-primary">
+                  <p className="tabular-nums font-semibold text-primary/60">
                     {r.nextStrike != null ? currency(r.nextStrike) : "—"}
                   </p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">2-week %</p>
-                  <p className="tabular-nums font-medium text-primary">
+                  <p className="tabular-nums font-medium text-primary/60">
                     {r.yield2w != null ? percent(r.yield2w) : "—"}
                   </p>
                 </div>
@@ -299,7 +299,7 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
           <Card tone="raised" className="text-sm">
             <div className="flex justify-between">
               <span className="font-semibold text-foreground">All together</span>
-              <span className="tabular-nums text-primary">
+              <span className="tabular-nums text-primary/60">
                 {percent(yield2wAvg)} over 2 weeks
               </span>
             </div>
@@ -392,7 +392,7 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
               <div
                 className={cn(
                   cellBase,
-                  "tabular-nums font-semibold text-primary"
+                  "tabular-nums font-semibold text-primary/60"
                 )}
               >
                 {r.nextStrike != null ? currency(r.nextStrike) : "—"}
@@ -406,7 +406,7 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
                 {Math.round(r.contracts)}
               </div>
               <div
-                className={cn(cellBase, "tabular-nums font-medium text-primary")}
+                className={cn(cellBase, "tabular-nums font-medium text-primary/60")}
               >
                 {r.yield2w != null ? percent(r.yield2w) : "—"}
               </div>
@@ -427,7 +427,7 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
               <div className={cellBase} />
               <div className={cellBase} />
               <div className={cellBase} />
-              <div className={cn(cellBase, "tabular-nums text-primary")}>
+              <div className={cn(cellBase, "tabular-nums text-primary/60")}>
                 {percent(yield2wAvg)}
               </div>
               <div className={cn(cellBase, "tabular-nums text-foreground")}>

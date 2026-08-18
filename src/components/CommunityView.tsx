@@ -1841,33 +1841,38 @@ export function CommunityView({ communityId }: Props) {
                           </p>
                         </div>
                       </div>
-                      <ItemGroup className="gap-0 has-data-[size=sm]:gap-0">
-                        {achievements.map((a, i) => (
-                          <Fragment key={a.id}>
-                            {i > 0 ? <ItemSeparator className="my-0" /> : null}
-                            <Item className="items-start px-0">
-                              <ItemMedia aria-hidden>
-                                <span className="text-base leading-none">
-                                  {a.emoji}
-                                </span>
-                              </ItemMedia>
-                              <ItemContent>
-                                <ItemTitle>{a.title}</ItemTitle>
-                                <ItemDescription className="line-clamp-none">
-                                  <span className="font-medium text-foreground">
-                                    {a.winner}
-                                  </span>
-                                  {" · "}
-                                  {a.stat}
-                                </ItemDescription>
-                                <ItemDescription className="line-clamp-none leading-relaxed">
-                                  {a.description}
-                                </ItemDescription>
-                              </ItemContent>
-                            </Item>
-                          </Fragment>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        {achievements.map((a) => (
+                          <div
+                            key={a.id}
+                            className="card-sheen flex flex-col gap-2 rounded-lg bg-muted p-4"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="text-2xl leading-none"
+                                aria-hidden
+                              >
+                                {a.emoji}
+                              </span>
+                              <p className="text-sm font-medium tracking-tight text-foreground">
+                                {a.title}
+                              </p>
+                            </div>
+                            <p className="text-sm">
+                              <span className="font-semibold text-foreground">
+                                {a.winner}
+                              </span>
+                              <span className="text-muted-foreground">
+                                {" · "}
+                                {a.stat}
+                              </span>
+                            </p>
+                            <p className="text-sm leading-relaxed text-muted-foreground">
+                              {a.description}
+                            </p>
+                          </div>
                         ))}
-                      </ItemGroup>
+                      </div>
                     </section>
                   )}
 

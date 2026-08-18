@@ -122,7 +122,7 @@ import {
 
 /** Page-level box. shadcn Card shell: ring, not a gold hairline. */
 export const BOX =
-  "rounded-xl bg-card text-sm text-card-foreground ring-1 ring-foreground/10";
+  "card-sheen rounded-xl bg-card text-sm text-card-foreground ring-1 ring-foreground/10";
 /** Nested well inside a box. Not a second card, and not for static facts. */
 export const CARD = "rounded-lg bg-muted";
 /** Panel padding. Comfortable density, same on phone and desktop. */
@@ -131,7 +131,7 @@ export const PANEL_PAD = "p-6";
 export const NESTED_PAD = "p-6";
 /** A Scoreboard cell. Separate card on the field, not a hairline slice. */
 export const SCORE_CELL =
-  "min-w-0 rounded-xl bg-card p-6 ring-1 ring-foreground/10";
+  "card-sheen min-w-0 rounded-xl bg-card p-6 ring-1 ring-foreground/10";
 /** Member / row list on the field. */
 export const LIST =
   "divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10";
@@ -140,11 +140,11 @@ export const SUGGEST_MENU =
   "absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/20";
 
 const SHELL_TONES = {
-  default: "bg-card ring-foreground/10",
-  plain: "bg-card ring-foreground/10",
-  brand: "bg-card ring-primary/20",
-  warn: "bg-card ring-warning/35",
-  danger: "bg-card ring-destructive/30",
+  default: "card-sheen bg-card ring-foreground/10",
+  plain: "card-sheen bg-card ring-foreground/10",
+  brand: "card-sheen bg-card ring-primary/20",
+  warn: "card-sheen bg-card ring-warning/35",
+  danger: "card-sheen bg-card ring-destructive/30",
 } as const;
 
 const FIGURE =

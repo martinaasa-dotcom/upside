@@ -339,8 +339,8 @@ run("power animals each keep their own color", () => {
   assert.ok(ANIMAL_CARD_TONE.octopus?.bar.includes("violet"));
   assert.ok(ANIMAL_CARD_TONE.fox?.bar.includes("orange"));
   assert.ok(!bars.some((bar) => /brand|mustard|gain|loss|muted/.test(bar)));
-  assert.equal(PALETTE.brand, "#d6ad69");
-  assert.equal(PALETTE.bronze, "#d6ad69");
+  assert.equal(PALETTE.brand, "#8d5bff");
+  assert.equal(PALETTE.bronze, "#8d5bff");
   assert.equal(PALETTE.teal, "#2dd4bf");
   assert.equal(PALETTE.steel, "#60a5fa");
   assert.equal(PALETTE.gain, "#34d399");
@@ -1271,7 +1271,7 @@ run("humanize kills leftover market slang", () => {
   );
   assert.match(
     humanizeMargusText("Trim about 15% into this strength."),
-    /wouldn't be a bad idea/i
+    /Trim 15% into the strength/i
   );
   assert.match(
     humanizeMargusText("Trim about 15% into this strength."),
@@ -1287,7 +1287,7 @@ run("humanize kills leftover market slang", () => {
   );
   assert.match(
     humanizeMargusText("Add now ~$80"),
-    /Adding a bit around \$80.*wouldn't be a bad idea/i
+    /Adding near \$80 builds on the position/i
   );
   assert.match(
     humanizeMargusText("Let the move play out, but do not buy more here or chase it."),
@@ -1299,23 +1299,27 @@ run("humanize kills leftover market slang", () => {
   );
   assert.match(
     pulseSuggestion({ action: "trim", trimPct: 20 }),
-    /^Trimming about 20% after a jump like this wouldn't be a bad idea\.$/
+    /^Trim 20% into the strength\.$/
   );
   assert.match(
     pulseSuggestion({ action: "add", addLevel: "around $80" }),
-    /^Adding a bit around \$80 wouldn't be a bad idea if you still believe the reason\.$/
+    /^Adding near \$80 builds on the position if the reason still holds\.$/
   );
   assert.match(
     pulseSuggestion({ action: "sell" }),
-    /^Selling here wouldn't be a bad idea if the reason you own it is gone\.$/
+    /^Selling here closes it out if the reason it was bought is gone\.$/
   );
   assert.match(
     pulseSuggestion({ action: "watch" }),
-    /^Waiting wouldn't be a bad idea until the story is clearer\.$/
+    /^Waiting for more clarity is the safer read right now\.$/
   );
   assert.match(
     pulseSuggestion({ action: "hold" }),
-    /^Sitting tight wouldn't be a bad idea\.$/
+    /^Sitting tight fits here\.$/
+  );
+  assert.equal(
+    pulseSuggestion({ action: "trim", trimPct: 20, ticker: "NBIS" }),
+    pulseSuggestion({ action: "trim", trimPct: 20, ticker: "NBIS" })
   );
 });
 
@@ -1768,18 +1772,20 @@ run("community books lead with today's percent, not dollar size", () => {
   assert.match(roster, /signedPercent\(m\.todayPct\)/);
 });
 
-run("circle awards are a list, not a grid of muted tiles", () => {
+run("circle awards are a grid of cards, not a flat divided list", () => {
   const community = readFileSync(
     join(process.cwd(), "src/components/CommunityView.tsx"),
     "utf8"
   );
-  const awards = community.slice(
-    community.indexOf("Community superlatives")
+  const awardsStart = community.indexOf("Community superlatives");
+  const awardsEnd = community.indexOf(
+    "effectiveView === \"overview\" && membersWithBooks.length > 0"
   );
-  assert.match(awards, /<ItemGroup/);
-  assert.match(awards, /<Item /);
-  assert.doesNotMatch(awards, /rounded-lg bg-muted p-3/);
-  assert.doesNotMatch(awards, /sm:grid-cols-2 lg:grid-cols-3/);
+  const awards = community.slice(awardsStart, awardsEnd);
+  assert.match(awards, /grid grid-cols-1 gap-3 sm:grid-cols-2/);
+  assert.match(awards, /rounded-lg bg-muted p-4/);
+  assert.doesNotMatch(awards, /<ItemGroup/);
+  assert.doesNotMatch(awards, /<ItemSeparator/);
   assert.doesNotMatch(awards, /bg-pink-500/);
 });
 
@@ -2170,7 +2176,7 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
     "utf8"
   );
   assert.match(css, /--background: oklch\(0 0 0\)/);
-  assert.match(css, /--primary: oklch\(0\.762 0\.102 80\)/);
+  assert.match(css, /--primary: oklch\(0\.62 0\.24 291\)/);
   assert.match(css, /--card: oklch\(0\.205 0 0\)/);
   assert.match(css, /--radius: 0\.625rem/);
   assert.match(css, /--gain:/);
@@ -2193,7 +2199,7 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
   assert.doesNotMatch(css, /--border: rgb\(237 232 220/);
   assert.doesNotMatch(css, /#d6ad69/);
   assert.doesNotMatch(css, /#dcad55/);
-  assert.match(palette, /brand: "#d6ad69"/);
+  assert.match(palette, /brand: "#8d5bff"/);
   assert.match(palette, /gain: "#34d399"/);
   assert.match(panel, /export function Reading/);
   assert.match(panel, /export function ScanList/);
@@ -2208,9 +2214,9 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
     panel.slice(panel.indexOf("export function Reading")),
     /bg-paper/
   );
-  assert.match(panel, /default: "bg-card ring-foreground\/10"/);
+  assert.match(panel, /default: "card-sheen bg-card ring-foreground\/10"/);
   assert.match(panel, /rounded-lg bg-border/);
-  assert.match(panel, /SCORE_CELL =\n  "min-w-0 rounded-xl bg-card p-6 ring-1 ring-foreground\/10"/);
+  assert.match(panel, /SCORE_CELL =\n  "card-sheen min-w-0 rounded-xl bg-card p-6 ring-1 ring-foreground\/10"/);
   assert.doesNotMatch(
     panel.slice(panel.indexOf("export function Stat")),
     /h-full rounded-xl/
@@ -3164,7 +3170,10 @@ run("Worth noticing names the two groups in plain English", () => {
     join(process.cwd(), "src/components/OverviewDashboard.tsx"),
     "utf8"
   );
-  assert.match(overview, /<Reading>\{morning\.sentence\}<\/Reading>/);
+  assert.match(
+    overview,
+    /<p className="text-base leading-relaxed text-foreground">\s*\{morning\.sentence\}/
+  );
   const header = overview.slice(
     overview.indexOf("{morning.moveLabel}"),
     overview.indexOf("<Scoreboard className=\"overview-fade\">")

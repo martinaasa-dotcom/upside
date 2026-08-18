@@ -147,14 +147,21 @@ function StatusIcon({ status }: { status: ThesisStatus }) {
 }
 
 function ActionBadge({ action }: { action: PulseAction }) {
+  // Every action gets its own color — trim and watch used to share the
+  // same warn/orange tone, which made "take some profit" (a good,
+  // deliberate move) read as a caution flag. Trim gets the brand accent
+  // instead: a considered, positive action, distinct from both "add"
+  // (more bullish) and "watch" (an actual caution).
   const tone =
     action === "add"
       ? "good"
       : action === "sell"
         ? "bad"
-        : action === "trim" || action === "watch"
-          ? "warn"
-          : "neutral";
+        : action === "trim"
+          ? "brand"
+          : action === "watch"
+            ? "warn"
+            : "neutral";
   return <Pill tone={tone}>{actionLabel(action)}</Pill>;
 }
 

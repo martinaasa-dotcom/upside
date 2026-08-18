@@ -22,7 +22,7 @@ import { normalizeYahooTicker } from "@/lib/ticker";
 import { useTickerSearch } from "@/lib/use-ticker-search";
 import { FALLBACK_POPULAR_TICKERS } from "@/lib/popular-tickers";
 import type { Quote } from "@/lib/types";
-import { watchLook, type WatchLook, type WatchLookKind } from "@/lib/watch-look";
+import { watchLook, type WatchLook } from "@/lib/watch-look";
 import {
   addWatchlistTicker,
   loadWatchlist,
@@ -58,22 +58,14 @@ const EMPTY_LIST: string[] = [];
 const EMPTY_QUOTES: Record<string, Quote> = {};
 const POPULAR_SEED = [...FALLBACK_POPULAR_TICKERS];
 
-function markerTone(kind: WatchLookKind): string {
-  if (kind === "look") return "bg-gain";
-  if (kind === "wait" || kind === "report") return "bg-warning";
-  return "bg-foreground";
-}
-
 function RangeMeter({
   low,
   high,
   price,
-  kind,
 }: {
   low: number;
   high: number;
   price: number;
-  kind: WatchLookKind;
 }) {
   const span = high - low;
   const pos = span > 0 ? Math.min(1, Math.max(0, (price - low) / span)) : 0.5;
@@ -91,14 +83,14 @@ function RangeMeter({
           aria-valuemin={low}
           aria-valuemax={high}
           aria-valuenow={price}
-          aria-label="Where today's price sits in the recent range"
+          aria-label="Where today's price sits in the recent range, from cooled-off (green) to stretched (rose)"
         >
           <span
-            className={cn(
-              "absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-background",
-              markerTone(kind)
-            )}
-            style={{ left: `${pos * 100}%` }}
+            className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-background"
+            style={{
+              left: `${pos * 100}%`,
+              backgroundColor: `color-mix(in oklch, var(--gain) ${(1 - pos) * 100}%, var(--loss) ${pos * 100}%)`,
+            }}
           />
         </div>
       </div>
@@ -162,7 +154,7 @@ function WatchCard({
   }
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4">
+    <div className="flex h-full flex-col gap-4 rounded-lg border border-border bg-card p-4">
       <div className="flex items-start justify-between gap-3">
         <Badge variant="secondary" className="font-heading text-sm font-semibold">
           {cashtag(ticker)}
@@ -201,7 +193,6 @@ function WatchCard({
           low={rangeLow}
           high={rangeHigh}
           price={quote.price}
-          kind={look.kind}
         />
       )}
 
@@ -530,7 +521,7 @@ export function WatchlistStrip({
         />
       ) : (
         <>
-          <ul className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2">
+          <ul className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2">
             {names.map((ticker) => {
               const q = quotes[ticker];
               const look = q ? watchLook(q, reportDays[ticker] ?? null) : null;

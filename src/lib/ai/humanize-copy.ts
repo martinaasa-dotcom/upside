@@ -162,33 +162,95 @@ function firstDollar(text: string | null | undefined): string | null {
   return m ? m[0].replace(/\s+/g, "") : null;
 }
 
+/** Stable pick so the same ticker always shows the same phrasing, but two
+ * different tickers on the same card rarely land on the same one. */
+function pickVariant<T>(variants: T[], seed?: string | null): T {
+  if (!seed) return variants[0];
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  return variants[h % variants.length];
+}
+
 /** One short Pulse suggestion. A thought, never an order. */
 export function pulseSuggestion(input: {
   action?: string | null;
   trimPct?: number | null;
   addLevel?: string | null;
+  ticker?: string | null;
 }): string {
   const action = String(input.action ?? "hold").trim().toLowerCase();
+  const seed = input.ticker;
   if (action === "trim") {
     if (input.trimPct != null && Number.isFinite(input.trimPct)) {
-      return `Trimming about ${Math.round(input.trimPct)}% after a jump like this wouldn't be a bad idea.`;
+      const pct = Math.round(input.trimPct);
+      return pickVariant(
+        [
+          `Trim ${pct}% into the strength.`,
+          `Taking ${pct}% off the top after a jump like this is a common move.`,
+          `A ${pct}% trim here locks in some of the run.`,
+          `${pct}% off keeps most of the position while banking some of the gain.`,
+        ],
+        seed
+      );
     }
-    return "Trimming a little after a jump like this wouldn't be a bad idea.";
+    return pickVariant(
+      [
+        "Trim a little into the strength.",
+        "Taking a small bite off the top after a jump like this is a common move.",
+        "A partial trim here locks in some of the run.",
+      ],
+      seed
+    );
   }
   if (action === "add") {
     const price = firstDollar(input.addLevel);
     if (price) {
-      return `Adding a bit around ${price} wouldn't be a bad idea if you still believe the reason.`;
+      return pickVariant(
+        [
+          `Adding near ${price} builds on the position if the reason still holds.`,
+          `A small add around ${price} is in play while the story holds up.`,
+          `Layering in near ${price} keeps this growing on the same thesis.`,
+        ],
+        seed
+      );
     }
-    return "Adding a bit here wouldn't be a bad idea if you still believe the reason.";
+    return pickVariant(
+      [
+        "Adding here builds on the position if the reason still holds.",
+        "A small add is in play while the story holds up.",
+        "Layering in a bit keeps this growing on the same thesis.",
+      ],
+      seed
+    );
   }
   if (action === "sell") {
-    return "Selling here wouldn't be a bad idea if the reason you own it is gone.";
+    return pickVariant(
+      [
+        "Selling here closes it out if the reason it was bought is gone.",
+        "Exiting makes sense once the original reason no longer holds.",
+        "Closing the position out fits once the thesis is broken.",
+      ],
+      seed
+    );
   }
   if (action === "watch") {
-    return "Waiting wouldn't be a bad idea until the story is clearer.";
+    return pickVariant(
+      [
+        "Waiting for more clarity is the safer read right now.",
+        "Sitting on hands until the story firms up.",
+        "Holding off until the picture is clearer fits here.",
+      ],
+      seed
+    );
   }
-  return "Sitting tight wouldn't be a bad idea.";
+  return pickVariant(
+    [
+      "Sitting tight fits here.",
+      "No change needed while the thesis holds.",
+      "Staying put is the straightforward read.",
+    ],
+    seed
+  );
 }
 
 /** Kill leftover buy/sell orders the model still emits. Ban lists may
@@ -234,6 +296,11 @@ function scrubTradeOrders(text: string): string {
     /\bLook to add\.?/gi,
     pulseSuggestion({ action: "add" })
   );
+  // Strip leftover "into this/the strength" padding from the raw model
+  // text before substitution -- pulseSuggestion() below may add its own
+  // "into the strength" phrasing, which must survive past this point.
+  s = s.replace(/\s+into this strength\.?/gi, ".");
+  s = s.replace(/\s+into the strength\.?/gi, ".");
   s = s.replace(
     /\bOne check:\s*selling about (\d+)\s*%(?:\s+into (?:this|the) (?:strength|run(?:-up)?))?\.?/gi,
     (_, n: string) => pulseSuggestion({ action: "trim", trimPct: Number(n) })
@@ -246,8 +313,6 @@ function scrubTradeOrders(text: string): string {
     /\bOne check:\s*selling a little into the run\.?/gi,
     pulseSuggestion({ action: "trim" })
   );
-  s = s.replace(/\s+into this strength\.?/gi, ".");
-  s = s.replace(/\s+into the strength\.?/gi, ".");
   s = s.replace(
     /\bAdd now\s*~?\s*(\$\s*[\d,]+(?:\.\d{1,2})?)/gi,
     (_, price: string) =>
