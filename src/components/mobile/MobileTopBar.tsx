@@ -70,7 +70,7 @@ export function MobileTopBar({
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 bg-background/75 pt-[env(safe-area-inset-top)] backdrop-blur-xl md:hidden",
+        "sticky top-0 z-40 bg-background pt-[env(safe-area-inset-top)] md:hidden",
         className
       )}
     >
