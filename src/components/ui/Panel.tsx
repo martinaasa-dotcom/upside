@@ -308,7 +308,7 @@ export function Card({
         NESTED_PAD,
         CARD_TONES[tone],
         interactive &&
-          "transition hover:bg-accent active:scale-[0.995]",
+          "transition hover:scale-[1.01] hover:bg-accent active:scale-[0.995]",
         className
       )}
       {...rest}
@@ -535,7 +535,10 @@ function ScanRow({
             </Badge>
           ) : null}
           {onOpen ? (
-            <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
+            <ChevronRight
+              className="size-4 text-muted-foreground transition-transform group-hover/scanrow:translate-x-0.5"
+              aria-hidden
+            />
           ) : null}
         </ItemActions>
       ) : null}
@@ -544,7 +547,11 @@ function ScanRow({
 
   if (onOpen) {
     return (
-      <Item variant="outline" asChild className="hover:bg-muted">
+      <Item
+        variant="outline"
+        asChild
+        className="group/scanrow transition hover:scale-[1.01] hover:bg-muted active:scale-[0.99]"
+      >
         <button
           type="button"
           onClick={() => onOpen(ticker)}
