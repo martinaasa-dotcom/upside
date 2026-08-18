@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
-import { getStripe, stripeErrorMessage, stripePriceId } from "@/lib/stripe";
+import { getStripe, stripeErrorMessage, stripePriceId, stripeSubscriptionFields } from "@/lib/stripe";
 import { observeRoute } from "@/lib/observe-route";
 
 export const dynamic = "force-dynamic";
@@ -60,6 +60,29 @@ async function handlePOST(req: Request) {
         .eq("id", auth.user.id);
       if (saveError) {
         return NextResponse.json({ error: saveError.message }, { status: 500 });
+      }
+    } else {
+      // The local subscription_status can lag Stripe's (a webhook that
+      // hasn't landed yet, or failed to verify). Check Stripe directly so a
+      // stale "free" reading here can never start a second, duplicate
+      // subscription for someone who is already paying.
+      const existingSubs = await stripe.subscriptions.list({
+        customer: customerId,
+        status: "all",
+        limit: 5,
+      });
+      const active = existingSubs.data.find(
+        (s) => s.status === "active" || s.status === "trialing"
+      );
+      if (active) {
+        await supabase
+          .from(PORTFELL_TABLES.profiles)
+          .update(stripeSubscriptionFields(active))
+          .eq("id", auth.user.id);
+        return NextResponse.json(
+          { error: "You already have an active subscription. Refresh the page to manage it." },
+          { status: 409 }
+        );
       }
     }
 
