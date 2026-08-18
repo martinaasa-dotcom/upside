@@ -4,8 +4,6 @@
  * per-feature toggles: the goal is "this looks simpler," not a settings
  * page with 30 checkboxes.
  */
-import { LAB_TAB_ID } from "@/lib/overview";
-
 export type ExperienceTier = "novice" | "investor" | "advanced";
 
 export const EXPERIENCE_TIERS: {
@@ -62,44 +60,47 @@ export function saveStoredTier(tier: ExperienceTier) {
 /**
  * Meta-tab ids hidden per tier — must be the actual `__xxx__` tab id
  * constants from lib/overview (matches PortfolioTabs' MODES[i].id), not
- * plain labels. These were previously plain strings ("pulse", "lab", …)
- * that never matched, so novice-tier tab hiding silently did nothing.
+ * plain labels.
  *
- * Pulse is deliberately absent, so every tier sees it: "is my thesis
- * still intact after that move" is the question a newer investor most
- * needs answered, and it's the reason Pulse sits in the main tab row
- * rather than buried in Lab. Seasonality is a Lab sub-tab, so hiding Lab
- * for a novice hides it too.
+ * Temporarily disabled (2026-08-18, per product call): every tier sees
+ * every meta-tab regardless of what they picked, until tier-based
+ * hiding is fully thought through. Do not delete the tier system —
+ * flip these back to real per-tier lists (novice used to hide
+ * `LAB_TAB_ID` from `@/lib/overview`) to re-enable.
  */
 export const TIER_HIDDEN_META_TABS: Record<ExperienceTier, string[]> = {
-  novice: [LAB_TAB_ID],
+  novice: [],
   investor: [],
   advanced: [],
 };
 
 /**
- * LabSheet sub-tab ids hidden per tier. Novices don't reach Lab at all,
- * so their list is empty by construction; an investor-tier viewer gets
- * Lab minus its heaviest tool (stress/correlation modelling).
+ * LabSheet sub-tab ids hidden per tier.
+ *
+ * Temporarily disabled (2026-08-18, per product call) — see
+ * `TIER_HIDDEN_META_TABS` above. Investor used to hide "risk".
  */
 export const TIER_HIDDEN_LAB_TABS: Record<ExperienceTier, string[]> = {
   novice: [],
-  investor: ["risk"],
+  investor: [],
   advanced: [],
 };
 
 const KNOWS_OPTIONS_STORAGE_KEY = "portfell-knows-options";
 
 /**
- * Options familiarity — deliberately separate from ExperienceTier. A
- * "very experienced" investor who's never touched options should still
- * get every options surface removed, not just soft-defaulted-off; an
- * options-savvy novice-tier investor should still see them. Tri-state:
- * null = hasn't answered yet, true = opted in, false = explicitly none.
- * Only `true` shows options UI. Unanswered and "no" both hide it.
+ * Options familiarity — deliberately separate from ExperienceTier.
+ * Tri-state: null = hasn't answered yet, true = opted in, false =
+ * explicitly none.
+ *
+ * Temporarily disabled (2026-08-18, per product call): options UI is
+ * never hidden regardless of the stored answer, until this gating is
+ * fully thought through. Do not delete `knowsOptions`/its storage —
+ * restore `return knowsOptions !== true;` to re-enable.
  */
 export function shouldHideOptions(knowsOptions: boolean | null): boolean {
-  return knowsOptions !== true;
+  void knowsOptions;
+  return false;
 }
 
 /**

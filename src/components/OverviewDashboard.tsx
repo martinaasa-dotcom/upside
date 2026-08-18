@@ -417,8 +417,10 @@ function MorningStack({
           )}
         </Reading>
       ) : (
-        <Reading className="text-base leading-relaxed">
-          {morning.sentence}
+        <Reading>
+          <p className="text-base font-medium leading-relaxed text-foreground">
+            {morning.sentence}
+          </p>
           {!morning.quiet && morning.drivers.length > 0 && (
             <div
               className={cn(

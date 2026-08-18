@@ -1168,7 +1168,7 @@ export const ForecastPanel = memo(function ForecastPanel({
         </>
       )}
 
-      <div className="border-t border-border p-4">
+      <div className="border-t border-border p-6">
         <div>
           <h3 className="text-lg font-semibold tracking-tight text-foreground">
             What Margus makes of it
@@ -1332,7 +1332,7 @@ export const ForecastPanel = memo(function ForecastPanel({
                   </Card>
                 </div>
                 {activePeriod.notes?.trim() && (
-                  <Reading nested>
+                  <Reading nested label="Net effect">
                     <InsightText text={activePeriod.notes} />
                   </Reading>
                 )}

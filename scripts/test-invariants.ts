@@ -358,10 +358,10 @@ run("power animals each keep their own color", () => {
   assert.match(community, /border-border bg-muted/);
 });
 
-run("options UI is hidden unless the viewer explicitly said yes", () => {
+run("options gating is temporarily disabled — options UI always shows", () => {
   assert.equal(shouldHideOptions(true), false);
-  assert.equal(shouldHideOptions(false), true);
-  assert.equal(shouldHideOptions(null), true);
+  assert.equal(shouldHideOptions(false), false);
+  assert.equal(shouldHideOptions(null), false);
 });
 
 run("Karud household is two accounts on one book, like Martin and Amanda", () => {
@@ -1791,8 +1791,8 @@ run("connected emails send notes to the first address only", () => {
   assert.match(nudge, /connectedEmailsFor/);
 });
 
-run("novice hides Lab, not Pulse", () => {
-  assert.ok(TIER_HIDDEN_META_TABS.novice.includes(LAB_TAB_ID));
+run("tier-based meta-tab hiding is temporarily disabled", () => {
+  assert.ok(!TIER_HIDDEN_META_TABS.novice.includes(LAB_TAB_ID));
   assert.ok(!TIER_HIDDEN_META_TABS.novice.includes(PULSE_TAB_ID));
 });
 
@@ -3237,7 +3237,7 @@ run("Worth noticing names the two groups in plain English", () => {
   );
   assert.match(
     overview,
-    /<Reading className="text-base leading-relaxed">\s*\{morning\.sentence\}/
+    /<p className="text-base font-medium leading-relaxed text-foreground">\s*\{morning\.sentence\}/
   );
   const header = overview.slice(
     overview.indexOf("{morning.moveLabel}"),
