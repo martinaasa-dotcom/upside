@@ -87,8 +87,26 @@ function daySentence(
   }
   return {
     quiet: false,
-    sentence: "A few holdings moved the whole number. Who is listed below.",
+    sentence: pickSwingSentence(dollars),
   };
+}
+
+/** Rotates through a few plain-English phrasings so the reading doesn't
+ * repeat the exact same sentence every time. Picked off the day of the
+ * year so it's stable within a day, not flickering on every render. */
+function pickSwingSentence(dollars: string): string {
+  const variations = [
+    "Your portfolio's value moved mostly because of the holdings below.",
+    "A few holdings did most of the moving today. They're listed below.",
+    "Here's what moved your total today.",
+    `${dollars} today, mostly from the holdings below.`,
+    "These holdings moved your total the most today.",
+  ];
+  const dayOfYear = Math.floor(
+    (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) /
+      86400000
+  );
+  return variations[dayOfYear % variations.length];
 }
 
 export function pulseFlagsFromChecks(

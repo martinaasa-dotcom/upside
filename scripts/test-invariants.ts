@@ -3157,7 +3157,8 @@ run("gap thoughts name the weight and a next step", () => {
   assert.match(morning, /What's missing/);
   assert.doesNotMatch(morning, /A thought/);
   assert.doesNotMatch(morning, /A few names did the work/);
-  assert.match(morning, /A few holdings moved the whole number/);
+  assert.doesNotMatch(morning, /A few holdings moved the whole number/);
+  assert.match(morning, /pickSwingSentence/);
 });
 
 run("advice copy names a check, not a vibe", () => {
