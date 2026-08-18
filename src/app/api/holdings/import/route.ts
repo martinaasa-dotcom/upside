@@ -139,79 +139,92 @@ async function handlePOST(req: NextRequest) {
   const failed: string[] = [];
   const keep = new Set<string>();
 
-  for (const row of rows) {
-    const ticker = resolveImportTicker(
-      String(row.ticker ?? ""),
-      row.isin
-    ) || normalizeYahooTicker(String(row.ticker ?? ""));
-    if (!ticker) continue;
-    const shares = Number(row.shares);
-    const buyPrice = Number(row.buy_price);
-    const callPct = Number(row.target_call_pct ?? 0.15);
-    if (!Number.isFinite(shares) || shares <= 0 || !Number.isFinite(buyPrice) || !(buyPrice > 0)) {
-      failed.push(ticker || "?");
-      continue;
-    }
+  // One row -> one write, but they don't depend on each other, so they go
+  // out together instead of one-at-a-time: a 30-line brokerage CSV used to
+  // mean 30 serial round trips before the import could finish. The
+  // sort_order counter and `keep`/`failed` accumulation stay correct
+  // because each callback's synchronous prefix (ticker/shares validation,
+  // the sortBase bump, the byTicker lookup) runs to completion before the
+  // next row's callback starts — .map() only interleaves at the `await`.
+  await Promise.all(
+    rows.map(async (row) => {
+      const ticker = resolveImportTicker(
+        String(row.ticker ?? ""),
+        row.isin
+      ) || normalizeYahooTicker(String(row.ticker ?? ""));
+      if (!ticker) return;
+      const shares = Number(row.shares);
+      const buyPrice = Number(row.buy_price);
+      const callPct = Number(row.target_call_pct ?? 0.15);
+      if (!Number.isFinite(shares) || shares <= 0 || !Number.isFinite(buyPrice) || !(buyPrice > 0)) {
+        failed.push(ticker || "?");
+        return;
+      }
 
-    keep.add(ticker.toUpperCase());
-    const prev = byTicker.get(ticker.toUpperCase());
-    if (prev) {
-      const { error } = await supabase
-        .from(PORTFELL_TABLES.holdings)
-        .update({
-          ticker,
-          shares,
-          buy_price: buyPrice,
-          target_call_pct: callPct,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", prev.id);
-      if (error) failed.push(ticker);
-      else upserted += 1;
-    } else {
-      sortBase += 1;
-      const { data, error } = await supabase
-        .from(PORTFELL_TABLES.holdings)
-        .upsert(
-          {
-            portfolio_id: portfolioId,
+      keep.add(ticker.toUpperCase());
+      const prev = byTicker.get(ticker.toUpperCase());
+      if (prev) {
+        const { error } = await supabase
+          .from(PORTFELL_TABLES.holdings)
+          .update({
             ticker,
             shares,
             buy_price: buyPrice,
             target_call_pct: callPct,
-            sort_order: sortBase,
-          },
-          { onConflict: "portfolio_id,ticker" }
-        )
-        .select("id, ticker, sort_order")
-        .single();
-      if (error) failed.push(ticker);
-      else {
-        upserted += 1;
-        if (data) {
-          byTicker.set(String(data.ticker).toUpperCase(), {
-            id: data.id,
-            ticker: data.ticker,
-            shares,
-            buy_price: buyPrice,
-            sort_order: data.sort_order,
-          });
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", prev.id);
+        if (error) failed.push(ticker);
+        else upserted += 1;
+      } else {
+        sortBase += 1;
+        const rowSortOrder = sortBase;
+        const { data, error } = await supabase
+          .from(PORTFELL_TABLES.holdings)
+          .upsert(
+            {
+              portfolio_id: portfolioId,
+              ticker,
+              shares,
+              buy_price: buyPrice,
+              target_call_pct: callPct,
+              sort_order: rowSortOrder,
+            },
+            { onConflict: "portfolio_id,ticker" }
+          )
+          .select("id, ticker, sort_order")
+          .single();
+        if (error) failed.push(ticker);
+        else {
+          upserted += 1;
+          if (data) {
+            byTicker.set(String(data.ticker).toUpperCase(), {
+              id: data.id,
+              ticker: data.ticker,
+              shares,
+              buy_price: buyPrice,
+              sort_order: data.sort_order,
+            });
+          }
         }
       }
-    }
-  }
+    })
+  );
 
   let removed = 0;
   if (body.replace !== false && rows.length > 0) {
     const toRemove = (existing ?? []).filter(
       (h) => !keep.has(String(h.ticker).toUpperCase())
     );
-    for (const h of toRemove) {
+    if (toRemove.length > 0) {
       const { error } = await supabase
         .from(PORTFELL_TABLES.holdings)
         .delete()
-        .eq("id", h.id);
-      if (!error) removed += 1;
+        .in(
+          "id",
+          toRemove.map((h) => h.id)
+        );
+      removed = error ? 0 : toRemove.length;
     }
   }
 
