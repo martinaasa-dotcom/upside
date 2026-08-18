@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
-import { getStripe } from "@/lib/stripe";
+import { getStripe, stripeErrorMessage } from "@/lib/stripe";
 import { observeRoute } from "@/lib/observe-route";
 
 export const dynamic = "force-dynamic";
@@ -41,12 +41,16 @@ async function handlePOST(req: Request) {
 
   const origin = new URL(req.url).origin;
 
-  const session = await stripe.billingPortal.sessions.create({
-    customer: profile.stripe_customer_id,
-    return_url: `${origin}/account`,
-  });
+  try {
+    const session = await stripe.billingPortal.sessions.create({
+      customer: profile.stripe_customer_id,
+      return_url: `${origin}/account`,
+    });
 
-  return NextResponse.json({ url: session.url });
+    return NextResponse.json({ url: session.url });
+  } catch (err) {
+    return NextResponse.json({ error: stripeErrorMessage(err) }, { status: 502 });
+  }
 }
 
 export const POST = observeRoute(handlePOST, "/api/billing/portal");
