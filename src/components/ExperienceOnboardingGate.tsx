@@ -27,6 +27,16 @@ type BookRow = {
 };
 
 /**
+ * Temporarily disabled (2026-08-18, per product call): the tier/options
+ * questions this wizard asks don't gate anything right now (see
+ * TIER_HIDDEN_META_TABS/TIER_HIDDEN_LAB_TABS/shouldHideOptions in
+ * lib/experience-tier.ts), so asking them is misleading. Flip back to
+ * false once that gating is real again — everything below stays wired
+ * up so re-enabling is a one-line change.
+ */
+const ONBOARDING_DISABLED = true;
+
+/**
  * Same first-run walkthrough on Home, Circle, Fund, and Account.
  * Classroom-only accounts skip. Circle invite joins do not.
  * Show the wizard as soon as they are signed in. Waiting on book/circle
@@ -145,7 +155,7 @@ export function ExperienceOnboardingGate() {
     return () => ctrl.abort();
   }, [ready, user]);
 
-  if (!readyToAsk || skip || !user) return null;
+  if (ONBOARDING_DISABLED || !readyToAsk || skip || !user) return null;
 
   return (
     <ExperienceOnboardingModal
