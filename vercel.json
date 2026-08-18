@@ -9,6 +9,10 @@
       "schedule": "30 21 * * 1-5"
     },
     {
+      "path": "/api/cron/margus-fund",
+      "schedule": "0 11 * * 1-6"
+    },
+    {
       "path": "/api/cron/morning-note",
       "schedule": "0 4 * * 1-5"
     },

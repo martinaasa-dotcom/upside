@@ -133,7 +133,11 @@ import {
   sessionReaction,
 } from "../src/lib/earnings-brief";
 import { insightWhen, isUsAfterCashClose, sessionMark } from "../src/lib/market-session";
-import { quotePollMs } from "../src/lib/market/session";
+import {
+  lastCompletedUsSessionKey,
+  pinQuotesToSessionClose,
+  quotePollMs,
+} from "../src/lib/market/session";
 import {
   isLegacyHost,
   isNonPublicHost,
@@ -794,6 +798,54 @@ run("quote polls stay live through pre-market and after hours", () => {
   assert.equal(quotePollMs(new Date("2026-08-15T14:00:00Z")), 15 * 60_000); // 10:00 ET Sat
 });
 
+run("fund reports date to the last closed US session, not Tallinn tomorrow", () => {
+  assert.equal(
+    lastCompletedUsSessionKey(new Date("2026-08-17T21:30:00Z")),
+    "2026-08-17"
+  );
+  assert.equal(
+    lastCompletedUsSessionKey(new Date("2026-08-18T14:30:00Z")),
+    "2026-08-17"
+  );
+  assert.equal(
+    lastCompletedUsSessionKey(new Date("2026-08-14T21:30:00Z")),
+    "2026-08-14"
+  );
+  assert.equal(
+    lastCompletedUsSessionKey(new Date("2026-08-15T11:00:00Z")),
+    "2026-08-14"
+  );
+  const live = {
+    NVDA: {
+      ticker: "NVDA",
+      price: 220,
+      change: 2.5,
+      changePercent: 0.011,
+      previousClose: 217.5,
+      sparkline: [],
+      marketState: "REGULAR",
+      preMarketPrice: null,
+      preMarketChange: null,
+      preMarketChangePercent: null,
+      postMarketPrice: null,
+      postMarketChange: null,
+      postMarketChangePercent: null,
+    },
+  };
+  const pinned = pinQuotesToSessionClose(
+    live,
+    "2026-08-17",
+    new Date("2026-08-18T14:30:00Z")
+  );
+  assert.equal(pinned.NVDA?.price, 217.5);
+  const sameDay = pinQuotesToSessionClose(
+    live,
+    "2026-08-18",
+    new Date("2026-08-18T21:30:00Z")
+  );
+  assert.equal(sameDay.NVDA?.price, 220);
+});
+
 run("sheet mark as-of a pin date uses that session's close, not last night's", () => {
   assert.equal(priorNySessionKey("2026-08-12"), "2026-08-11");
   assert.equal(priorNySessionKey("2026-08-10"), "2026-08-07");
@@ -1002,6 +1054,13 @@ run("fund cron posts to X after a new daily report", () => {
   assert.match(route, /composeWeeklyFundPost/);
   assert.match(route, /maybeTweetFundUpdate/);
   assert.match(route, /xPostingConfigured/);
+  assert.match(route, /lastCompletedUsSessionKey/);
+  assert.match(route, /deadlineAt/);
+  assert.match(route, /maxDuration = 300/);
+  assert.doesNotMatch(route, /todayKeyInTz/);
+  const crons = readFileSync(join(process.cwd(), "vercel.json"), "utf8");
+  assert.match(crons, /30 21 \* \* 1-5/);
+  assert.match(crons, /0 11 \* \* 1-6/);
   const page = readFileSync(
     join(process.cwd(), "src/components/UpsidePortfolioPage.tsx"),
     "utf8"

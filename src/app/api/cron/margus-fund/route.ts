@@ -8,7 +8,12 @@ import {
   PORTFELL_TABLES,
 } from "@/lib/supabase/tables";
 import { fetchQuotesWithFallback } from "@/lib/market/quotes";
+import {
+  lastCompletedUsSessionKey,
+  pinQuotesToSessionClose,
+} from "@/lib/market/session";
 import { fetchFearGreedIndex } from "@/lib/market/fear-greed-fetch";
+import { logEvent } from "@/lib/telemetry";
 import {
   STRUCTURED_PROVIDER_OPTIONS,
   buildAdvisorProviderChain,
@@ -35,14 +40,13 @@ import {
 import { postTweet, xPostingConfigured } from "@/lib/x-post";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { logError } from "@/lib/error-log";
-import { todayKeyInTz } from "@/lib/timezone";
 import { generateObject } from "ai";
 import { NextResponse } from "next/server";
 import { observeRoute } from "@/lib/observe-route";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-export const maxDuration = 90;
+export const maxDuration = 300;
 
 function daysBetween(fromIso: string, toIso: string): number {
   const from = new Date(`${fromIso}T00:00:00Z`).getTime();
@@ -75,17 +79,21 @@ async function maybeFillFundIntent(
   if (chain.length === 0) return false;
 
   const held = holdings.map((h) => h.ticker);
-  const { object: raw } = await withAdvisorFallback(chain, (model) =>
-    generateObject({
-      model,
-      schema: fundIntentSchema,
-      providerOptions: STRUCTURED_PROVIDER_OPTIONS,
-      system: buildFundSystemPrompt(),
-      prompt: `Today's trades already happened. Do not open, add, trim, or exit anything. Fill watchlist (1-4 names you do not hold, each with a concrete wait) and cashPurpose (one sentence on why undeployed cash is sitting).
+    const { object: raw } = await withAdvisorFallback(
+    chain,
+    (model, _id, signal) =>
+      generateObject({
+        model,
+        schema: fundIntentSchema,
+        providerOptions: STRUCTURED_PROVIDER_OPTIONS,
+        abortSignal: signal,
+        system: buildFundSystemPrompt(),
+        prompt: `Today's trades already happened. Do not open, add, trim, or exit anything. Fill watchlist (1-4 names you do not hold, each with a concrete wait) and cashPurpose (one sentence on why undeployed cash is sitting).
 
 Cash: $${Math.round(Number(fundRow.cash)).toLocaleString("en-US")}
 Open holdings: ${held.join(", ") || "none"}`,
-    })
+      }),
+    { deadlineAt: Date.now() + 60_000 }
   );
   const intent = humanizeMargusTree(raw);
   const watchlist = sanitizeFundWatchlist(intent.watchlist, held).map((w) => ({
@@ -104,14 +112,16 @@ Open holdings: ${held.join(", ") || "none"}`,
   return true;
 }
 
+function isFridayKey(key: string): boolean {
+  const [y, m, d] = key.split("-").map(Number);
+  return new Date(Date.UTC(y, (m ?? 1) - 1, d ?? 1, 12)).getUTCDay() === 5;
+}
+
 /**
- * Best-effort weekly recap, appended after a normal Friday run. Checked
- * against UTC day-of-week (not todayKeyInTz's report_date), since the
- * 21:30 UTC run time rolls the Tallinn calendar date to Saturday before
- * the report_date is even computed -- getUTCDay() still correctly reads
- * as Friday because the run happens *within* Friday in UTC, which is the
- * timezone that actually matches the US trading day being wrapped up.
- * Never throws -- a recap failure shouldn't fail the whole cron run.
+ * Best-effort weekly recap after a Friday US session. Uses the session
+ * date, not UTC day-of-week, so a Saturday-morning catch-up of Friday
+ * still writes the recap. Never throws -- a recap failure shouldn't
+ * fail the whole cron run.
  */
 async function maybeGenerateWeeklyRecap(
   supabase: SupabaseClient,
@@ -119,7 +129,7 @@ async function maybeGenerateWeeklyRecap(
   fundStartingCapital: number,
   pricedHoldings: PricedHolding[]
 ): Promise<void> {
-  if (new Date().getUTCDay() !== 5) return;
+  if (!isFridayKey(weekEnding)) return;
 
   try {
     const { data: existing } = await supabase
@@ -172,22 +182,26 @@ async function maybeGenerateWeeklyRecap(
     const chain = buildAdvisorProviderChain({ reasoning: true });
     if (chain.length === 0) return;
 
-    const { object: rawRecap } = await withAdvisorFallback(chain, (model) =>
-      generateObject({
-        model,
-        schema: weeklyRecapSchema,
-        providerOptions: STRUCTURED_PROVIDER_OPTIONS,
-        system: buildWeeklyRecapSystemPrompt(),
-        prompt: buildWeeklyRecapUserPrompt({
-          weekEnding,
-          portfolioValueStart,
-          portfolioValueEnd,
-          weekReturnPct,
-          spyWeekReturnPct,
-          currentHoldings: pricedHoldings,
-          weekActions,
+    const { object: rawRecap } = await withAdvisorFallback(
+      chain,
+      (model, _id, signal) =>
+        generateObject({
+          model,
+          schema: weeklyRecapSchema,
+          providerOptions: STRUCTURED_PROVIDER_OPTIONS,
+          abortSignal: signal,
+          system: buildWeeklyRecapSystemPrompt(),
+          prompt: buildWeeklyRecapUserPrompt({
+            weekEnding,
+            portfolioValueStart,
+            portfolioValueEnd,
+            weekReturnPct,
+            spyWeekReturnPct,
+            currentHoldings: pricedHoldings,
+            weekActions,
+          }),
         }),
-      })
+      { deadlineAt: Date.now() + 120_000 }
     );
     const recap = humanizeMargusTree(rawRecap);
 
@@ -270,7 +284,8 @@ async function handleGET(req: Request) {
     return NextResponse.json({ error: "Supabase not configured" }, { status: 400 });
   }
 
-  const today = todayKeyInTz();
+  const today = lastCompletedUsSessionKey();
+  logEvent("fund_cron_start", { session: today });
 
   try {
     // Idempotent — a manual re-trigger on a day the cron already ran just
@@ -352,7 +367,11 @@ async function handleGET(req: Request) {
         ?.spy_price ?? null;
 
     const heldTickers = holdings.map((h) => h.ticker);
-    const { quotes } = await fetchQuotesWithFallback([...heldTickers, "SPY"]);
+    const { quotes: liveQuotes } = await fetchQuotesWithFallback([
+      ...heldTickers,
+      "SPY",
+    ]);
+    const quotes = pinQuotesToSessionClose(liveQuotes, today);
     const fearGreed = await fetchFearGreedIndex().catch(() => null);
 
     let cash = Number(fundRow.cash);
@@ -385,30 +404,34 @@ async function handleGET(req: Request) {
       throw new Error("No LLM provider configured for Upside Portfolio");
     }
 
-    const { object: rawDecision } = await withAdvisorFallback(chain, (model) =>
-      generateObject({
-        model,
-        schema: fundDecisionSchema,
-        providerOptions: STRUCTURED_PROVIDER_OPTIONS,
-        system: buildFundSystemPrompt(),
-        prompt: buildFundUserPrompt({
-          today,
-          cash,
-          holdings: pricedHoldings,
-          totalValue: totalValueBefore,
-          spyMovePct,
-          fearGreed,
-          recentHeadlines,
-          currentWatchlist: sanitizeFundWatchlist(
-            Array.isArray(fundRow.watchlist) ? fundRow.watchlist : [],
-            holdings.map((h) => h.ticker)
-          ),
-          currentCashPurpose:
-            typeof fundRow.cash_purpose === "string"
-              ? fundRow.cash_purpose
-              : null,
+    const { object: rawDecision } = await withAdvisorFallback(
+      chain,
+      (model, _id, signal) =>
+        generateObject({
+          model,
+          schema: fundDecisionSchema,
+          providerOptions: STRUCTURED_PROVIDER_OPTIONS,
+          abortSignal: signal,
+          system: buildFundSystemPrompt(),
+          prompt: buildFundUserPrompt({
+            today,
+            cash,
+            holdings: pricedHoldings,
+            totalValue: totalValueBefore,
+            spyMovePct,
+            fearGreed,
+            recentHeadlines,
+            currentWatchlist: sanitizeFundWatchlist(
+              Array.isArray(fundRow.watchlist) ? fundRow.watchlist : [],
+              holdings.map((h) => h.ticker)
+            ),
+            currentCashPurpose:
+              typeof fundRow.cash_purpose === "string"
+                ? fundRow.cash_purpose
+                : null,
+          }),
         }),
-      })
+      { deadlineAt: Date.now() + 240_000 }
     );
     const decision = humanizeMargusTree(rawDecision);
 
@@ -525,7 +548,7 @@ async function handleGET(req: Request) {
       // Not already priced above (it's a new name) -- fetch it specifically.
       const { quotes: ideaQuotes, missing: ideaMissing } =
         await fetchQuotesWithFallback([ticker]);
-      const q = ideaQuotes[ticker];
+      const q = pinQuotesToSessionClose(ideaQuotes, today)[ticker];
       if (!q || ideaMissing.includes(ticker)) {
         actions.push({
           type: "hold",
