@@ -175,11 +175,10 @@ function pulseCardChrome({
   downDay: boolean;
   status: ThesisStatus | null;
 }): string {
-  const base = "bg-card border-border";
-  if (pinned) return cn(base, "border-l-4 border-primary");
-  if (!needsLook) return base;
-  if (downDay || status === "broken") return cn(base, "border-l-4 border-destructive");
-  return cn(base, "border-l-4 border-warning");
+  if (pinned) return "border-l-4 border-l-primary";
+  if (!needsLook) return "";
+  if (downDay || status === "broken") return "border-l-4 border-l-destructive";
+  return "border-l-4 border-l-warning";
 }
 
 function PulseCard({
