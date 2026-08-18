@@ -54,7 +54,7 @@ import {
  * The rules, so a new surface can't drift again:
  *
  *   Radius     shell rounded-xl · nested muted rounded-lg · control rounded-lg
- *   Shell      black field, lifted cards. Primary is Gold Delta. Nested is muted.
+ *   Shell      black field, lifted cards. Primary is violet. Nested is muted.
  *              Green is an up number, not a wash.
  *   Stack      field is bg-background. A box on the field is bg-card.
  *              Floating menus are bg-popover, never muted (muted is hover).
