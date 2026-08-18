@@ -265,20 +265,13 @@ function PulseCard({
           ) : (
             cashtag(c.ticker)
           )}
-          {pinned ? <Badge variant="secondary">Your check</Badge> : null}
-          {!c.inBook ? <Badge variant="secondary">Lookup</Badge> : null}
-          {leftHold ? <Badge variant="secondary">Was Hold</Badge> : null}
+          {pinned ? <Pill tone="neutral">Your check</Pill> : null}
+          {!c.inBook ? <Pill tone="neutral">Lookup</Pill> : null}
+          {leftHold ? <Pill tone="neutral">Was Hold</Pill> : null}
           {c.isBigMove ? (
-            <Badge
-              variant="outline"
-              className={
-                (c.effectivePct ?? 0) < 0
-                  ? "border-loss/30 bg-loss/10 text-loss"
-                  : "border-gain/30 bg-gain/10 text-gain"
-              }
-            >
+            <Pill tone={(c.effectivePct ?? 0) < 0 ? "bad" : "good"}>
               {(c.effectivePct ?? 0) < 0 ? "Down ≥5%" : "Up ≥5%"}
-            </Badge>
+            </Pill>
           ) : null}
         </CardTitle>
         <CardDescription

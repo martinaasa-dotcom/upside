@@ -557,16 +557,9 @@ function ScanRow({
       {(showMove || onOpen) ? (
         <ItemActions>
           {showMove ? (
-            <Badge
-              variant="outline"
-              className={cn(
-                "tabular-nums",
-                movePct < 0 && "border-loss/30 bg-loss/10 text-loss",
-                movePct > 0 && "border-gain/30 bg-gain/10 text-gain"
-              )}
-            >
+            <Pill tone={movePct < 0 ? "bad" : "good"} className="font-mono">
               {signedPercent(movePct)}
-            </Badge>
+            </Pill>
           ) : null}
           {onOpen ? (
             <ChevronRight

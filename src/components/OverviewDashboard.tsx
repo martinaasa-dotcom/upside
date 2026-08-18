@@ -560,7 +560,7 @@ function MoverTile({
         aria-hidden
       />
       <span className="min-w-0 flex-1">
-        <Badge variant="secondary" className="font-heading text-sm font-semibold">
+        <Badge variant="secondary" className="h-6 font-heading text-sm font-semibold">
           {cashtag(ticker.ticker)}
         </Badge>
         <span className="mt-1.5 block font-mono text-sm tabular-nums text-muted-foreground">

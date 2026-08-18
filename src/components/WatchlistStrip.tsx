@@ -71,13 +71,13 @@ function RangeMeter({
   return (
     <div>
       <MicroLabel>Recent range</MicroLabel>
-      <div className="mt-2 flex items-center justify-between gap-3 text-xs tabular-nums text-muted-foreground">
+      <div className="mt-2 flex items-center justify-between gap-3 text-sm tabular-nums text-muted-foreground">
         <span className="font-mono">{currency(low)}</span>
         <span className="font-mono">{currency(high)}</span>
       </div>
       <div className="mt-2 px-1">
         <div
-          className="relative h-2 rounded-full bg-secondary"
+          className="relative h-2.5 rounded-full bg-secondary"
           role="meter"
           aria-valuemin={low}
           aria-valuemax={high}
@@ -85,7 +85,7 @@ function RangeMeter({
           aria-label="Where today's price sits in the recent range, from the low (rose) to the high (green)"
         >
           <span
-            className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-background"
+            className="absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-background"
             style={{
               left: `${pos * 100}%`,
               backgroundColor: `color-mix(in oklch, var(--gain) ${pos * 100}%, var(--loss) ${(1 - pos) * 100}%)`,
@@ -122,7 +122,7 @@ function WatchCard({
   if (waiting) {
     return (
       <div className="flex h-12 items-center justify-between gap-3 rounded-md border border-border bg-card px-4">
-        <Badge variant="secondary">{cashtag(ticker)}</Badge>
+        <Badge variant="secondary" className="h-6">{cashtag(ticker)}</Badge>
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">Waiting on today&apos;s price</span>
           {onRetryQuote ? (
@@ -155,7 +155,7 @@ function WatchCard({
   return (
     <div className="flex h-full flex-col gap-4 rounded-lg border border-border bg-card p-4">
       <div className="flex items-start justify-between gap-3">
-        <Badge variant="secondary" className="font-heading text-sm font-semibold">
+        <Badge variant="secondary" className="h-6 font-heading text-sm font-semibold">
           {cashtag(ticker)}
         </Badge>
         <Button
