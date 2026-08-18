@@ -140,6 +140,14 @@ export default function PrivacyPage() {
               <strong className="text-foreground">Vercel</strong>: hosting,
               plus the performance metrics mentioned above.
             </li>
+            <li>
+              <strong className="text-foreground">Stripe</strong> handles
+              payment for {PRODUCT_NAME} Pro. If you subscribe, your name,
+              email, billing address, and card details go directly to
+              Stripe -- we never see or store your card number. We keep only
+              your Stripe customer/subscription IDs and subscription status
+              so the app knows what you&apos;re on.
+            </li>
           </ul>
         </Section>
 

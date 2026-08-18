@@ -78,7 +78,28 @@ export default function TermsPage() {
           class (see below), not a brokerage.
         </Section>
 
-        <Section title="4. Classroom">
+        <Section title="4. Paid subscription">
+          {PRODUCT_NAME} Pro is an optional paid subscription, billed monthly
+          and renewing automatically until you cancel. Card payments are
+          handled by Stripe; we never see or store your card number.
+          Cancel anytime from{" "}
+          <Link href="/account" className="underline hover:text-foreground">
+            My account
+          </Link>
+          , which opens Stripe&apos;s billing portal. Canceling keeps Pro
+          active through the end of the period you already paid for; it does
+          not refund the current period. If you are an EU consumer starting
+          a new subscription, you have a 14-day right of withdrawal under EU
+          law, but by subscribing and getting immediate access you agree
+          that right ends once the paid period starts, consistent with the
+          exception EU law makes for digital services delivered immediately
+          with your consent. If we ever get something visibly wrong on a
+          charge, email us and we will sort it out. Prices shown at checkout
+          include VAT for EU consumers where applicable under the OSS
+          scheme; the amount you see at checkout is the amount charged.
+        </Section>
+
+        <Section title="5. Classroom">
           A teacher can invite a class into a private paper Classroom. Each
           student gets homework cash and an empty sheet. It is not a real
           brokerage, not real money, and not a real book. Real sheets cannot
@@ -89,7 +110,7 @@ export default function TermsPage() {
           responsible for running the class under their school&apos;s rules.
         </Section>
 
-        <Section title="5. Your data, your entries">
+        <Section title="6. Your data, your entries">
           You keep ownership of the portfolio data you enter (holdings, cash,
           notes, thesis text). You&apos;re responsible for its accuracy; we
           don&apos;t verify anything you type in. If you invite a co-owner to
@@ -102,7 +123,7 @@ export default function TermsPage() {
           don&apos;t have the right to share with those people.
         </Section>
 
-        <Section title="6. Market data and third parties">
+        <Section title="7. Market data and third parties">
           Prices, quotes, options chains, earnings dates, and seasonality
           stats come from third-party data providers on a best-effort,
           &ldquo;as available&rdquo; basis. We do not run a licensed
@@ -116,7 +137,7 @@ export default function TermsPage() {
           the rest of the app.
         </Section>
 
-        <Section title="7. Acceptable use">
+        <Section title="8. Acceptable use">
           Don&apos;t attempt to break, scrape at abusive volume, reverse
           engineer for competitive cloning, or use the app to store data you
           don&apos;t have rights to. Don&apos;t use it to provide financial
@@ -125,7 +146,7 @@ export default function TermsPage() {
           market-data endpoints in a way that degrades service for others).
         </Section>
 
-        <Section title="8. Availability">
+        <Section title="9. Availability">
           This is a small, evolving product. We don&apos;t guarantee uptime,
           and features can change, be renamed, or be removed as the app
           develops. We take reasonable care with backups but you can export
@@ -137,7 +158,7 @@ export default function TermsPage() {
           anything important.
         </Section>
 
-        <Section title="9. Liability">
+        <Section title="10. Liability">
           {PRODUCT_NAME} is provided &ldquo;as is,&rdquo; without warranties of
           any kind, except where the law of {LEGAL_COUNTRY} or your EU
           consumer rights say we cannot disclaim them. To the maximum extent
@@ -147,21 +168,21 @@ export default function TermsPage() {
           of your home country.
         </Section>
 
-        <Section title="10. Governing law">
+        <Section title="11. Governing law">
           These terms are governed by the laws of {LEGAL_COUNTRY}. Courts in{" "}
           {LEGAL_COUNTRY} have jurisdiction, except that EU consumers may
           also bring a claim in their home country where the law gives them
           that right.
         </Section>
 
-        <Section title="11. Changes">
+        <Section title="12. Changes">
           We may update these terms as the product changes. Material changes
           will be reflected here with a new &ldquo;last updated&rdquo; date.
           Continuing to use {PRODUCT_NAME} after a change means you accept the
           update.
         </Section>
 
-        <Section title="12. Contact">
+        <Section title="13. Contact">
           Product help:{" "}
           <a
             href={`mailto:${PRODUCT_SUPPORT_EMAIL}`}

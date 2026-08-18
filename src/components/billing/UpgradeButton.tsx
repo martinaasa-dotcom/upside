@@ -3,11 +3,14 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { isActiveSubscription } from "@/lib/billing-status";
 
 /**
- * Drop into /account. Shows "Upgrade" for a free user, "Manage billing"
- * for anyone with an active/trialing subscription -- same button, two
- * destinations depending on `subscriptionStatus`.
+ * Drop into /account. Shows "Upgrade" for a free user, "Manage billing" for
+ * anyone with an active/trialing/past_due subscription -- same button, two
+ * destinations depending on `subscriptionStatus`. past_due counts as
+ * subscribed so the destination is the portal (fix the card), not a second
+ * Checkout session.
  */
 export function UpgradeButton({
   subscriptionStatus,
@@ -15,7 +18,7 @@ export function UpgradeButton({
   subscriptionStatus: string | null;
 }) {
   const [loading, setLoading] = useState(false);
-  const isSubscribed = subscriptionStatus === "active" || subscriptionStatus === "trialing";
+  const isSubscribed = isActiveSubscription(subscriptionStatus);
 
   async function handleClick() {
     setLoading(true);
