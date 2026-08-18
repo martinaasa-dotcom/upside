@@ -6508,7 +6508,7 @@ run("production telemetry covers crashes, slow routes, and vitals", () => {
 
 run("offline-first engine caches the book and queues safe writes", () => {
   const sw = readFileSync(join(process.cwd(), "public/sw.js"), "utf8");
-  assert.match(sw, /upside-shell-v6/);
+  assert.match(sw, /upside-shell-v7/);
   assert.match(sw, /skipWaiting/);
   assert.match(sw, /clients\.claim/);
   assert.match(sw, /path\.startsWith\("\/api\/"\)/);

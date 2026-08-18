@@ -1,15 +1,17 @@
-// Rasterizes public/upside-fund-x-avatar.png (the metallic A) into the
-// PNGs Next.js file-convention icons, the web manifest, OG card, and
-// email lockup need. Re-run only if the source mark changes. Outputs
-// are committed, not built.
+// Rasterizes Images/upside-fund-x-avatar-centered.png (the metallic A,
+// sitting in the square) into the PNGs Next.js file-convention icons, the
+// web manifest, OG card, and email lockup need. The circle-safe X avatar
+// stays at public/upside-fund-x-avatar.png. Re-run only if the source
+// mark changes. Outputs are committed, not built.
 import sharp from "sharp";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const src = join(root, "public", "upside-fund-x-avatar.png");
+const src = join(root, "Images", "upside-fund-x-avatar-centered.png");
 const BG = "#000000";
+const MARK_PAD = 0.16;
 
 mkdirSync(join(root, "public", "icons"), { recursive: true });
 
@@ -26,13 +28,37 @@ function maskSvg(size) {
   );
 }
 
-async function framedPngBuffer(size) {
-  const base = await sharp(src)
-    .resize(size, size, { fit: "cover" })
+/** Trim the A and sit it in the square so the tip is not on the edge. */
+async function centeredMark(size) {
+  const inner = Math.max(1, Math.round(size * (1 - 2 * MARK_PAD)));
+  const trimmed = await sharp(src)
     .flatten({ background: BG })
-    .ensureAlpha()
+    .trim({ threshold: 12 })
     .png()
     .toBuffer();
+  const fitted = await sharp(trimmed)
+    .resize(inner, inner, {
+      fit: "contain",
+      background: BG,
+      withoutEnlargement: false,
+    })
+    .png()
+    .toBuffer();
+  return sharp({
+    create: {
+      width: size,
+      height: size,
+      channels: 4,
+      background: { r: 0, g: 0, b: 0, alpha: 1 },
+    },
+  })
+    .composite([{ input: fitted, gravity: "centre" }])
+    .png()
+    .toBuffer();
+}
+
+async function framedPngBuffer(size) {
+  const base = await centeredMark(size);
   return sharp(base)
     .composite([{ input: maskSvg(size), blend: "dest-in" }])
     .png()
@@ -70,16 +96,12 @@ function packIco(pngs) {
 }
 
 async function squarePng(size, out) {
-  await sharp(src)
-    .resize(size, size, { fit: "cover" })
-    .flatten({ background: BG })
-    .png()
-    .toFile(out);
+  writeFileSync(out, await centeredMark(size));
   console.log(`wrote ${out} (${size}x${size} square)`);
 }
 
 async function writeOg() {
-  const logo = await sharp(src).resize(440, 440, { fit: "cover" }).png().toBuffer();
+  const logo = await centeredMark(440);
   await sharp({
     create: { width: 1200, height: 630, channels: 3, background: BG },
   })
@@ -90,7 +112,7 @@ async function writeOg() {
 }
 
 async function writeEmailLockup() {
-  const mark = await sharp(src).resize(80, 80, { fit: "cover" }).png().toBuffer();
+  const mark = await centeredMark(80);
   const plate = Buffer.from(
     `<svg xmlns="http://www.w3.org/2000/svg" width="540" height="100">
       <rect width="540" height="100" fill="${BG}"/>
