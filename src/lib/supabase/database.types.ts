@@ -875,6 +875,7 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           created_at: string
+          current_period_end: string | null
           display_name: string | null
           email: string | null
           empty_book_nudge_sent_at: string | null
@@ -885,12 +886,17 @@ export type Database = {
           morning_note: boolean
           note_morning: boolean
           note_sunday: boolean
+          plan: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscription_status: string | null
           updated_at: string
         }
         Insert: {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          current_period_end?: string | null
           display_name?: string | null
           email?: string | null
           empty_book_nudge_sent_at?: string | null
@@ -901,12 +907,17 @@ export type Database = {
           morning_note?: boolean
           note_morning?: boolean
           note_sunday?: boolean
+          plan?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_status?: string | null
           updated_at?: string
         }
         Update: {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          current_period_end?: string | null
           display_name?: string | null
           email?: string | null
           empty_book_nudge_sent_at?: string | null
@@ -917,6 +928,10 @@ export type Database = {
           morning_note?: boolean
           note_morning?: boolean
           note_sunday?: boolean
+          plan?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_status?: string | null
           updated_at?: string
         }
         Relationships: []
