@@ -50,7 +50,7 @@ import {
   Target,
   Zap,
 } from "lucide-react";
-import { useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState, memo } from "react";
+import { Fragment, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState, memo } from "react";
 import { useTimeout } from "@/lib/use-timeout";
 import {
   MicroLabel,
@@ -67,6 +67,7 @@ import {
   ItemContent,
   ItemDescription,
   ItemGroup,
+  ItemSeparator,
   ItemTitle,
 } from "@/components/ui/item";
 import {
@@ -1416,17 +1417,20 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
         <Panel className={SHEET_PANEL}>
           <PanelHeader title="What this actually tells you" />
           <ItemGroup>
-            {narrative.map((beat) => (
-              <Item key={beat.label} className="px-0 py-0">
-                <ItemContent>
-                  <ItemTitle className="font-semibold tracking-tight">
-                    {beat.label}
-                  </ItemTitle>
-                  <ItemDescription className="line-clamp-none leading-relaxed">
-                    {beat.body}
-                  </ItemDescription>
-                </ItemContent>
-              </Item>
+            {narrative.map((beat, i) => (
+              <Fragment key={beat.label}>
+                {i > 0 ? <ItemSeparator /> : null}
+                <Item className="px-0">
+                  <ItemContent>
+                    <ItemTitle className="font-semibold tracking-tight">
+                      {beat.label}
+                    </ItemTitle>
+                    <ItemDescription className="line-clamp-none leading-relaxed">
+                      {beat.body}
+                    </ItemDescription>
+                  </ItemContent>
+                </Item>
+              </Fragment>
             ))}
           </ItemGroup>
         </Panel>

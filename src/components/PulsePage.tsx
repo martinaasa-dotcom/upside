@@ -123,16 +123,6 @@ type Props = {
   ) => void;
 };
 
-function PulseHistory({ ticker }: { ticker: string }) {
-  const prior = loadPulseHistory(ticker).slice(0, -1).at(-1);
-  if (!prior) return null;
-  return (
-    <p className="text-sm text-muted-foreground">
-      Last time: {actionLabel(prior.action)}, {statusLabel(prior.thesisStatus)}
-    </p>
-  );
-}
-
 function scanLineBody(ticker: string, line: string): string {
   const tag = cashtag(ticker);
   const stripped = line.replace(new RegExp(`^\\${tag}\\s+`, "i"), "").trim();
@@ -330,36 +320,25 @@ function PulseCard({
       </CardHeader>
       <CardContent className="flex flex-col gap-6">
       {c.inBook ? (
-        <div className="grid grid-cols-2 gap-3 rounded-md border border-border/50 bg-muted/40 p-3 sm:grid-cols-4">
-          <Metric
-            label="Price"
-            hint={currency(c.currentValue)}
-            valueClassName="mt-1 font-mono text-sm font-semibold"
-          >
+        <div className="grid grid-cols-2 gap-6 rounded-lg border border-border/50 bg-muted/40 p-6 sm:grid-cols-4">
+          <Metric label="Price" hint={currency(c.currentValue)}>
             {currency(c.price)}
           </Metric>
           <Metric
             label="Today"
-            valueClassName={cn(
-              "mt-1 font-mono text-sm font-semibold",
-              signedTone(c.todayDollar, "text-foreground")
-            )}
+            valueClassName={signedTone(c.todayDollar, "text-foreground")}
           >
             {signedCurrency(c.todayDollar)}
           </Metric>
           <Metric
             label="Lifetime"
-            valueClassName={cn(
-              "mt-1 font-mono text-sm font-semibold",
-              signedTone(c.roiPct, "text-foreground")
-            )}
+            valueClassName={signedTone(c.roiPct, "text-foreground")}
           >
             {percent(c.roiPct)}
           </Metric>
           <Metric
             label="Portfolio"
             hint={c.portfolios.length > 0 ? c.portfolios.join(", ") : undefined}
-            valueClassName="mt-1 font-mono text-sm font-semibold"
           >
             {percent(c.bookPct)}
           </Metric>
@@ -369,8 +348,6 @@ function PulseCard({
           {currency(c.price)} - not in your portfolio
         </p>
       )}
-
-      <PulseHistory ticker={c.ticker} />
 
       {hasBody ? (
         <div className="flex flex-col gap-3">
