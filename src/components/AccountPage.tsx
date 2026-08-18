@@ -376,13 +376,27 @@ export function AccountPage() {
                 <Badge variant="warning">Payment failed</Badge>
               )}
             </div>
-            <p className="text-sm text-muted-foreground">
-              {subscriptionNeedsAttention(subscriptionStatus)
-                ? "Your last payment didn't go through. Update your card to keep Pro."
-                : isActiveSubscription(subscriptionStatus)
-                  ? "Your subscription is active. Manage your card, invoices, or cancel anytime."
-                  : "Free for now. Upgrade to unlock everything, whenever it's ready."}
-            </p>
+            {subscriptionNeedsAttention(subscriptionStatus) ? (
+              <p className="text-sm text-muted-foreground">
+                Your last payment didn&apos;t go through. Update your card to keep Pro.
+              </p>
+            ) : isActiveSubscription(subscriptionStatus) ? (
+              <p className="text-sm text-muted-foreground">
+                Your subscription is active. Manage your card, invoices, or cancel anytime.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-1">
+                <p className="text-sm font-medium text-foreground">
+                  Pro gets you everything. Every feature, every edge, the whole
+                  beautiful machine.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Okay, just kidding — it&apos;s twelve euros a month to help
+                  support the person building this, right now. That&apos;s
+                  the whole pitch.
+                </p>
+              </div>
+            )}
             <div>
               <UpgradeButton subscriptionStatus={subscriptionStatus} />
             </div>
