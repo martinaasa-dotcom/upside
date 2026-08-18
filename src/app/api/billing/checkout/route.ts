@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
-import { getStripe, stripePriceId } from "@/lib/stripe";
+import { getStripe, stripeErrorMessage, stripePriceId } from "@/lib/stripe";
 import { observeRoute } from "@/lib/observe-route";
 
 export const dynamic = "force-dynamic";
@@ -46,41 +46,45 @@ async function handlePOST(req: Request) {
 
   let customerId = profile?.stripe_customer_id ?? undefined;
 
-  if (!customerId) {
-    const customer = await stripe.customers.create({
-      email: profile?.email ?? auth.user.email ?? undefined,
-      metadata: { supabase_user_id: auth.user.id },
-    });
-    customerId = customer.id;
+  try {
+    if (!customerId) {
+      const customer = await stripe.customers.create({
+        email: profile?.email ?? auth.user.email ?? undefined,
+        metadata: { supabase_user_id: auth.user.id },
+      });
+      customerId = customer.id;
 
-    const { error: saveError } = await supabase
-      .from(PORTFELL_TABLES.profiles)
-      .update({ stripe_customer_id: customerId, updated_at: new Date().toISOString() })
-      .eq("id", auth.user.id);
-    if (saveError) {
-      return NextResponse.json({ error: saveError.message }, { status: 500 });
+      const { error: saveError } = await supabase
+        .from(PORTFELL_TABLES.profiles)
+        .update({ stripe_customer_id: customerId, updated_at: new Date().toISOString() })
+        .eq("id", auth.user.id);
+      if (saveError) {
+        return NextResponse.json({ error: saveError.message }, { status: 500 });
+      }
     }
+
+    const origin = new URL(req.url).origin;
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      customer: customerId,
+      line_items: [{ price: priceId, quantity: 1 }],
+      automatic_tax: { enabled: true },
+      tax_id_collection: { enabled: true },
+      billing_address_collection: "required",
+      success_url: `${origin}/account?upgraded=1`,
+      cancel_url: `${origin}/account`,
+      allow_promotion_codes: true,
+    });
+
+    if (!session.url) {
+      return NextResponse.json({ error: "Stripe didn't return a checkout URL" }, { status: 502 });
+    }
+
+    return NextResponse.json({ url: session.url });
+  } catch (err) {
+    return NextResponse.json({ error: stripeErrorMessage(err) }, { status: 502 });
   }
-
-  const origin = new URL(req.url).origin;
-
-  const session = await stripe.checkout.sessions.create({
-    mode: "subscription",
-    customer: customerId,
-    line_items: [{ price: priceId, quantity: 1 }],
-    automatic_tax: { enabled: true },
-    tax_id_collection: { enabled: true },
-    billing_address_collection: "required",
-    success_url: `${origin}/account?upgraded=1`,
-    cancel_url: `${origin}/account`,
-    allow_promotion_codes: true,
-  });
-
-  if (!session.url) {
-    return NextResponse.json({ error: "Stripe didn't return a checkout URL" }, { status: 502 });
-  }
-
-  return NextResponse.json({ url: session.url });
 }
 
 export const POST = observeRoute(handlePOST, "/api/billing/checkout");

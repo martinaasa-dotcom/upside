@@ -24,3 +24,13 @@ export function stripePriceId(): string | undefined {
 export function stripeWebhookSecret(): string | undefined {
   return process.env.STRIPE_WEBHOOK_SECRET?.trim() || undefined;
 }
+
+/**
+ * A Stripe API error (bad key, inactive price, Stripe Tax not turned on in
+ * the Dashboard, etc.) has a real, useful `.message`. Anything else is an
+ * unexpected bug -- keep that generic rather than leaking internals.
+ */
+export function stripeErrorMessage(err: unknown): string {
+  if (err instanceof Stripe.errors.StripeError) return err.message;
+  return "Something went wrong talking to Stripe.";
+}
