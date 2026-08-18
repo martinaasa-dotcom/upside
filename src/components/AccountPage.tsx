@@ -6,12 +6,13 @@ import { useFeedback } from "@/components/FeedbackHost";
 import { SignInGate } from "@/components/SignInGate";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { CARD, Panel, PanelHeader } from "@/components/ui/Panel";
 import {
   Avatar,
   AvatarFallback,
@@ -61,6 +62,7 @@ import {
   LogOut,
   MessageSquare,
   ShieldCheck,
+  Trash2,
   UserRound,
 } from "lucide-react";
 import Link from "next/link";
@@ -79,9 +81,8 @@ function VisitStreakCard() {
   );
   if (!streak || streak.totalVisits <= 0) return null;
   return (
-    <section className="flex flex-col gap-3 rounded-xl glass ring-1 ring-foreground/20 p-6">
-      <h2 className="text-base font-medium tracking-tight text-foreground">Showing up</h2>
-      <p className="text-sm text-muted-foreground">{streakFlavor(streak.currentStreak)}</p>
+    <Panel>
+      <PanelHeader title="Showing up" subtitle={streakFlavor(streak.currentStreak)} />
       <div className="flex gap-1" title="Your last seven days">
         {last7DaysStrip(streak).map((visited, i) => (
           <span
@@ -97,7 +98,7 @@ function VisitStreakCard() {
         {streak.currentStreak} day streak - best {streak.longestStreak} -{" "}
         {streak.totalVisits} visits on this device
       </p>
-    </section>
+    </Panel>
   );
 }
 
@@ -336,27 +337,21 @@ export function AccountPage() {
           </div>
 
           <WidgetErrorBoundary name="Account">
-          <section className="flex flex-col gap-3 rounded-xl glass ring-1 ring-foreground/20 p-6">
-            <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-accent text-foreground">
-                <MessageSquare className="h-4 w-4" />
-              </div>
-              <div>
-                <h2 className="text-base font-medium tracking-tight text-foreground">Feedback</h2>
-                <p className="text-sm text-muted-foreground">
-                  A bug, a missing thing, or a rant. Upside reads these.
-                </p>
-              </div>
-            </div>
-            <Button type="button" onClick={openManual}>
-              Tell Upside
-            </Button>
-          </section>
+          <Panel>
+            <PanelHeader
+              icon={<MessageSquare className="h-4 w-4" />}
+              title="Feedback"
+              subtitle="A bug, a missing thing, or a rant. Upside reads these."
+              actions={
+                <Button type="button" onClick={openManual}>
+                  Tell Upside
+                </Button>
+              }
+            />
+          </Panel>
 
-          <section className="flex flex-col gap-3 rounded-xl glass ring-1 ring-foreground/20 p-6">
-            <h2 className="text-base font-medium tracking-tight text-foreground">
-              Help
-            </h2>
+          <Panel>
+            <PanelHeader title="Help" />
             <p className="text-sm text-muted-foreground">
               A question about the app, not a data request. Mail{" "}
               <a
@@ -367,15 +362,17 @@ export function AccountPage() {
               </a>
               .
             </p>
-          </section>
+          </Panel>
 
-          <section className="flex flex-col gap-3 rounded-xl glass ring-1 ring-foreground/20 p-6">
-            <div className="flex items-center gap-2">
-              <h2 className="text-base font-medium tracking-tight text-foreground">Billing</h2>
-              {subscriptionNeedsAttention(subscriptionStatus) && (
-                <Badge variant="warning">Payment failed</Badge>
-              )}
-            </div>
+          <Panel>
+            <PanelHeader
+              title="Billing"
+              actions={
+                subscriptionNeedsAttention(subscriptionStatus) ? (
+                  <Badge variant="warning">Payment failed</Badge>
+                ) : undefined
+              }
+            />
             {subscriptionNeedsAttention(subscriptionStatus) ? (
               <p className="text-sm text-muted-foreground">
                 Your last payment didn&apos;t go through. Update your card to keep Pro.
@@ -401,88 +398,84 @@ export function AccountPage() {
             <div>
               <UpgradeButton subscriptionStatus={subscriptionStatus} />
             </div>
-          </section>
+          </Panel>
 
           <VisitStreakCard />
 
-          <section className="flex flex-col gap-3 rounded-xl glass ring-1 ring-foreground/20 p-6">
-            <h2 className="text-base font-medium tracking-tight text-foreground">Email notes</h2>
-            <p className="text-sm text-muted-foreground">
-              {morningCanSend
-                ? "Sunday is on. Weekdays and the after-close recap are extra if you want them."
-                : "Notes also land in the app. Email is not set up on this server yet."}
-            </p>
-            {(
-              [
-                {
-                  id: "morning",
-                  checked: noteMorning,
-                  set: setNoteMorning,
-                  label:
-                    "Weekdays. What to watch before the open, then a recap after the US close.",
-                },
-                {
-                  id: "sunday",
-                  checked: noteSunday,
-                  set: setNoteSunday,
-                  label:
-                    "Sundays. The week that just finished, and what to think about next.",
-                },
-              ] as const
-            ).map((row) => (
-              <div
-                key={row.id}
-                className="flex items-center gap-2 text-sm text-foreground"
-              >
-                <Checkbox
-                  id={`note-${row.id}`}
-                  checked={row.checked}
-                  onCheckedChange={(v) => {
-                    const next = v === true;
-                    const prev = row.checked;
-                    row.set(next);
-                    void postJsonOrQueue(
-                      "/api/account/morning-note",
-                      row.id === "morning"
-                        ? { morning: next }
-                        : { sunday: next }
-                    )
-                      .then((r) => {
-                        if (r.ok) {
-                          setMorningSaved(true);
-                          later(() => setMorningSaved(false), 2000);
-                          return;
-                        }
-                        row.set(prev);
-                      })
-                      .catch(() => {
-                        row.set(prev);
-                      });
-                  }}
-                />
-                <label htmlFor={`note-${row.id}`}>{row.label}</label>
-              </div>
-            ))}
-            {morningSaved && (
-              <p className="text-sm text-gain">Saved.</p>
-            )}
-          </section>
+          <Panel>
+            <PanelHeader
+              title="Email notes"
+              subtitle={
+                morningCanSend
+                  ? "Sunday is on. Weekdays and the after-close recap are extra if you want them."
+                  : "Notes also land in the app. Email is not set up on this server yet."
+              }
+            />
+            <div className="flex flex-col gap-3">
+              {(
+                [
+                  {
+                    id: "morning",
+                    checked: noteMorning,
+                    set: setNoteMorning,
+                    label:
+                      "Weekdays. What to watch before the open, then a recap after the US close.",
+                  },
+                  {
+                    id: "sunday",
+                    checked: noteSunday,
+                    set: setNoteSunday,
+                    label:
+                      "Sundays. The week that just finished, and what to think about next.",
+                  },
+                ] as const
+              ).map((row) => (
+                <div
+                  key={row.id}
+                  className="flex items-center gap-2 text-sm text-foreground"
+                >
+                  <Checkbox
+                    id={`note-${row.id}`}
+                    checked={row.checked}
+                    onCheckedChange={(v) => {
+                      const next = v === true;
+                      const prev = row.checked;
+                      row.set(next);
+                      void postJsonOrQueue(
+                        "/api/account/morning-note",
+                        row.id === "morning"
+                          ? { morning: next }
+                          : { sunday: next }
+                      )
+                        .then((r) => {
+                          if (r.ok) {
+                            setMorningSaved(true);
+                            later(() => setMorningSaved(false), 2000);
+                            return;
+                          }
+                          row.set(prev);
+                        })
+                        .catch(() => {
+                          row.set(prev);
+                        });
+                    }}
+                  />
+                  <label htmlFor={`note-${row.id}`}>{row.label}</label>
+                </div>
+              ))}
+              {morningSaved && (
+                <p className="text-sm text-gain">Saved.</p>
+              )}
+            </div>
+          </Panel>
 
           {/* Profile / community appearance */}
-          <section className="flex flex-col gap-4 rounded-xl glass ring-1 ring-foreground/20 p-6">
-            <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-accent text-foreground">
-                <UserRound className="h-4 w-4" />
-              </div>
-              <div>
-                <h2 className="text-base font-medium tracking-tight text-foreground">
-                  Community profile
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  Signed in as {user?.email ?? "—"}
-                </p>
-              </div>
-            </div>
+          <Panel>
+            <PanelHeader
+              icon={<UserRound className="h-4 w-4" />}
+              title="Community profile"
+              subtitle={`Signed in as ${user?.email ?? "—"}`}
+            />
 
             <Item className="px-0">
               <ItemMedia>
@@ -565,25 +558,19 @@ export function AccountPage() {
               {profileMsg && (
                 <p className="text-sm text-gain">{profileMsg}</p>
               )}
-              <Button type="submit" disabled={savingProfile}>
+              <Button type="submit" disabled={savingProfile} className="self-start">
                 {savingProfile ? "Saving …" : "Save profile"}
               </Button>
             </form>
-          </section>
+          </Panel>
 
           {/* Experience level */}
-          <section className="flex flex-col gap-3 rounded-xl glass ring-1 ring-foreground/20 p-6">
-            <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-accent text-foreground">
-                <Gauge className="h-4 w-4" />
-              </div>
-              <div>
-                <h2 className="text-base font-medium tracking-tight text-foreground">Experience level</h2>
-                <p className="text-sm text-muted-foreground">
-                  Simplifies what&apos;s shown. Nothing is locked, change it anytime.
-                </p>
-              </div>
-            </div>
+          <Panel>
+            <PanelHeader
+              icon={<Gauge className="h-4 w-4" />}
+              title="Experience level"
+              subtitle="Simplifies what's shown. Nothing is locked, change it anytime."
+            />
             <div className="flex flex-col gap-2">
               {EXPERIENCE_TIERS.map((t) => (
                 <button
@@ -591,40 +578,42 @@ export function AccountPage() {
                   type="button"
                   onClick={() => void handleTierChange(t.id)}
                   className={cn(
-                    "flex w-full items-center justify-between gap-3 rounded-xl border px-3.5 py-3 text-left text-sm transition",
-                    tier === t.id
-                      ? "border-border bg-accent text-foreground"
-                      : "border-border bg-muted/60 text-foreground hover:border-border"
+                    CARD,
+                    "flex w-full items-center justify-between gap-3 px-3.5 py-3 text-left text-sm text-foreground transition hover:bg-accent",
+                    tier === t.id && "ring-1 ring-primary/40"
                   )}
                 >
                   <span>
-                    <span className="font-medium">{t.label}</span>
+                    <span className={cn("font-medium", tier === t.id && "text-primary")}>
+                      {t.label}
+                    </span>
                     <span className="mt-0.5 block text-sm text-muted-foreground">{t.blurb}</span>
                   </span>
-                  {tier === t.id && <Check className="h-4 w-4 shrink-0 text-foreground" />}
+                  {tier === t.id && <Check className="h-4 w-4 shrink-0 text-primary" />}
                 </button>
               ))}
+              {tierSaved && <p className="text-sm text-gain">Saved.</p>}
             </div>
-            {tierSaved && <p className="text-sm text-gain">Saved.</p>}
 
-            <div className="mt-4 border-t border-border pt-4">
+            <div className="border-t border-border pt-4">
               <p className="text-sm font-medium text-foreground">Options experience</p>
               <p className="mt-0.5 text-sm text-muted-foreground">
                 Controls covered calls, strike alerts, and Call % everywhere.
                 Separate from the level above.
               </p>
-              <div className="mt-2 grid grid-cols-2 gap-2">
+              <div className="mt-3 grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => void handleKnowsOptionsChange(true)}
                   className={cn(
-                    "rounded-xl border px-3 py-2.5 text-left text-sm transition",
-                    knowsOptions === true
-                      ? "border-border bg-accent text-foreground"
-                      : "border-border bg-muted/60 text-foreground hover:border-border"
+                    CARD,
+                    "px-3 py-2.5 text-left text-sm text-foreground transition hover:bg-accent",
+                    knowsOptions === true && "ring-1 ring-primary/40"
                   )}
                 >
-                  <span className="font-medium">Yes</span>
+                  <span className={cn("font-medium", knowsOptions === true && "text-primary")}>
+                    Yes
+                  </span>
                   <span className="mt-0.5 block text-sm text-muted-foreground">
                     Show covered calls
                   </span>
@@ -633,13 +622,14 @@ export function AccountPage() {
                   type="button"
                   onClick={() => void handleKnowsOptionsChange(false)}
                   className={cn(
-                    "rounded-xl border px-3 py-2.5 text-left text-sm transition",
-                    knowsOptions === false
-                      ? "border-border bg-accent text-foreground"
-                      : "border-border bg-muted/60 text-foreground hover:border-border"
+                    CARD,
+                    "px-3 py-2.5 text-left text-sm text-foreground transition hover:bg-accent",
+                    knowsOptions === false && "ring-1 ring-primary/40"
                   )}
                 >
-                  <span className="font-medium">No</span>
+                  <span className={cn("font-medium", knowsOptions === false && "text-primary")}>
+                    No
+                  </span>
                   <span className="mt-0.5 block text-sm text-muted-foreground">
                     Hide options entirely
                   </span>
@@ -647,24 +637,15 @@ export function AccountPage() {
               </div>
               {knowsOptionsSaved && <p className="mt-2 text-sm text-gain">Saved.</p>}
             </div>
-          </section>
+          </Panel>
 
           {/* Sheet invites live next to the sheet, not here. */}
-          <section className="flex flex-col gap-3 rounded-xl glass ring-1 ring-foreground/20 p-6">
-            <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-accent text-foreground">
-                <Link2 className="h-4 w-4" />
-              </div>
-              <div>
-                <h2 className="text-base font-medium tracking-tight text-foreground">
-                  Invite a partner
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  That lives on the sheet now. Open a book, tap Invite next to
-                  Add holding.
-                </p>
-              </div>
-            </div>
+          <Panel>
+            <PanelHeader
+              icon={<Link2 className="h-4 w-4" />}
+              title="Invite a partner"
+              subtitle="That lives on the sheet now. Open a book, tap Invite next to Add holding."
+            />
             <p className="text-sm leading-relaxed text-muted-foreground">
               Redeem a code at{" "}
               <Link href="/account/join" className="text-foreground underline">
@@ -672,23 +653,15 @@ export function AccountPage() {
               </Link>
               .
             </p>
-          </section>
+          </Panel>
 
           {/* Data & privacy */}
-          <section className="flex flex-col gap-4 rounded-xl glass ring-1 ring-foreground/20 p-6">
-            <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-accent text-foreground">
-                <ShieldCheck className="h-4 w-4" />
-              </div>
-              <div>
-                <h2 className="text-base font-medium tracking-tight text-foreground">
-                  Data &amp; privacy
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  Your data, your call. Export it or wipe it any time.
-                </p>
-              </div>
-            </div>
+          <Panel>
+            <PanelHeader
+              icon={<ShieldCheck className="h-4 w-4" />}
+              title="Data & privacy"
+              subtitle="Your data, your call. Export it or wipe it any time."
+            />
 
             <div className="flex items-start gap-2 text-sm text-foreground">
               <Checkbox
@@ -728,27 +701,6 @@ export function AccountPage() {
               </Alert>
             )}
 
-            <Alert variant="destructive">
-              <AlertTriangle />
-              <AlertTitle>Delete my account</AlertTitle>
-              <AlertDescription>
-                Removes your profile, deletes sheets only you own, and steps
-                you off any shared ones. Cannot be undone.
-                <Button
-                  type="button"
-                  variant="destructive"
-                  className="mt-2"
-                  onClick={() => {
-                    setDeleteErr(null);
-                    setDeleteText("");
-                    setDeleteOpen(true);
-                  }}
-                >
-                  Delete account
-                </Button>
-              </AlertDescription>
-            </Alert>
-
             <p className="text-center text-sm text-muted-foreground">
               <Link href="/privacy" className="underline hover:text-muted-foreground">
                 Privacy policy
@@ -758,7 +710,42 @@ export function AccountPage() {
                 Terms of service
               </Link>
             </p>
-          </section>
+          </Panel>
+
+          {/* Danger zone */}
+          <Panel tone="danger">
+            <div className="flex items-start gap-3">
+              <span
+                className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-destructive/15 text-destructive"
+                aria-hidden
+              >
+                <AlertTriangle className="h-4 w-4" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <h2 className="font-heading text-lg font-semibold tracking-tight text-destructive">
+                  Delete my account
+                </h2>
+                <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                  Removes your profile, deletes sheets only you own, and steps
+                  you off any shared ones. Cannot be undone.
+                </p>
+              </div>
+            </div>
+            <div>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => {
+                  setDeleteErr(null);
+                  setDeleteText("");
+                  setDeleteOpen(true);
+                }}
+              >
+                <Trash2 data-icon="inline-start" />
+                Delete account
+              </Button>
+            </div>
+          </Panel>
           </WidgetErrorBoundary>
         </main>
       </div>
@@ -771,7 +758,7 @@ export function AccountPage() {
             aria-label="Close"
             onClick={() => !deleting && setDeleteOpen(false)}
           />
-          <div className="relative max-h-full w-full overflow-y-auto rounded-t-xl border border-loss/50 bg-muted p-6 sm:max-w-md sm:rounded-xl">
+          <div className="relative max-h-full w-full overflow-y-auto rounded-t-xl bg-popover ring-1 ring-destructive/30 p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:max-w-md sm:rounded-xl sm:pb-6">
             <h3 className="text-base font-semibold text-loss">
               Delete your account?
             </h3>
