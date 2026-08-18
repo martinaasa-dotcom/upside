@@ -78,7 +78,10 @@ export type LabDeepLink = "seasonality";
 const tone = (value: number | null | undefined) =>
   signedTone(value, "text-muted-foreground");
 
-/** Tinted pill for a signed delta, instead of plain colored text. */
+/** Tinted pill for a signed delta, instead of plain colored text. Same
+ * Pill every other delta in the app uses — this one sits in the hero
+ * Scoreboard, so it's the last place that should look like a smaller,
+ * different kind of chip. */
 function DeltaBadge({
   value,
   children,
@@ -89,16 +92,9 @@ function DeltaBadge({
   const up = value != null && value > 0;
   const down = value != null && value < 0;
   return (
-    <Badge
-      variant="outline"
-      className={cn(
-        "font-mono tabular-nums",
-        up && "border-gain/20 bg-gain/10 text-gain",
-        down && "border-loss/20 bg-loss/10 text-loss"
-      )}
-    >
+    <Pill tone={up ? "good" : down ? "bad" : "neutral"} className="font-mono">
       {children}
-    </Badge>
+    </Pill>
   );
 }
 
