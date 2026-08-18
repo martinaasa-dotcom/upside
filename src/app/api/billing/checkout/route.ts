@@ -3,6 +3,7 @@ import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { getStripe, stripeErrorMessage, stripePriceId, stripeSubscriptionFields } from "@/lib/stripe";
+import { isActiveSubscription } from "@/lib/billing-status";
 import { observeRoute } from "@/lib/observe-route";
 
 export const dynamic = "force-dynamic";
@@ -71,16 +72,19 @@ async function handlePOST(req: Request) {
         status: "all",
         limit: 5,
       });
-      const active = existingSubs.data.find(
-        (s) => s.status === "active" || s.status === "trialing"
-      );
+      const active = existingSubs.data.find((s) => isActiveSubscription(s.status));
       if (active) {
         await supabase
           .from(PORTFELL_TABLES.profiles)
           .update(stripeSubscriptionFields(active))
           .eq("id", auth.user.id);
         return NextResponse.json(
-          { error: "You already have an active subscription. Refresh the page to manage it." },
+          {
+            error:
+              active.status === "past_due"
+                ? "Your last payment failed. Refresh the page and use Manage billing to update your card."
+                : "You already have an active subscription. Refresh the page to manage it.",
+          },
           { status: 409 }
         );
       }

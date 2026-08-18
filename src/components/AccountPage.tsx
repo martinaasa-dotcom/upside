@@ -7,6 +7,7 @@ import { SignInGate } from "@/components/SignInGate";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -68,6 +69,7 @@ import { useTimeout } from "@/lib/use-timeout";
 import { useCallback, useEffect, useState } from "react";
 import { useHydratedCache } from "@/lib/use-hydrated-cache";
 import { UpgradeButton } from "@/components/billing/UpgradeButton";
+import { isActiveSubscription, subscriptionNeedsAttention } from "@/lib/billing-status";
 import { toast } from "sonner";
 
 function VisitStreakCard() {
@@ -368,11 +370,18 @@ export function AccountPage() {
           </section>
 
           <section className="flex flex-col gap-3 rounded-xl glass ring-1 ring-foreground/10 p-6">
-            <h2 className="text-base font-medium tracking-tight text-foreground">Billing</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-medium tracking-tight text-foreground">Billing</h2>
+              {subscriptionNeedsAttention(subscriptionStatus) && (
+                <Badge variant="warning">Payment failed</Badge>
+              )}
+            </div>
             <p className="text-sm text-muted-foreground">
-              {subscriptionStatus === "active" || subscriptionStatus === "trialing"
-                ? "Your subscription is active. Manage your card, invoices, or cancel anytime."
-                : "Free for now. Upgrade to unlock everything, whenever it's ready."}
+              {subscriptionNeedsAttention(subscriptionStatus)
+                ? "Your last payment didn't go through. Update your card to keep Pro."
+                : isActiveSubscription(subscriptionStatus)
+                  ? "Your subscription is active. Manage your card, invoices, or cancel anytime."
+                  : "Free for now. Upgrade to unlock everything, whenever it's ready."}
             </p>
             <div>
               <UpgradeButton subscriptionStatus={subscriptionStatus} />
