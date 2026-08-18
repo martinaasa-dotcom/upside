@@ -224,15 +224,25 @@ body {
    * at the card edge. Backdrop-filter with no fallback is fine: browsers
    * without support just render the translucent fill, which still reads
    * fine over the mostly-flat black field.
+   *
+   * The real `border` here (on top of whichever `ring-foreground/*` each
+   * call site also carries) is deliberate, not redundant: it's the same
+   * two-stroke recipe PopoverContent already uses (`border border-border
+   * ... ring-1 ring-foreground/20`), which is the one surface in the app
+   * that reads as a genuinely crisp pane of glass instead of translucency
+   * that just fades into the black field. Applying it once here means
+   * every `.glass`/`.glass-well` call site gets that same edge for free.
    */
   .glass {
     background-color: color-mix(in oklch, var(--card), transparent 48%);
+    border: 1px solid var(--border);
     backdrop-filter: blur(28px);
     -webkit-backdrop-filter: blur(28px);
     box-shadow: 0 12px 32px -16px color-mix(in oklch, black, transparent 15%);
   }
   .glass-well {
     background-color: color-mix(in oklch, var(--muted), transparent 50%);
+    border: 1px solid color-mix(in oklch, var(--border), transparent 35%);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
   }

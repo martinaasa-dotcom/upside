@@ -239,7 +239,7 @@ function CycleHistoryBars({
             key={h.year}
             className={cn(
               "grid grid-cols-[3.25rem_minmax(0,1fr)_4.25rem] items-center gap-2 rounded-lg px-1 py-1.5",
-              isHighlight && "bg-accent ring-1 ring-foreground/18"
+              isHighlight && "bg-accent ring-1 ring-foreground/20"
             )}
             title={`${h.year}: ${fmtPct(h.returnPct, 2)}`}
           >

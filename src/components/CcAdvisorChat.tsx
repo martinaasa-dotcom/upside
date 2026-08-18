@@ -920,7 +920,7 @@ export function CcAdvisorChat({
       {showSilentCard && (
         <div
           role="status"
-          className="pointer-events-auto w-[min(22rem,calc(100vw-1.5rem))] cursor-pointer overflow-hidden rounded-xl glass ring-1 ring-foreground/18"
+          className="pointer-events-auto w-[min(22rem,calc(100vw-1.5rem))] cursor-pointer overflow-hidden rounded-xl glass ring-1 ring-foreground/20"
           onClick={() => setOpen(true)}
         >
           <div className="flex items-start gap-2.5 px-3.5 py-3">
@@ -1012,7 +1012,7 @@ export function CcAdvisorChat({
       {open && (
         <section
           ref={panelRef}
-          className={`pointer-events-auto flex flex-col overflow-hidden rounded-xl glass ring-1 ring-foreground/18 transition-[width,height] duration-200 ease-out ${
+          className={`pointer-events-auto flex flex-col overflow-hidden rounded-xl glass ring-1 ring-foreground/20 transition-[width,height] duration-200 ease-out ${
             wide
               ? "w-[min(56rem,calc(100vw-1.5rem))]"
               : "w-[min(26rem,calc(100vw-1.5rem))]"
@@ -1212,7 +1212,7 @@ export function CcAdvisorChat({
                   className={
                     message.role === "user"
                       ? "ml-0 max-w-[95%] rounded-lg bg-accent/80 px-3 py-2 text-sm text-foreground sm:ml-6"
-                      : "w-full min-w-0 rounded-xl glass ring-1 ring-foreground/18 px-4 py-3 text-base text-foreground"
+                      : "w-full min-w-0 rounded-xl glass ring-1 ring-foreground/20 px-4 py-3 text-base text-foreground"
                   }
                 >
                   <p

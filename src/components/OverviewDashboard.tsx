@@ -612,7 +612,7 @@ function PortfolioLane({
     <button
       type="button"
       onClick={onOpen}
-      className="card-sheen glass-well group flex w-full flex-col gap-4 rounded-lg p-6 text-left ring-1 ring-foreground/18 transition hover:scale-[1.01] hover:bg-accent hover:ring-primary/25"
+      className="card-sheen glass-well group flex w-full flex-col gap-4 rounded-lg p-6 text-left ring-1 ring-foreground/20 transition hover:scale-[1.01] hover:bg-accent hover:ring-primary/25"
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
