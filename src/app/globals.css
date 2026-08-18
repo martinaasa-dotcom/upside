@@ -15,11 +15,14 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  /* Violet accent. Buttons, focus rings, and the main chart stroke.
-     Replaces the earlier gold ("Gold Delta") — see DESIGN_TOKENS.md for
-     why and for the fixed Accent Palette this app-wide accent belongs to. */
-  --primary: oklch(0.62 0.24 291);
-  --primary-foreground: oklch(0.985 0 0);
+  /* Subtle warm yellow accent. Buttons, focus rings, and the main chart
+     stroke. Replaces the earlier violet, which itself replaced the
+     original gold ("Gold Delta") — see DESIGN_TOKENS.md for why and for
+     the fixed Accent Palette this app-wide accent belongs to. Muted on
+     purpose: lower chroma and a further-from-orange hue than the old
+     gold, so it reads as a quiet warm neutral, not a bright brand color. */
+  --primary: oklch(0.8 0.09 90);
+  --primary-foreground: oklch(0.145 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
@@ -29,7 +32,7 @@
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 16%);
   --input: oklch(1 0 0 / 18%);
-  --ring: oklch(0.62 0.24 291);
+  --ring: oklch(0.8 0.09 90);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.63 0.22 45);
@@ -38,12 +41,12 @@
   --radius: 0.625rem;
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.62 0.24 291);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.8 0.09 90);
+  --sidebar-primary-foreground: oklch(0.145 0 0);
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 16%);
-  --sidebar-ring: oklch(0.62 0.24 291);
+  --sidebar-ring: oklch(0.8 0.09 90);
   /* True orange, not gold/amber — see DESIGN_TOKENS.md "Warning/caution". */
   --warning: oklch(0.63 0.22 45);
   --gain: oklch(0.696 0.17 162.48);
@@ -159,13 +162,15 @@ body {
 }
 
 /*
- * Ambient corner glow shared by every signed-in page — one violet, one
- * gain-green, both barely-there. `.page-frame` (PAGE_FRAME_CLASS) wraps
- * every screen and paints its own opaque bg-background, which would
- * otherwise hide a glow set on body. `isolation: isolate` gives it a
- * stacking context so the negative z-index pseudo below sits above that
- * fill but under the page's real content. Fixed position so it reads as
- * the room's light while scrolling, not a decoration tied to page length.
+ * Ambient corner glow shared by every signed-in page — one warm-yellow, one
+ * gain-green. `.page-frame` (PAGE_FRAME_CLASS) wraps every screen and
+ * paints its own opaque bg-background, which would otherwise hide a glow
+ * set on body. `isolation: isolate` gives it a stacking context so the
+ * negative z-index pseudo below sits above that fill but under the page's
+ * real content. Fixed position so it reads as the room's light while
+ * scrolling, not a decoration tied to page length. Strong enough (and
+ * cards translucent enough, see `.glass`) that it reads through the cards
+ * sitting on top of it, not just in the gutters between them.
  */
 .page-frame {
   position: relative;
@@ -179,31 +184,50 @@ body {
   pointer-events: none;
   background-image:
     radial-gradient(
-      1200px 900px at -10% -10%,
-      oklch(from var(--primary) l c h / 16%),
-      transparent 65%
+      1600px 1200px at -5% -5%,
+      oklch(from var(--primary) l c h / 30%),
+      transparent 70%
     ),
     radial-gradient(
-      1200px 900px at 110% 110%,
-      oklch(from var(--gain) l c h / 12%),
-      transparent 65%
+      1400px 1100px at 105% 105%,
+      oklch(from var(--gain) l c h / 22%),
+      transparent 70%
     );
 }
 
 /*
- * Card sheen — a faint top-to-bottom lightness gradient over the flat
- * --card fill, so surfaces read as gently lit rather than a solid block
- * of color. `background-image` layers on top of `background-color`
- * (bg-card), so this composes with the existing token instead of
- * replacing it. Same idea as the ambient glow: draws from tokens, not a
- * new hardcoded value.
+ * Card sheen — a faint top-to-bottom specular highlight over whatever fill
+ * the element already has (opaque bg-card or the translucent `.glass`
+ * fill below), so surfaces read as gently lit glass rather than a flat
+ * block of color. Painted as a white-to-transparent wash rather than a
+ * gradient between two --card stops, specifically so it composes with
+ * `.glass`'s translucent background-color instead of re-opaquing it —
+ * `background-image` paints over `background-color`, so an opaque stop
+ * here would cancel the glass effect underneath.
  */
 .card-sheen {
   background-image: linear-gradient(
     180deg,
-    color-mix(in oklch, var(--card), white 4%) 0%,
-    var(--card) 100%
+    color-mix(in oklch, white, transparent 92%) 0%,
+    transparent 60%
   );
+}
+
+/*
+ * Glass surface — the standard treatment for every top-level card/panel.
+ * Translucent instead of a flat opaque fill so the ambient corner glow
+ * (`.page-frame::before`) shows through, blurred, instead of stopping dead
+ * at the card edge. Backdrop-filter with no fallback is fine: browsers
+ * without support just render the translucent fill, which still reads
+ * fine over the mostly-flat black field.
+ */
+.glass {
+  background-color: color-mix(in oklch, var(--card), transparent 25%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+.glass-well {
+  background-color: color-mix(in oklch, var(--muted), transparent 35%);
 }
 
 h1,

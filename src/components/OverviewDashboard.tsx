@@ -325,9 +325,9 @@ function MorningStack({
         </div>
       ) : (
         <>
-          <p className="text-base leading-relaxed text-foreground">
+          <Reading className="text-base leading-relaxed">
             {morning.sentence}
-          </p>
+          </Reading>
           {!morning.quiet && morning.drivers.length > 0 && (
             <Scoreboard
               cols={
@@ -450,7 +450,7 @@ function MoverTile({
       onClick={onOpen}
       title={sheets || undefined}
       className={cn(
-        "card-sheen group relative flex h-full w-full min-w-0 items-center justify-between gap-2 overflow-hidden rounded-lg bg-card p-6 text-left ring-1 transition hover:scale-[1.01] hover:bg-accent sm:gap-3",
+        "card-sheen glass group relative flex h-full w-full min-w-0 items-center justify-between gap-2 overflow-hidden rounded-lg p-6 text-left ring-1 transition hover:scale-[1.01] hover:bg-accent sm:gap-3",
         isUp ? "ring-gain/20 hover:ring-gain/40" : "ring-loss/20 hover:ring-loss/40"
       )}
     >
@@ -508,7 +508,7 @@ function PortfolioLane({
     <button
       type="button"
       onClick={onOpen}
-      className="card-sheen group min-h-11 w-full rounded-lg bg-muted p-6 text-left ring-1 ring-foreground/10 transition hover:scale-[1.01] hover:bg-accent hover:ring-primary/25"
+      className="card-sheen glass-well group min-h-11 w-full rounded-lg p-6 text-left ring-1 ring-foreground/10 transition hover:scale-[1.01] hover:bg-accent hover:ring-primary/25"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">

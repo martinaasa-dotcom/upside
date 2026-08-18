@@ -242,7 +242,7 @@ export function InvitePartnerModal({
         )}
 
         {owners.length > 0 && (
-          <ul className="mt-4 divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
+          <ul className="mt-4 divide-y divide-border overflow-hidden rounded-xl glass ring-1 ring-foreground/10">
             {owners.map((o) => (
               <li
                 key={o.user_id}

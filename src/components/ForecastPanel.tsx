@@ -403,7 +403,7 @@ function SheetPathChart({ points }: { points: SheetPathPoint[] }) {
         <div className="relative">
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-11 bg-gradient-to-r from-card from-30% to-transparent"
+            className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-11 bg-gradient-to-r from-card/75 from-30% to-transparent"
           />
           <ChartYAxis
             overlay
@@ -932,7 +932,7 @@ export const ForecastPanel = memo(function ForecastPanel({
   }, [labReady, planHydrated, model.rows, plan, fullyCovered, busy, cachedTickers, retryTick]);
 
   return (
-    <section className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
+    <section className="overflow-hidden rounded-xl glass ring-1 ring-foreground/10">
       <header className="border-b border-border p-6">
         <PanelHeader
           title="Forecast"

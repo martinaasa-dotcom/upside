@@ -68,7 +68,7 @@ function VisitStreakCard() {
   );
   if (!streak || streak.totalVisits <= 0) return null;
   return (
-    <section className="flex flex-col gap-3 rounded-xl bg-card ring-1 ring-foreground/10 p-6">
+    <section className="flex flex-col gap-3 rounded-xl glass ring-1 ring-foreground/10 p-6">
       <h2 className="text-base font-medium tracking-tight text-foreground">Showing up</h2>
       <p className="text-sm text-muted-foreground">{streakFlavor(streak.currentStreak)}</p>
       <div className="flex gap-1" title="Your last seven days">
@@ -297,7 +297,7 @@ export function AccountPage() {
           </div>
 
           <WidgetErrorBoundary name="Account">
-          <section className="flex flex-col gap-3 rounded-xl bg-card ring-1 ring-foreground/10 p-6">
+          <section className="flex flex-col gap-3 rounded-xl glass ring-1 ring-foreground/10 p-6">
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-accent text-foreground">
                 <MessageSquare className="h-4 w-4" />
@@ -316,7 +316,7 @@ export function AccountPage() {
 
           <VisitStreakCard />
 
-          <section className="flex flex-col gap-3 rounded-xl bg-card ring-1 ring-foreground/10 p-6">
+          <section className="flex flex-col gap-3 rounded-xl glass ring-1 ring-foreground/10 p-6">
             <h2 className="text-base font-medium tracking-tight text-foreground">Email notes</h2>
             <p className="text-sm text-muted-foreground">
               {morningCanSend
@@ -380,7 +380,7 @@ export function AccountPage() {
           </section>
 
           {/* Profile / community appearance */}
-          <section className="flex flex-col gap-4 rounded-xl bg-card ring-1 ring-foreground/10 p-6">
+          <section className="flex flex-col gap-4 rounded-xl glass ring-1 ring-foreground/10 p-6">
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-accent text-foreground">
                 <UserRound className="h-4 w-4" />
@@ -483,7 +483,7 @@ export function AccountPage() {
           </section>
 
           {/* Experience level */}
-          <section className="flex flex-col gap-3 rounded-xl bg-card ring-1 ring-foreground/10 p-6">
+          <section className="flex flex-col gap-3 rounded-xl glass ring-1 ring-foreground/10 p-6">
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-accent text-foreground">
                 <Gauge className="h-4 w-4" />
@@ -561,7 +561,7 @@ export function AccountPage() {
           </section>
 
           {/* Sheet invites live next to the sheet, not here. */}
-          <section className="flex flex-col gap-3 rounded-xl bg-card ring-1 ring-foreground/10 p-6">
+          <section className="flex flex-col gap-3 rounded-xl glass ring-1 ring-foreground/10 p-6">
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-accent text-foreground">
                 <Link2 className="h-4 w-4" />
@@ -586,7 +586,7 @@ export function AccountPage() {
           </section>
 
           {/* Data & privacy */}
-          <section className="flex flex-col gap-4 rounded-xl bg-card ring-1 ring-foreground/10 p-6">
+          <section className="flex flex-col gap-4 rounded-xl glass ring-1 ring-foreground/10 p-6">
             <div className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-accent text-foreground">
                 <ShieldCheck className="h-4 w-4" />
