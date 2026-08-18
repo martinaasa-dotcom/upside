@@ -70,6 +70,10 @@ async function handlePOST(req: Request) {
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
       automatic_tax: { enabled: true },
+      // Every Customer we create starts with no address. Without this,
+      // automatic_tax rejects the session up front instead of using the
+      // address the buyer is about to enter in Checkout.
+      customer_update: { address: "auto", name: "auto" },
       tax_id_collection: { enabled: true },
       billing_address_collection: "required",
       success_url: `${origin}/account?upgraded=1`,
