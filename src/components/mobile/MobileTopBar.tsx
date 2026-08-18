@@ -3,6 +3,7 @@
 import { useAuth } from "@/components/AuthProvider";
 import { useFeedback } from "@/components/FeedbackHost";
 import { HeaderBrand } from "@/components/HeaderBrand";
+import { UpgradeNudge } from "@/components/billing/UpgradeNudge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/format";
 import Link from "next/link";
@@ -93,6 +94,7 @@ export function MobileTopBar({
         </div>
         <div className="flex shrink-0 items-center justify-end gap-1">
           {end}
+          <UpgradeNudge variant="icon" />
           <FeedbackIconButton />
           {onAlerts ? (
             <Button
