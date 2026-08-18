@@ -1772,18 +1772,20 @@ run("community books lead with today's percent, not dollar size", () => {
   assert.match(roster, /signedPercent\(m\.todayPct\)/);
 });
 
-run("circle awards are a list, not a grid of muted tiles", () => {
+run("circle awards are a grid of cards, not a flat divided list", () => {
   const community = readFileSync(
     join(process.cwd(), "src/components/CommunityView.tsx"),
     "utf8"
   );
-  const awards = community.slice(
-    community.indexOf("Community superlatives")
+  const awardsStart = community.indexOf("Community superlatives");
+  const awardsEnd = community.indexOf(
+    "effectiveView === \"overview\" && membersWithBooks.length > 0"
   );
-  assert.match(awards, /<ItemGroup/);
-  assert.match(awards, /<Item /);
-  assert.doesNotMatch(awards, /rounded-lg bg-muted p-3/);
-  assert.doesNotMatch(awards, /sm:grid-cols-2 lg:grid-cols-3/);
+  const awards = community.slice(awardsStart, awardsEnd);
+  assert.match(awards, /grid grid-cols-1 gap-3 sm:grid-cols-2/);
+  assert.match(awards, /rounded-lg bg-muted p-4/);
+  assert.doesNotMatch(awards, /<ItemGroup/);
+  assert.doesNotMatch(awards, /<ItemSeparator/);
   assert.doesNotMatch(awards, /bg-pink-500/);
 });
 
