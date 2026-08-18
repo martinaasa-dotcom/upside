@@ -160,26 +160,27 @@ export function SignInGate({ children }: Props) {
               })}
             </ul>
 
-            <label className="signin-rise-3 mt-10 flex max-w-sm items-start gap-2.5 text-left text-sm leading-relaxed text-muted-foreground">
-              <Checkbox
-                checked={ageOk}
-                onCheckedChange={(v) => setAgeOk(v === true)}
-                className="mt-0.5"
-                aria-label="I am 13 or older"
-              />
-              <span>I am 13 or older.</span>
-            </label>
+            <div className="signin-rise-3 mt-10 flex max-w-sm flex-col gap-2.5">
+              <label className="flex items-center gap-2 text-left text-xs text-muted-foreground/80">
+                <Checkbox
+                  checked={ageOk}
+                  onCheckedChange={(v) => setAgeOk(v === true)}
+                  aria-label="I am 13 or older"
+                />
+                I am 13 or older.
+              </label>
 
-            <Button
-              type="button"
-              size="lg"
-              disabled={busy || !ageOk}
-              onClick={() => void onSignIn()}
-              className="signin-rise-3 mt-4 h-11 w-full max-w-sm gap-2.5 rounded-full text-base shadow-[0_18px_40px_-16px_var(--primary)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[0_22px_50px_-14px_var(--primary)] md:w-auto md:min-w-[17rem]"
-            >
-              {busy ? <Spinner data-icon="inline-start" /> : <GoogleMark />}
-              {busy ? "Redirecting …" : "Continue with Google"}
-            </Button>
+              <Button
+                type="button"
+                size="lg"
+                disabled={busy || !ageOk}
+                onClick={() => void onSignIn()}
+                className="h-11 w-full gap-2.5 rounded-full text-base shadow-[0_18px_40px_-16px_var(--primary)] md:w-auto md:min-w-[17rem]"
+              >
+                {busy ? <Spinner data-icon="inline-start" /> : <GoogleMark />}
+                {busy ? "Redirecting …" : "Continue with Google"}
+              </Button>
+            </div>
 
             {err && (
               <p className="mt-4 text-sm text-loss" role="alert">
