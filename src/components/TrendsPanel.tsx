@@ -137,7 +137,7 @@ function TickerStoryCard({
   const rest = story.signals.filter((s) => s.key !== "trend");
 
   return (
-    <Card className="gap-0">
+    <Card className="gap-0 border border-border shadow-lg shadow-black/40">
       <CardHeader className="border-b">
         <CardTitle className="flex items-center gap-2">
           {cashtag(row.ticker)}
@@ -398,7 +398,7 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
             </AlertDescription>
           </Alert>
 
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-8">
             {stories.map(({ row }) => (
               <TickerStoryCard
                 key={row.ticker}

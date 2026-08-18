@@ -648,7 +648,7 @@ export const PortfolioTable = memo(function PortfolioTable({
                       onClick={() => toggleSort(col.key!)}
                       className={cn(
                         "inline-flex items-center gap-1 transition hover:text-foreground",
-                        sortKey === col.key && "text-primary"
+                        sortKey === col.key && "text-primary/70"
                       )}
                       title={
                         col.explain

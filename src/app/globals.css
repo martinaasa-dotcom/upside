@@ -179,15 +179,31 @@ body {
   pointer-events: none;
   background-image:
     radial-gradient(
-      1100px 800px at -10% -10%,
-      oklch(from var(--primary) l c h / 7%),
-      transparent 60%
+      1200px 900px at -10% -10%,
+      oklch(from var(--primary) l c h / 16%),
+      transparent 65%
     ),
     radial-gradient(
-      1100px 800px at 110% 110%,
-      oklch(from var(--gain) l c h / 6%),
-      transparent 60%
+      1200px 900px at 110% 110%,
+      oklch(from var(--gain) l c h / 12%),
+      transparent 65%
     );
+}
+
+/*
+ * Card sheen — a faint top-to-bottom lightness gradient over the flat
+ * --card fill, so surfaces read as gently lit rather than a solid block
+ * of color. `background-image` layers on top of `background-color`
+ * (bg-card), so this composes with the existing token instead of
+ * replacing it. Same idea as the ambient glow: draws from tokens, not a
+ * new hardcoded value.
+ */
+.card-sheen {
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in oklch, var(--card), white 4%) 0%,
+    var(--card) 100%
+  );
 }
 
 h1,

@@ -325,7 +325,9 @@ function MorningStack({
         </div>
       ) : (
         <>
-          <Reading>{morning.sentence}</Reading>
+          <p className="text-base leading-relaxed text-foreground">
+            {morning.sentence}
+          </p>
           {!morning.quiet && morning.drivers.length > 0 && (
             <Scoreboard
               cols={
@@ -408,14 +410,17 @@ function MorningStack({
               key={flag.ticker}
               type="button"
               onClick={() => onOpenPulse?.(flag.ticker)}
-              className="w-full rounded-xl bg-card p-6 text-left ring-1 ring-foreground/10 transition hover:bg-accent"
+              className="group/flag flex w-full items-center gap-4 rounded-xl bg-card p-6 text-left ring-1 ring-foreground/10 transition hover:scale-[1.01] hover:bg-accent hover:ring-primary/30"
             >
-              <p className="text-sm font-semibold tracking-tight text-foreground">
-                Pulse · {cashtag(flag.ticker)} · {statusLabel(flag.status)}
-              </p>
-              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                {flag.line}
-              </p>
+              <span className="min-w-0 flex-1">
+                <p className="text-sm font-semibold tracking-tight text-foreground">
+                  Pulse · {cashtag(flag.ticker)} · {statusLabel(flag.status)}
+                </p>
+                <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                  {flag.line}
+                </p>
+              </span>
+              <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover/flag:translate-x-0.5" />
             </button>
           ))}
         </div>
@@ -517,7 +522,10 @@ function PortfolioLane({
       <Progress
         value={width}
         className={cn(
-          "mt-4 h-2 bg-secondary [&_[data-slot=progress-indicator]]:bg-primary",
+          // bg-secondary matches this card's own bg-muted exactly, so the
+          // track would be invisible against its own container — darken it
+          // instead so the fill reads as "X% of a whole," not a floating bar.
+          "mt-4 h-2 bg-background/40 [&_[data-slot=progress-indicator]]:bg-primary",
           hot
             ? "[&_[data-slot=progress-indicator]]:bg-gain"
             : "[&_[data-slot=progress-indicator]]:bg-loss"
