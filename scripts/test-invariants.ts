@@ -136,6 +136,7 @@ import { insightWhen, isUsAfterCashClose, sessionMark } from "../src/lib/market-
 import { quotePollMs } from "../src/lib/market/session";
 import {
   isLegacyHost,
+  isNonPublicHost,
   normalizeHostname,
   safeInternalPath,
 } from "../src/lib/site-url";
@@ -1898,6 +1899,8 @@ run("canonical host strips www and rejects off-site next paths", () => {
   assert.ok(isLegacyHost("www.upsidelab.app"));
   assert.ok(isLegacyHost("https://upside-upthink-solutions.vercel.app"));
   assert.ok(!isLegacyHost("upsidelab.app"));
+  assert.ok(isNonPublicHost("ci.upsidelab.test"));
+  assert.ok(!isNonPublicHost("upsidelab.app"));
   assert.equal(safeInternalPath("https://evil.example"), "/");
   assert.equal(safeInternalPath("//evil.example"), "/");
   assert.equal(safeInternalPath("/lab?tab=pulse"), "/lab?tab=pulse");

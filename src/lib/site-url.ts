@@ -10,6 +10,9 @@ import { PRODUCT_DOMAIN } from "@/lib/product";
  * Redirects stay off until one of those envs is set. Shipping a 301 onto a
  * parking page took the live alias down once; do not set them until the
  * domain's nameservers point at this project.
+ *
+ * Reserved TLDs (.test, .example, .invalid, .localhost) are ignored, same as
+ * localhost. GitHub Actions sets NEXT_PUBLIC_SITE_URL=https://ci.upsidelab.test.
  */
 
 const LEGACY_HOSTS = new Set([
@@ -50,6 +53,18 @@ export function isLocalHost(hostname: string): boolean {
   );
 }
 
+/** RFC 2606 / 6761 names. CI sets NEXT_PUBLIC_SITE_URL to *.test; never advertise it. */
+export function isNonPublicHost(hostname: string): boolean {
+  if (isLocalHost(hostname)) return true;
+  const h = normalizeHostname(hostname);
+  return (
+    h.endsWith(".test") ||
+    h.endsWith(".example") ||
+    h.endsWith(".invalid") ||
+    h.endsWith(".localhost")
+  );
+}
+
 function apex(hostname: string): string {
   return hostname.startsWith("www.") ? hostname.slice(4) : hostname;
 }
@@ -70,7 +85,7 @@ export function redirectTarget(): string | null {
   const raw = explicitCanonicalInput();
   if (!raw) return null;
   const h = apex(normalizeHostname(raw));
-  if (!h || isLocalHost(h)) return null;
+  if (!h || isNonPublicHost(h)) return null;
   if (isLegacyHost(h)) return PRODUCT_DOMAIN;
   return h;
 }
