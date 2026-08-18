@@ -1,4 +1,5 @@
 import { requireAuthUser } from "@/lib/supabase/server-auth";
+import { checkRateLimit, rateLimitJson } from "@/lib/rate-limit";
 import { fetchTrendsBatch, MAX_TICKERS } from "@/lib/market/trends-cache";
 import { NextRequest, NextResponse } from "next/server";
 import { observeRoute } from "@/lib/observe-route";
@@ -11,6 +12,11 @@ export const maxDuration = 60;
 async function handlePOST(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
+
+  const limit = checkRateLimit(`trends:${auth.user.id}`, 30, 5 * 60_000);
+  if (!limit.ok) {
+    return rateLimitJson(limit, "Trend requests are limited. Try again in a bit.");
+  }
 
   const parsed = await parseJsonBody(req, trendsPostSchema);
   if (!parsed.ok) return parsed.response;

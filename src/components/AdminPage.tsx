@@ -5,6 +5,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { SignInGate } from "@/components/SignInGate";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
+import { Score, Scoreboard } from "@/components/ui/Panel";
 import { isSuperadminEmail } from "@/lib/auth/superadmin";
 import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
 import { plainError } from "@/lib/plain-error";
@@ -41,6 +42,7 @@ type AdminFunnel = {
   signedIn: number;
   hasSheet: number;
   hasHoldings: number;
+  usedAdvisor: number;
   returned7d: number;
   activated: number;
 };
@@ -233,30 +235,21 @@ export function AdminPage() {
                     Activation
                   </h2>
                   <p className="text-sm text-muted-foreground">
-                    Signed in, has a sheet, has holdings, signed in this week,
-                    and holdings plus a visit in the last 7 days.
+                    Signed in, has a sheet, has holdings, used Margus or Pulse,
+                    signed in this week, and holdings plus a visit in the last
+                    7 days.
                   </p>
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-                    {(
-                      [
-                        ["Signed in", funnel.signedIn],
-                        ["Has a sheet", funnel.hasSheet],
-                        ["Has holdings", funnel.hasHoldings],
-                        ["Visited 7d", funnel.returned7d],
-                        ["Active 7d", funnel.activated],
-                      ] as const
-                    ).map(([label, n]) => (
-                      <div
-                        key={label}
-                        className="rounded-xl glass ring-1 ring-foreground/10 px-3 py-3"
-                      >
-                        <p className="text-lg font-semibold tabular-nums text-foreground">
-                          {n}
-                        </p>
-                        <p className="mt-0.5 text-sm text-muted-foreground">{label}</p>
-                      </div>
-                    ))}
-                  </div>
+                  <Scoreboard cols={2}>
+                    <Score label="Signed in" value={funnel.signedIn} />
+                    <Score label="Has a sheet" value={funnel.hasSheet} />
+                    <Score label="Has holdings" value={funnel.hasHoldings} />
+                    <Score
+                      label="Used Margus or Pulse"
+                      value={funnel.usedAdvisor}
+                    />
+                    <Score label="Visited 7d" value={funnel.returned7d} />
+                    <Score label="Active 7d" value={funnel.activated} />
+                  </Scoreboard>
                 </section>
               )}
 

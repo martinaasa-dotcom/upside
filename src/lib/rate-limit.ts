@@ -127,3 +127,38 @@ export function limitMutationRequest(req: Request): RateLimitResult | null {
     60_000
   );
 }
+
+function isPublicMarketPath(pathname: string): boolean {
+  return pathname === "/api/quotes" || pathname.startsWith("/api/market/");
+}
+
+/**
+ * GET quote and ticker-search endpoints are unauthenticated. Cap by IP so
+ * a scrape loop cannot burn the Yahoo/Twelve Data fallbacks. Memory only;
+ * the CDN still absorbs repeats of the same URL.
+ */
+export function limitPublicMarketRequest(req: Request): RateLimitResult | null {
+  const method = req.method.toUpperCase();
+  if (method !== "GET" && method !== "HEAD") return null;
+  let pathname = "/";
+  try {
+    pathname = new URL(req.url).pathname;
+  } catch {
+    return null;
+  }
+  if (!isPublicMarketPath(pathname)) return null;
+  return checkRateLimit(`mkt:${clientIp(req)}`, 120, 60_000);
+}
+
+export function rateLimitJson(
+  limit: RateLimitResult,
+  error: string
+): Response {
+  return Response.json(
+    { error },
+    {
+      status: 429,
+      headers: { "Retry-After": String(limit.retryAfterSec ?? 60) },
+    }
+  );
+}

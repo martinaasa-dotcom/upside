@@ -192,6 +192,11 @@ import { quotesAreDelayed, quotesStampMs } from "@/lib/market/quote-freshness";
 import { OFFLINE_CACHE_READY } from "@/lib/offline/snapshots";
 import { postJsonOrQueue } from "@/lib/offline/queued-fetch";
 import { markSheetImported } from "@/lib/sheet-import-stamp";
+import {
+  dismissInviteNudge,
+  markInviteOffered,
+  shouldOfferInvite,
+} from "@/lib/invite-nudge";
 import { addPulseStamp } from "@/lib/conviction";
 
 /**
@@ -404,6 +409,8 @@ export function Dashboard() {
   const [confirmResetForecast, setConfirmResetForecast] = useState(false);
   const [csvImportOpen, setCsvImportOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteNudgeOpen, setInviteNudgeOpen] = useState(false);
+  const emptyInviteSeenRef = useRef<Set<string>>(new Set());
   const creatingFirstSheetRef = useRef<Promise<Portfolio | undefined> | null>(
     null
   );
@@ -706,6 +713,30 @@ export function Dashboard() {
     }
     setEoyOverrides(loadEoyOverrides(activePortfolio.id));
   }, [activePortfolio]);
+
+  useEffect(() => {
+    const sheet = inviteSheet;
+    if (!sheet) return;
+    const n = holdings.filter((h) => h.portfolio_id === sheet.id).length;
+    if (n === 0) {
+      emptyInviteSeenRef.current.add(sheet.id);
+      return;
+    }
+    if (!emptyInviteSeenRef.current.has(sheet.id)) return;
+    emptyInviteSeenRef.current.delete(sheet.id);
+    if (
+      !shouldOfferInvite({
+        portfolioId: sheet.id,
+        classroom: Boolean(sheet.classroom_community_id),
+        holdingCountBefore: 0,
+        holdingCountAfter: n,
+      })
+    ) {
+      return;
+    }
+    markInviteOffered(sheet.id);
+    setInviteNudgeOpen(true);
+  }, [inviteSheet, holdings]);
 
   function seedNewSheetPanelDefaults(portfolio: {
     id: string;
@@ -3640,6 +3671,15 @@ export function Dashboard() {
               onOpenCompound={onOpenCompound}
               onOpenCash={onOpenCash}
               onOpenAlerts={onOpenAlerts}
+              inviteNudge={inviteNudgeOpen && source === "supabase"}
+              onInvitePartner={() => {
+                setInviteNudgeOpen(false);
+                setInviteOpen(true);
+              }}
+              onDismissInvite={() => {
+                dismissInviteNudge();
+                setInviteNudgeOpen(false);
+              }}
             />
           </WidgetErrorBoundary>
         ) : (

@@ -1846,8 +1846,12 @@ run("product is Upside Lab on upsidelab.app", () => {
   assert.match(proxy, /redirectTarget/);
   assert.match(proxy, /Content-Security-Policy/);
   assert.match(proxy, /limitMutationRequest/);
+  assert.match(proxy, /limitPublicMarketRequest/);
   const rateLimit = readFileSync("src/lib/rate-limit.ts", "utf8");
   assert.match(rateLimit, /limitMutationRequest/);
+  assert.match(rateLimit, /limitPublicMarketRequest/);
+  const durable = readFileSync("src/lib/rate-limit-durable.ts", "utf8");
+  assert.match(durable, /portfell_rate_take/);
   const parseBody = readFileSync("src/lib/parse-json-body.ts", "utf8");
   assert.match(parseBody, /schema\.safeParse/);
   const demoLock = readFileSync("src/app/api/demo/lock/route.ts", "utf8");
@@ -6363,6 +6367,7 @@ run("legal pages name the operator and match the product", () => {
   assert.match(product, /LEGAL_VAT_ID = "EE102590654"/);
   assert.match(product, /Aiandi tn 8\/2-28/);
   assert.match(product, /PRODUCT_CONTACT_EMAIL = "privacy@upsidelab.app"/);
+  assert.match(product, /PRODUCT_SUPPORT_EMAIL = "support@upsidelab.app"/);
 
   for (const src of [terms, privacy]) {
     assert.match(src, /LEGAL_OPERATOR/);
@@ -6372,6 +6377,8 @@ run("legal pages name the operator and match the product", () => {
     assert.match(src, /LEGAL_VAT_ID/);
     assert.match(src, /PRODUCT_CONTACT_EMAIL/);
     assert.match(src, /Under 13 is never allowed/);
+    assert.match(src, /13 or older/);
+    assert.match(src, /PRODUCT_SUPPORT_EMAIL/);
     assert.match(src, /Classroom/);
     assert.match(src, /paper/);
     assert.doesNotMatch(src, /Martin Aasa/);
@@ -6396,6 +6403,7 @@ run("legal pages name the operator and match the product", () => {
   assert.match(privacy, /household/);
   assert.match(privacy, /Feedback/);
   assert.match(privacy, /Google sets cookies/);
+  assert.match(privacy, /only if you allow/);
   assert.doesNotMatch(privacy, /explicitly ask them to/);
   assert.doesNotMatch(privacy, /not your raw cash balance/);
   assert.doesNotMatch(privacy, /only when you explicitly ask/);
@@ -6404,6 +6412,7 @@ run("legal pages name the operator and match the product", () => {
 run("production telemetry covers crashes, slow routes, and vitals", () => {
   const layout = readFileSync(join(process.cwd(), "src/app/layout.tsx"), "utf8");
   assert.ok(/<WebVitals \/>/.test(layout), "root layout must report web vitals");
+  assert.match(layout, /ConsentedAnalytics/);
   const inst = readFileSync(
     join(process.cwd(), "src/instrumentation.ts"),
     "utf8"

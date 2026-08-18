@@ -2,7 +2,10 @@ import { clearBookCache } from "@/lib/book-cache";
 import { saveLastUser } from "@/lib/last-session";
 import { idbWipe } from "@/lib/offline/idb";
 
-const KEEP_EXACT = new Set(["portfell-locked"]);
+const KEEP_EXACT = new Set([
+  "portfell-locked",
+  "upside-analytics-consent-v1",
+]);
 
 function keepLocalKey(key: string): boolean {
   if (KEEP_EXACT.has(key)) return true;

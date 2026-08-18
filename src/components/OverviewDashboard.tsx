@@ -127,6 +127,9 @@ type Props = {
   /** Empty classroom homework sheet, not a personal book. */
   homework?: boolean;
   homeworkCash?: number;
+  inviteNudge?: boolean;
+  onInvitePartner?: () => void;
+  onDismissInvite?: () => void;
 };
 
 /**
@@ -602,6 +605,9 @@ export const OverviewDashboard = memo(function OverviewDashboard({
   showCommunities = false,
   homework = false,
   homeworkCash,
+  inviteNudge = false,
+  onInvitePartner,
+  onDismissInvite,
 }: Props) {
   const {
     totals,
@@ -741,6 +747,24 @@ export const OverviewDashboard = memo(function OverviewDashboard({
 
   return (
     <div className="flex flex-col gap-6">
+      {inviteNudge && onInvitePartner && (
+        <Panel className="overview-fade">
+          <PanelHeader
+            title="Invite someone who shares this sheet"
+            subtitle="One prompt. You can always find Invite next to Add holding."
+          />
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" onClick={onInvitePartner}>
+              Invite
+            </Button>
+            {onDismissInvite && (
+              <Button type="button" variant="outline" onClick={onDismissInvite}>
+                Not now
+              </Button>
+            )}
+          </div>
+        </Panel>
+      )}
       <div className="overview-fade flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 flex-col gap-1">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">

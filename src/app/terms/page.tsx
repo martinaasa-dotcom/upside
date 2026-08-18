@@ -8,6 +8,7 @@ import {
   LEGAL_VAT_ID,
   PRODUCT_CONTACT_EMAIL,
   PRODUCT_NAME,
+  PRODUCT_SUPPORT_EMAIL,
 } from "@/lib/product";
 import Link from "next/link";
 import { publicPageMetadata } from "@/lib/site-metadata";
@@ -72,8 +73,9 @@ export default function TermsPage() {
         <Section title="3. Your account">
           You sign in with Google. You&apos;re responsible for keeping that
           Google account secure. Anyone with access to it can access your{" "}
-          {PRODUCT_NAME} data. Under 13 is never allowed. Classroom is a
-          teacher-invite paper class (see below), not a brokerage.
+          {PRODUCT_NAME} data. Under 13 is never allowed. You confirm you are
+          13 or older when you sign in. Classroom is a teacher-invite paper
+          class (see below), not a brokerage.
         </Section>
 
         <Section title="4. Classroom">
@@ -160,7 +162,14 @@ export default function TermsPage() {
         </Section>
 
         <Section title="12. Contact">
-          Questions about these terms:{" "}
+          Product help:{" "}
+          <a
+            href={`mailto:${PRODUCT_SUPPORT_EMAIL}`}
+            className="underline hover:text-foreground"
+          >
+            {PRODUCT_SUPPORT_EMAIL}
+          </a>
+          . Questions about these terms:{" "}
           <a
             href={`mailto:${PRODUCT_CONTACT_EMAIL}`}
             className="underline hover:text-foreground"
@@ -182,7 +191,7 @@ export default function TermsPage() {
   );
 }
 
-const LAST_UPDATED = "17 August 2026";
+const LAST_UPDATED = "18 August 2026";
 
 function Section({
   title,

@@ -8,6 +8,7 @@ import {
   LEGAL_VAT_ID,
   PRODUCT_CONTACT_EMAIL,
   PRODUCT_NAME,
+  PRODUCT_SUPPORT_EMAIL,
 } from "@/lib/product";
 import Link from "next/link";
 import { publicPageMetadata } from "@/lib/site-metadata";
@@ -84,7 +85,8 @@ export default function PrivacyPage() {
             <li>
               <strong className="text-foreground">Usage &amp; performance:</strong>{" "}
               page views and load times via Vercel Analytics and Speed
-              Insights. No ads, and no following you across other sites.
+              Insights, only if you allow that measurement. No ads, and no
+              following you across other sites.
             </li>
           </ul>
         </Section>
@@ -156,8 +158,13 @@ export default function PrivacyPage() {
           We use essential cookies from Supabase Auth to keep you signed in.
           When you sign in with Google, Google sets cookies on its own domain
           under Google&apos;s rules. Vercel Analytics and Speed Insights
-          measure page views and load times. They are not advertising
-          cookies, and they do not follow you across other sites.
+          measure page views and load times only if you allow it. You can
+          say no on the banner, or change your mind later in{" "}
+          <Link href="/account" className="underline hover:text-foreground">
+            My account
+          </Link>
+          . They are not advertising cookies, and they do not follow you
+          across other sites.
         </Section>
 
         <Section title="7. Data retention">
@@ -196,7 +203,8 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="10. Children and Classroom">
-          Under 13 is never allowed. {PRODUCT_NAME} is not a brokerage and
+          Under 13 is never allowed. You confirm you are 13 or older when you
+          sign in. {PRODUCT_NAME} is not a brokerage and
           does not open a real trading account. Classroom is a private paper
           class: a teacher invites students, each student gets homework cash
           and an empty sheet, and real books cannot be shared into the class.
@@ -211,7 +219,14 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="12. Contact">
-          Questions, data requests, or concerns:{" "}
+          Product help:{" "}
+          <a
+            href={`mailto:${PRODUCT_SUPPORT_EMAIL}`}
+            className="underline hover:text-foreground"
+          >
+            {PRODUCT_SUPPORT_EMAIL}
+          </a>
+          . Questions, data requests, or concerns:{" "}
           <a
             href={`mailto:${PRODUCT_CONTACT_EMAIL}`}
             className="underline hover:text-foreground"
@@ -233,7 +248,7 @@ export default function PrivacyPage() {
   );
 }
 
-const LAST_UPDATED = "17 August 2026";
+const LAST_UPDATED = "18 August 2026";
 
 function Section({
   title,

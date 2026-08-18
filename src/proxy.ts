@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { buildContentSecurityPolicy } from "@/lib/security-headers";
-import { limitMutationRequest } from "@/lib/rate-limit";
+import { limitMutationRequest, limitPublicMarketRequest } from "@/lib/rate-limit";
 import {
   isLegacyHost,
   isLocalHost,
@@ -43,7 +43,8 @@ export async function proxy(request: NextRequest) {
   }
 
   if (isApi) {
-    const limited = limitMutationRequest(request);
+    const limited =
+      limitMutationRequest(request) ?? limitPublicMarketRequest(request);
     if (limited && !limited.ok) {
       const blocked = NextResponse.json(
         { error: "Too many requests. Try again in a minute." },

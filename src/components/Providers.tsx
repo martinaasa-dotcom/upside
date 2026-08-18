@@ -1,6 +1,7 @@
 "use client";
 
 import { AuthProvider } from "@/components/AuthProvider";
+import { AnalyticsConsentBanner } from "@/components/AnalyticsConsentBanner";
 import { FeedbackHost } from "@/components/FeedbackHost";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { OfflineRuntime } from "@/components/OfflineRuntime";
@@ -40,6 +41,7 @@ export function Providers({ children }: { children: ReactNode }) {
           Skip to content
         </a>
         <OfflineBanner />
+        <AnalyticsConsentBanner />
         <FeedbackHost>
           <WorkspaceShell>{children}</WorkspaceShell>
         </FeedbackHost>

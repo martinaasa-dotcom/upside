@@ -14,7 +14,9 @@ import {
 } from "@/lib/ai/model";
 import { fetchPulseContexts } from "@/lib/market/ticker-context";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { rateLimitJson } from "@/lib/rate-limit";
+import { takeDurableRateLimit } from "@/lib/rate-limit-durable";
+import { stampAdvisorUse } from "@/lib/advisor-use";
 import { isRecord } from "@/lib/unknown";
 import {
   convertToModelMessages,
@@ -27,7 +29,6 @@ import {
   type ToolSet,
   type UIMessage,
 } from "ai";
-import { NextResponse } from "next/server";
 import { observeRoute } from "@/lib/observe-route";
 import { chatPostSchema } from "@/lib/api-schemas";
 import { parseJsonBody } from "@/lib/parse-json-body";
@@ -120,13 +121,14 @@ async function handlePOST(req: Request) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
-  const limit = checkRateLimit(`chat:${auth.user.id}`, 30, 5 * 60_000);
+  const limit = await takeDurableRateLimit(`chat:${auth.user.id}`, 30, 5 * 60_000);
   if (!limit.ok) {
-    return NextResponse.json(
-      { error: "You're sending messages faster than Margus can keep up. Give it a few seconds." },
-      { status: 429, headers: { "Retry-After": String(limit.retryAfterSec ?? 15) } }
+    return rateLimitJson(
+      limit,
+      "You're sending messages faster than Margus can keep up. Give it a few seconds."
     );
   }
+  stampAdvisorUse(auth.user.id);
   markChatActive();
 
   try {

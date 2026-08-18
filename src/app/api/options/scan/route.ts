@@ -3,7 +3,8 @@ import { scanCoveredCall } from "@/lib/market/covered-call";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { rateLimitJson } from "@/lib/rate-limit";
+import { takeDurableRateLimit } from "@/lib/rate-limit-durable";
 import { isRecord, readFiniteNumber, readString } from "@/lib/unknown";
 import { NextRequest, NextResponse } from "next/server";
 import { observeRoute } from "@/lib/observe-route";
@@ -34,11 +35,11 @@ async function handlePOST(req: NextRequest) {
     }
   }
 
-  const limit = checkRateLimit(`options-scan:${auth.user.id}`, 30, 5 * 60_000);
+  const limit = await takeDurableRateLimit(`options-scan:${auth.user.id}`, 30, 5 * 60_000);
   if (!limit.ok) {
-    return NextResponse.json(
-      { error: "Options scan is rate-limited. Try again shortly." },
-      { status: 429, headers: { "Retry-After": String(limit.retryAfterSec ?? 15) } }
+    return rateLimitJson(
+      limit,
+      "Options scan is rate-limited. Try again shortly."
     );
   }
 

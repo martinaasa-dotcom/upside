@@ -1,4 +1,5 @@
 import { isSuperadminEmail } from "@/lib/auth/superadmin";
+import { funnelFromUsers, type AdminFunnel } from "@/lib/admin-funnel";
 import {
   createSupabaseServerAuth,
   requireAuthUser,
@@ -22,17 +23,10 @@ type OverviewUser = {
   profile_created_at: string | null;
   profile_updated_at: string | null;
   last_sign_in_at: string | null;
+  last_advisor_at: string | null;
   email_confirmed_at: string | null;
   portfolios: { id: string; name: string }[];
   holding_count: number;
-};
-
-export type AdminFunnel = {
-  signedIn: number;
-  hasSheet: number;
-  hasHoldings: number;
-  returned7d: number;
-  activated: number;
 };
 
 type OverviewMember = {
@@ -66,7 +60,7 @@ async function loadViaServiceRole(): Promise<{
 
   const { data: profiles, error: pErr } = await supabase
     .from(PORTFELL_TABLES.profiles)
-    .select("id, email, display_name, avatar_url, bio, created_at, updated_at")
+    .select("id, email, display_name, avatar_url, bio, created_at, updated_at, last_advisor_at")
     .order("created_at", { ascending: false });
   if (pErr) throw new Error(pErr.message);
 
@@ -158,6 +152,7 @@ async function loadViaServiceRole(): Promise<{
     bio: string | null;
     created_at: string | null;
     updated_at: string | null;
+    last_advisor_at: string | null;
   }[]).map((p) => ({
     id: p.id,
     email: p.email,
@@ -167,6 +162,7 @@ async function loadViaServiceRole(): Promise<{
     profile_created_at: p.created_at,
     profile_updated_at: p.updated_at,
     last_sign_in_at: signInById.get(p.id) ?? null,
+    last_advisor_at: p.last_advisor_at,
     email_confirmed_at: null,
     portfolios: portfoliosByUser.get(p.id) ?? [],
     holding_count: (portfoliosByUser.get(p.id) ?? []).reduce(
@@ -229,24 +225,6 @@ async function loadViaServiceRole(): Promise<{
   });
 
   return { users, communities: communityRows, funnel: funnelFromUsers(users) };
-}
-
-function funnelFromUsers(users: OverviewUser[]): AdminFunnel {
-  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-  const signedIn = users.length;
-  const hasSheet = users.filter((u) => (u.portfolios?.length ?? 0) > 0).length;
-  const hasHoldings = users.filter((u) => (u.holding_count ?? 0) > 0).length;
-  const returned7d = users.filter((u) => {
-    if (!u.last_sign_in_at) return false;
-    const t = Date.parse(u.last_sign_in_at);
-    return Number.isFinite(t) && t >= weekAgo;
-  }).length;
-  const activated = users.filter((u) => {
-    if ((u.holding_count ?? 0) <= 0 || !u.last_sign_in_at) return false;
-    const t = Date.parse(u.last_sign_in_at);
-    return Number.isFinite(t) && t >= weekAgo;
-  }).length;
-  return { signedIn, hasSheet, hasHoldings, returned7d, activated };
 }
 
 async function handleGET() {

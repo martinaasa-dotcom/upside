@@ -27,6 +27,13 @@ import {
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { cn } from "@/lib/format";
 import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
+import { PRODUCT_SUPPORT_EMAIL } from "@/lib/product";
+import {
+  ANALYTICS_CONSENT_EVENT,
+  loadAnalyticsConsent,
+  saveAnalyticsConsent,
+  type AnalyticsConsent,
+} from "@/lib/analytics-consent";
 import { plainError } from "@/lib/plain-error";
 import {
   last7DaysStrip,
@@ -119,6 +126,15 @@ export function AccountPage() {
   const [noteSunday, setNoteSunday] = useState(false);
   const [morningSaved, setMorningSaved] = useState(false);
   const [morningCanSend, setMorningCanSend] = useState(false);
+  const [analyticsConsent, setAnalyticsConsent] =
+    useState<AnalyticsConsent | null>(null);
+
+  useEffect(() => {
+    const sync = () => setAnalyticsConsent(loadAnalyticsConsent());
+    sync();
+    window.addEventListener(ANALYTICS_CONSENT_EVENT, sync);
+    return () => window.removeEventListener(ANALYTICS_CONSENT_EVENT, sync);
+  }, []);
 
   useEffect(() => {
     setDisplayName(profile?.display_name ?? "");
@@ -312,6 +328,22 @@ export function AccountPage() {
             <Button type="button" onClick={openManual}>
               Tell Upside
             </Button>
+          </section>
+
+          <section className="flex flex-col gap-3 rounded-xl glass ring-1 ring-foreground/10 p-6">
+            <h2 className="text-base font-medium tracking-tight text-foreground">
+              Help
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              A question about the app, not a data request. Mail{" "}
+              <a
+                href={`mailto:${PRODUCT_SUPPORT_EMAIL}`}
+                className="underline hover:text-foreground"
+              >
+                {PRODUCT_SUPPORT_EMAIL}
+              </a>
+              .
+            </p>
           </section>
 
           <VisitStreakCard />
@@ -599,6 +631,19 @@ export function AccountPage() {
                   Your data, your call. Export it or wipe it any time.
                 </p>
               </div>
+            </div>
+
+            <div className="flex items-start gap-2 text-sm text-foreground">
+              <Checkbox
+                id="analytics-consent"
+                checked={analyticsConsent === "allow"}
+                onCheckedChange={(v) =>
+                  saveAnalyticsConsent(v === true ? "allow" : "deny")
+                }
+              />
+              <label htmlFor="analytics-consent">
+                Measure page views and load times. Sign-in cookies always run.
+              </label>
             </div>
 
             <Item className="px-0">

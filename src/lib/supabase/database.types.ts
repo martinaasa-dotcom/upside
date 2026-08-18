@@ -881,6 +881,7 @@ export type Database = {
           experience_tier: string | null
           id: string
           knows_options: boolean | null
+          last_advisor_at: string | null
           morning_note: boolean
           note_morning: boolean
           note_sunday: boolean
@@ -896,6 +897,7 @@ export type Database = {
           experience_tier?: string | null
           id: string
           knows_options?: boolean | null
+          last_advisor_at?: string | null
           morning_note?: boolean
           note_morning?: boolean
           note_sunday?: boolean
@@ -911,6 +913,7 @@ export type Database = {
           experience_tier?: string | null
           id?: string
           knows_options?: boolean | null
+          last_advisor_at?: string | null
           morning_note?: boolean
           note_morning?: boolean
           note_sunday?: boolean
@@ -982,6 +985,10 @@ export type Database = {
         Returns: string
       }
       portfell_primary_email: { Args: { em: string }; Returns: string }
+      portfell_rate_take: {
+        Args: { p_key: string; p_limit: number; p_window_ms: number }
+        Returns: Json
+      }
       portfell_redeem_community_invite: {
         Args: { p_token_hash: string }
         Returns: Json

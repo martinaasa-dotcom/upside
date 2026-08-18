@@ -13,7 +13,9 @@ import {
 import { forecastPlanSchema } from "@/lib/forecast-plan-schema";
 import type { ForecastModel } from "@/lib/forecast";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { rateLimitJson } from "@/lib/rate-limit";
+import { takeDurableRateLimit } from "@/lib/rate-limit-durable";
+import { stampAdvisorUse } from "@/lib/advisor-use";
 import { generateObject } from "ai";
 import { observeRoute } from "@/lib/observe-route";
 import { forecastPostSchema } from "@/lib/api-schemas";
@@ -39,13 +41,14 @@ async function handlePOST(req: Request) {
   if (!parsed.ok) return parsed.response;
   const body = parsed.data;
 
-  const limit = checkRateLimit(`forecast:${auth.user.id}`, 12, 10 * 60_000);
+  const limit = await takeDurableRateLimit(`forecast:${auth.user.id}`, 12, 10 * 60_000);
   if (!limit.ok) {
-    return Response.json(
-      { error: "Forecast requests are limited. Try again in a bit." },
-      { status: 429, headers: { "Retry-After": String(limit.retryAfterSec ?? 30) } }
+    return rateLimitJson(
+      limit,
+      "Forecast requests are limited. Try again in a bit."
     );
   }
+  stampAdvisorUse(auth.user.id);
 
   const portfolioId = String(body.portfolioId ?? "");
   const portfolioName = String(body.portfolioName ?? "Portfolio");

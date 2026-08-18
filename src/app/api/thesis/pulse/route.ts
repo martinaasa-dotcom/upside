@@ -13,7 +13,8 @@ import { MARGUS_PERSONA } from "@/lib/ai/margus-persona";
 import { insightsPromptBlock } from "@/lib/book-insights";
 import { fetchPulseContexts } from "@/lib/market/ticker-context";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { takeDurableRateLimit } from "@/lib/rate-limit-durable";
+import { stampAdvisorUse } from "@/lib/advisor-use";
 import {
   buildFallbackPulseCheck,
   formatMovePct,
@@ -257,7 +258,7 @@ async function handlePOST(req: Request) {
     return reuseCachedPulse(candidates, cachedMap, headlines);
   }
 
-  const limit = checkRateLimit(`pulse:${auth.user.id}`, 12, 10 * 60_000);
+  const limit = await takeDurableRateLimit(`pulse:${auth.user.id}`, 12, 10 * 60_000);
   if (!limit.ok) {
     return reuseCachedPulse(candidates, cachedMap, headlines);
   }
@@ -271,6 +272,7 @@ async function handlePOST(req: Request) {
     return reuseCachedPulse(candidates, cachedMap, headlines);
   }
   const heldSlot = true;
+  stampAdvisorUse(auth.user.id);
 
   const uncachedTickers = uncachedCandidates.map((c) => pulseTickerKey(c.ticker));
   const contexts = await fetchPulseContexts(uncachedTickers, { force });

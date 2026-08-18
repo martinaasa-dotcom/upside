@@ -6,6 +6,7 @@ import { UpsideLogo } from "@/components/UpsideLogo";
 import { InsightText, MicroLabel, Panel, Pill, Reading } from "@/components/ui/Panel";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/format";
@@ -17,6 +18,7 @@ import {
 } from "@/lib/invite-landing";
 import {
   PRODUCT_NAME,
+  PRODUCT_SUPPORT_EMAIL,
   PRODUCT_SENTENCE,
   SIGNIN_POINTS,
   SIGNIN_WHO,
@@ -46,6 +48,7 @@ export function SignInGate({ children }: Props) {
   );
   const loadingMessage = useLoadingMessage();
   const [invite, setInvite] = useState<InviteLanding | null>(null);
+  const [ageOk, setAgeOk] = useState(false);
   const needsAuth = supabaseIsConfigured();
 
   useEffect(() => {
@@ -157,12 +160,22 @@ export function SignInGate({ children }: Props) {
               })}
             </ul>
 
+            <label className="signin-rise-3 mt-10 flex max-w-sm items-start gap-2.5 text-left text-sm leading-relaxed text-muted-foreground">
+              <Checkbox
+                checked={ageOk}
+                onCheckedChange={(v) => setAgeOk(v === true)}
+                className="mt-0.5"
+                aria-label="I am 13 or older"
+              />
+              <span>I am 13 or older.</span>
+            </label>
+
             <Button
               type="button"
               size="lg"
-              disabled={busy}
+              disabled={busy || !ageOk}
               onClick={() => void onSignIn()}
-              className="signin-rise-3 mt-10 h-11 w-full max-w-sm gap-2.5 rounded-full text-base shadow-[0_18px_40px_-16px_var(--primary)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[0_22px_50px_-14px_var(--primary)] md:w-auto md:min-w-[17rem]"
+              className="signin-rise-3 mt-4 h-11 w-full max-w-sm gap-2.5 rounded-full text-base shadow-[0_18px_40px_-16px_var(--primary)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[0_22px_50px_-14px_var(--primary)] md:w-auto md:min-w-[17rem]"
             >
               {busy ? <Spinner data-icon="inline-start" /> : <GoogleMark />}
               {busy ? "Redirecting …" : "Continue with Google"}
@@ -183,7 +196,14 @@ export function SignInGate({ children }: Props) {
               <Link href="/privacy" className="underline hover:text-muted-foreground">
                 Privacy policy
               </Link>
-              . Not financial advice.
+              . Not financial advice. Help:{" "}
+              <a
+                href={`mailto:${PRODUCT_SUPPORT_EMAIL}`}
+                className="underline hover:text-muted-foreground"
+              >
+                {PRODUCT_SUPPORT_EMAIL}
+              </a>
+              .
             </p>
           </div>
 

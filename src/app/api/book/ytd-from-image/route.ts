@@ -4,7 +4,9 @@ import {
   withAdvisorFallback,
 } from "@/lib/ai/model";
 import { startNavFromYtdPct } from "@/lib/market/assumed-nav";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { rateLimitJson } from "@/lib/rate-limit";
+import { takeDurableRateLimit } from "@/lib/rate-limit-durable";
+import { stampAdvisorUse } from "@/lib/advisor-use";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { generateObject } from "ai";
 import { NextResponse } from "next/server";
@@ -54,11 +56,11 @@ async function handlePOST(req: Request) {
   const startedAt = Date.now();
   const auth = await requireAuthUser();
   const userKey = "error" in auth ? "anon" : auth.user.id;
-  const limit = checkRateLimit(`ytd-image:${userKey}`, 8, 10 * 60_000);
+  const limit = await takeDurableRateLimit(`ytd-image:${userKey}`, 8, 10 * 60_000);
   if (!limit.ok) {
-    return NextResponse.json(
-      { error: "That's enough screenshots for now. Try again in a bit." },
-      { status: 429, headers: { "Retry-After": String(limit.retryAfterSec ?? 30) } }
+    return rateLimitJson(
+      limit,
+      "That's enough screenshots for now. Try again in a bit."
     );
   }
 
@@ -103,6 +105,7 @@ async function handlePOST(req: Request) {
 
   const liveNav = Number(form.get("liveNav"));
   const bytes = new Uint8Array(await file.arrayBuffer());
+  if (!("error" in auth)) stampAdvisorUse(auth.user.id);
 
   try {
     const { object } = await withAdvisorFallback(

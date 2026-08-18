@@ -125,6 +125,7 @@ describe("session storage keep list", () => {
   it("keeps the demo Save lock and demo seeds", () => {
     expect(keepLocalKey("portfell-locked")).toBe(true);
     expect(keepLocalKey("portfell-demo-v8")).toBe(true);
+    expect(keepLocalKey("upside-analytics-consent-v1")).toBe(true);
     expect(keepLocalKey("upside-last-user-v1")).toBe(false);
     expect(keepLocalKey("upside-book-cache-v1")).toBe(false);
   });
