@@ -119,7 +119,7 @@ export const ComparisonChart = memo(function ComparisonChart({
         <div className="relative">
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-11 bg-gradient-to-r from-card/75 from-30% to-transparent"
+            className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-11 bg-gradient-to-r from-card/85 from-30% to-transparent"
           />
           <ChartYAxis
             overlay

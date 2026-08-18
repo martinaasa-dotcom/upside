@@ -83,13 +83,13 @@ function RangeMeter({
           aria-valuemin={low}
           aria-valuemax={high}
           aria-valuenow={price}
-          aria-label="Where today's price sits in the recent range, from cooled-off (green) to stretched (rose)"
+          aria-label="Where today's price sits in the recent range, from the low (rose) to the high (green)"
         >
           <span
             className="absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-background"
             style={{
               left: `${pos * 100}%`,
-              backgroundColor: `color-mix(in oklch, var(--gain) ${(1 - pos) * 100}%, var(--loss) ${pos * 100}%)`,
+              backgroundColor: `color-mix(in oklch, var(--gain) ${pos * 100}%, var(--loss) ${(1 - pos) * 100}%)`,
             }}
           />
         </div>

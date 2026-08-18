@@ -74,7 +74,7 @@ export function AppHeader({
     <>
       <header
         className={cn(
-          "fixed top-0 right-0 left-0 z-40 hidden bg-background/95 backdrop-blur md:block",
+          "fixed top-0 right-0 left-0 z-40 hidden bg-background/75 backdrop-blur-xl md:block",
           className
         )}
       >
@@ -113,7 +113,7 @@ export function AppHeader({
           </div>
         </div>
       </header>
-      <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-30 bg-background/95 backdrop-blur md:fixed md:top-14 md:right-0 md:left-0 md:z-40">
+      <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-30 bg-background/75 backdrop-blur-xl md:fixed md:top-14 md:right-0 md:left-0 md:z-40">
         <AppStatusStrip {...status} />
       </div>
       <div className={PAGE_CHROME_SPACER_CLASS} aria-hidden />
