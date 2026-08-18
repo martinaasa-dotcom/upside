@@ -21,7 +21,8 @@
     "test:watch": "vitest",
     "dr:export": "npx tsx scripts/export-cold-snapshot.ts",
     "dr:restore": "npx tsx scripts/restore-snapshot.ts",
-    "migrate:online": "npx tsx scripts/migrate-online.ts"
+    "migrate:online": "npx tsx scripts/migrate-online.ts",
+    "screenshot": "node scripts/screenshot.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.36",
@@ -61,6 +62,7 @@
     "eslint-config-next": "16.3.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.1.6",
+    "playwright": "^1.62.1",
     "sharp": "^0.35.3",
     "tailwindcss": "^4",
     "typescript": "^5",
