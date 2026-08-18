@@ -921,6 +921,7 @@ export function CommunityView({ communityId }: Props) {
     emoji: string;
     title: string;
     winner: string;
+    winnerId: string;
     stat: string;
     description: string;
   };
@@ -937,6 +938,7 @@ export function CommunityView({ communityId }: Props) {
       emoji: "🌐",
       title: "Most spread out",
       winner: mostDiversified.name,
+      winnerId: mostDiversified.id,
       stat: `${mostDiversified.personality!.diversificationScore}/100`,
       description: "Most spread-out portfolio in the circle.",
     });
@@ -949,6 +951,7 @@ export function CommunityView({ communityId }: Props) {
       emoji: "🔥",
       title: "Hottest portfolio",
       winner: mostRisk.name,
+      winnerId: mostRisk.id,
       stat: `${mostRisk.personality!.riskScore}/100`,
       description: "The jumpiest mix of names in the circle.",
     });
@@ -961,6 +964,7 @@ export function CommunityView({ communityId }: Props) {
       emoji: "🛡️",
       title: "The Steady Hand",
       winner: steadiest.name,
+      winnerId: steadiest.id,
       stat: `${steadiest.personality!.riskScore}/100`,
       description: "Calmest portfolio in the circle.",
     });
@@ -974,6 +978,7 @@ export function CommunityView({ communityId }: Props) {
         emoji: "🎯",
         title: "Biggest bet",
         winner: mostConviction.name,
+        winnerId: mostConviction.id,
         stat: `${mostConviction.personality!.convictionScore}%${
           mostConviction.personality!.topTicker
             ? ` ${cashtag(mostConviction.personality!.topTicker)}`
@@ -992,6 +997,7 @@ export function CommunityView({ communityId }: Props) {
         emoji: "🗺️",
         title: "Most kinds of stocks",
         winner: mostThemes.name,
+        winnerId: mostThemes.id,
         stat: `${mostThemes.personality!.themeCount} groups`,
         description: "Holds the most different kinds of businesses.",
       });
@@ -1006,6 +1012,7 @@ export function CommunityView({ communityId }: Props) {
         emoji: "💧",
         title: "Most cash",
         winner: mostCash.name,
+        winnerId: mostCash.id,
         stat: `${mostCash.personality!.cashPct}% cash`,
         description: "Largest cash stash relative to the portfolio.",
       });
@@ -1022,6 +1029,7 @@ export function CommunityView({ communityId }: Props) {
         emoji: "⬡",
         title: "One-kind diet",
         winner: mostSpecialist.name,
+        winnerId: mostSpecialist.id,
         stat: `${mostSpecialist.personality!.specialistScore}%`,
         description: "Heaviest bet on one kind of business.",
       });
@@ -1038,6 +1046,7 @@ export function CommunityView({ communityId }: Props) {
         emoji: "🏦",
         title: "Largest portfolio",
         winner: biggestBook.name,
+        winnerId: biggestBook.id,
         stat: currency(biggestBook.totalValue, 0),
         description: "Largest portfolio in the circle.",
       });
@@ -1046,6 +1055,7 @@ export function CommunityView({ communityId }: Props) {
         emoji: "🌱",
         title: "Small but Mighty",
         winner: smallestBook.name,
+        winnerId: smallestBook.id,
         stat: currency(smallestBook.totalValue, 0),
         description: "Smallest portfolio. Every circle has a sapling.",
       });
@@ -1060,6 +1070,7 @@ export function CommunityView({ communityId }: Props) {
         emoji: "🏁",
         title: "On the Doorstep",
         winner: closestToGoal.name,
+        winnerId: closestToGoal.id,
         stat: `${currency(closestToGoal.milestone.remaining, 0)} away`,
         description: `Closest to hitting ${currency(closestToGoal.milestone.next ?? 0, 0)}.`,
       });
@@ -1843,9 +1854,14 @@ export function CommunityView({ communityId }: Props) {
                       </div>
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                         {achievements.map((a) => (
-                          <div
+                          <button
                             key={a.id}
-                            className="card-sheen glass-well flex flex-col gap-1.5 rounded-lg p-3 ring-1 ring-foreground/10"
+                            type="button"
+                            onClick={() => {
+                              setSelectedOwnerId(a.winnerId);
+                              setSelectedPortfolioId(null);
+                            }}
+                            className="card-sheen glass-well flex w-full flex-col gap-1.5 rounded-lg p-3 text-left ring-1 ring-foreground/10 transition hover:scale-[1.01] hover:bg-accent hover:ring-primary/25"
                           >
                             <div className="flex items-center gap-2">
                               <span
@@ -1870,7 +1886,7 @@ export function CommunityView({ communityId }: Props) {
                             <p className="text-sm leading-relaxed text-muted-foreground">
                               {a.description}
                             </p>
-                          </div>
+                          </button>
                         ))}
                       </div>
                     </section>
