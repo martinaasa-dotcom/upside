@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
-import { getStripe, stripeWebhookSecret } from "@/lib/stripe";
+import { getStripe, stripeSubscriptionFields, stripeWebhookSecret } from "@/lib/stripe";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { observeRoute } from "@/lib/observe-route";
@@ -82,21 +82,9 @@ async function handlePOST(req: Request) {
   return NextResponse.json({ received: true });
 
   async function syncSubscription(customerId: string, subscription: Stripe.Subscription) {
-    const item = subscription.items.data[0];
-    const currentPeriodEnd = item?.current_period_end
-      ? new Date(item.current_period_end * 1000).toISOString()
-      : null;
-    const plan = item?.price?.nickname ?? item?.price?.lookup_key ?? null;
-
     const { error } = await supabase!
       .from(PORTFELL_TABLES.profiles)
-      .update({
-        stripe_subscription_id: subscription.id,
-        subscription_status: subscription.status,
-        plan,
-        current_period_end: currentPeriodEnd,
-        updated_at: new Date().toISOString(),
-      })
+      .update(stripeSubscriptionFields(subscription))
       .eq("stripe_customer_id", customerId);
 
     if (error) {

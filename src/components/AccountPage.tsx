@@ -68,6 +68,7 @@ import { useTimeout } from "@/lib/use-timeout";
 import { useCallback, useEffect, useState } from "react";
 import { useHydratedCache } from "@/lib/use-hydrated-cache";
 import { UpgradeButton } from "@/components/billing/UpgradeButton";
+import { toast } from "sonner";
 
 function VisitStreakCard() {
   const [streak] = useHydratedCache<VisitStreakState | null>(
@@ -144,6 +145,15 @@ export function AccountPage() {
     setAvatarUrl(profile?.avatar_url ?? "");
     setAvatarBroken(false);
   }, [profile]);
+
+  useEffect(() => {
+    // Plain browser API instead of useSearchParams() -- same reasoning as
+    // SignInGate's deletedNotice: avoids a Suspense boundary for a one-time
+    // post-checkout notice.
+    if (new URLSearchParams(window.location.search).get("upgraded") !== "1") return;
+    toast.success("You're on Upside Lab Pro now.");
+    router.replace("/account", { scroll: false });
+  }, [router]);
 
   useEffect(() => {
     const ctrl = new AbortController();

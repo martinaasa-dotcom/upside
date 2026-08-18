@@ -34,3 +34,23 @@ export function stripeErrorMessage(err: unknown): string {
   if (err instanceof Stripe.errors.StripeError) return err.message;
   return "Something went wrong talking to Stripe.";
 }
+
+/** The portfell_profiles columns that mirror a Stripe subscription's state. */
+export function stripeSubscriptionFields(subscription: Stripe.Subscription): {
+  stripe_subscription_id: string;
+  subscription_status: string;
+  plan: string | null;
+  current_period_end: string | null;
+  updated_at: string;
+} {
+  const item = subscription.items.data[0];
+  return {
+    stripe_subscription_id: subscription.id,
+    subscription_status: subscription.status,
+    plan: item?.price?.nickname ?? item?.price?.lookup_key ?? null,
+    current_period_end: item?.current_period_end
+      ? new Date(item.current_period_end * 1000).toISOString()
+      : null,
+    updated_at: new Date().toISOString(),
+  };
+}
