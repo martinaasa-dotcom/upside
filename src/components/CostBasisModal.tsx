@@ -45,7 +45,7 @@ export function CostBasisModal({
         aria-label="Close"
         onClick={onClose}
       />
-      <div className="relative flex max-h-full w-full max-w-lg flex-col overflow-hidden rounded-xl bg-popover ring-1 ring-foreground/10">
+      <div className="relative flex max-h-full w-full max-w-lg flex-col overflow-hidden rounded-xl bg-popover ring-1 ring-foreground/18">
         <div className="flex items-start justify-between gap-3 border-b border-border px-6 py-4">
           <div>
             <h3 className="text-base font-semibold text-foreground">

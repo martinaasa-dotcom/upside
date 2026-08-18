@@ -2278,9 +2278,9 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
     panel.slice(panel.indexOf("export function Reading")),
     /bg-paper/
   );
-  assert.match(panel, /default: "card-sheen glass ring-foreground\/10"/);
+  assert.match(panel, /default: "card-sheen glass ring-foreground\/18"/);
   assert.match(panel, /rounded-lg bg-border/);
-  assert.match(panel, /SCORE_CELL =\n  "card-sheen glass min-w-0 rounded-xl p-6 ring-1 ring-foreground\/10"/);
+  assert.match(panel, /SCORE_CELL =\n  "card-sheen glass min-w-0 rounded-xl p-6 ring-1 ring-foreground\/18"/);
   assert.doesNotMatch(
     panel.slice(panel.indexOf("export function Stat")),
     /h-full rounded-xl/
@@ -2402,12 +2402,12 @@ run("boxes sit off the field, never the same color as the page", () => {
   assert.match(panel, /export const BOX/);
   assert.match(panel, /export const CARD/);
   assert.match(panel, /export const LIST/);
-  assert.match(panel, /rounded-xl text-sm text-card-foreground ring-1 ring-foreground\/10/);
+  assert.match(panel, /rounded-xl text-sm text-card-foreground ring-1 ring-foreground\/18/);
   assert.match(
     members,
-    /divide-y divide-border overflow-hidden rounded-xl glass ring-1 ring-foreground\/10/
+    /divide-y divide-border overflow-hidden rounded-xl glass ring-1 ring-foreground\/18/
   );
-  assert.match(share, /rounded-xl glass ring-1 ring-foreground\/10 p-6/);
+  assert.match(share, /rounded-xl glass ring-1 ring-foreground\/18 p-6/);
   assert.deepEqual(
     offendersOf(/bg-card\/(?:80|50)\b/),
     [],

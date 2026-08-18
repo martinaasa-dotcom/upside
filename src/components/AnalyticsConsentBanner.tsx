@@ -30,7 +30,7 @@ export function AnalyticsConsentBanner() {
       aria-label="Performance measurement"
       className="fixed z-50 left-[max(0.75rem,env(safe-area-inset-left))] right-[max(0.75rem,env(safe-area-inset-right))] bottom-[max(0.75rem,calc(var(--dock-pad,5.5rem)+0.5rem))] md:left-auto md:w-[22rem]"
     >
-      <div className="flex flex-col gap-3 rounded-xl glass ring-1 ring-foreground/10 p-4">
+      <div className="flex flex-col gap-3 rounded-xl glass ring-1 ring-foreground/18 p-4">
         <p className="text-sm leading-relaxed text-foreground">
           Page views and load times help keep the app fast. Sign-in cookies
           always run. Performance measurement is optional.

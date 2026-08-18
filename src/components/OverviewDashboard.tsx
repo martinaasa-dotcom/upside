@@ -343,10 +343,10 @@ function DriverTile({
     </>
   );
   const shellClass = cn(
-    "group relative flex h-full min-w-0 flex-col justify-center gap-1.5 overflow-hidden rounded-lg p-6 text-left transition",
+    "group relative flex h-full min-w-0 flex-col justify-center gap-1.5 overflow-hidden rounded-lg p-6 text-left ring-1 transition",
     nested
-      ? "glass-well"
-      : cn("card-sheen glass ring-1", isUp ? "ring-gain/20" : "ring-loss/20"),
+      ? "glass-well ring-foreground/12"
+      : cn("card-sheen glass", isUp ? "ring-gain/20" : "ring-loss/20"),
     onOpen &&
       (nested
         ? "hover:scale-[1.01] hover:bg-accent/70 active:scale-[0.995]"
@@ -512,7 +512,7 @@ function MorningStack({
                 key={flag.ticker}
                 type="button"
                 onClick={() => onOpenPulse?.(flag.ticker)}
-                className="group/flag glass-well flex w-full items-center gap-4 rounded-lg p-4 text-left transition hover:scale-[1.01] hover:bg-accent/70 active:scale-[0.995]"
+                className="group/flag glass-well flex w-full items-center gap-4 rounded-lg p-4 text-left ring-1 ring-foreground/12 transition hover:scale-[1.01] hover:bg-accent/70 active:scale-[0.995]"
               >
                 <span className="min-w-0 flex-1">
                   <p className="text-sm font-semibold tracking-tight text-foreground">
@@ -612,7 +612,7 @@ function PortfolioLane({
     <button
       type="button"
       onClick={onOpen}
-      className="card-sheen glass-well group flex w-full flex-col gap-4 rounded-lg p-6 text-left ring-1 ring-foreground/10 transition hover:scale-[1.01] hover:bg-accent hover:ring-primary/25"
+      className="card-sheen glass-well group flex w-full flex-col gap-4 rounded-lg p-6 text-left ring-1 ring-foreground/18 transition hover:scale-[1.01] hover:bg-accent hover:ring-primary/25"
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
