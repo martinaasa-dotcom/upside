@@ -2597,6 +2597,11 @@ run("signed-in pages share one column so rooms do not jump", () => {
   );
   assert.match(strip, /min-h-10/);
   assert.match(strip, /sm:h-10/);
+  const macroStrip = readFileSync(
+    join(process.cwd(), "src/components/MacroStrip.tsx"),
+    "utf8"
+  );
+  assert.doesNotMatch(macroStrip, />\s*Markets\s*</);
   const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
   assert.match(css, /scrollbar-gutter:\s*stable/);
   const dash = readFileSync(

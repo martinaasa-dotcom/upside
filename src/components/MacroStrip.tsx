@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { isAbortError } from "@/lib/abort";
 import type { FearGreedSnapshot } from "@/lib/market/fear-greed";
 import { fearGreedTone } from "@/lib/market/fear-greed";
@@ -13,7 +13,6 @@ import {
   type MacroNumbers,
 } from "@/lib/paint-cache";
 import { useHydratedCache } from "@/lib/use-hydrated-cache";
-import { Button } from "@/components/ui/button";
 
 type Macro = MacroNumbers;
 type MacroPayload = Parameters<typeof macroFromQuotesPayload>[0];
@@ -58,7 +57,6 @@ function fmt(n: number | null, digits = 2) {
 }
 
 export function MacroStrip() {
-  const [open, setOpen] = useState(true);
   const [macro, setMacro] = useHydratedCache<Macro>(readCachedMacro, EMPTY_MACRO);
   const [fearGreed, setFearGreed] = useHydratedCache<FearGreedSnapshot | null>(
     () => loadMacroPaint()?.fearGreed ?? null,
@@ -66,7 +64,6 @@ export function MacroStrip() {
   );
 
   useEffect(() => {
-    if (!open) return;
     const ctrl = new AbortController();
     const applyMacro = (payload: MacroPayload) => {
       if (ctrl.signal.aborted) return;
@@ -118,7 +115,7 @@ export function MacroStrip() {
       ctrl.abort();
       window.clearTimeout(timer);
     };
-  }, [open, setFearGreed, setMacro]);
+  }, [setFearGreed, setMacro]);
 
   const items = [
     fearGreed
@@ -162,29 +159,14 @@ export function MacroStrip() {
 
   return (
     <div className="flex min-w-0 flex-1 flex-col items-stretch gap-2 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-end sm:gap-3">
-      <div className="flex min-w-0 items-center justify-start gap-2 sm:justify-end">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-        >
-          Markets
-        </Button>
-        {open && (
-          <div className="relative hidden min-w-0 flex-1 overflow-hidden sm:block">
-            <div className="ml-auto flex w-fit items-center gap-3 rounded-md border border-border bg-muted/50 px-3 py-1 font-mono text-xs tabular-nums">
-              {itemNodes}
-            </div>
-          </div>
-        )}
-      </div>
-      {open && (
-        <div className="grid grid-cols-3 gap-x-2 gap-y-1 rounded-md border border-border bg-muted/50 px-3 py-1 pb-1.5 font-mono tabular-nums sm:hidden">
+      <div className="relative hidden min-w-0 flex-1 overflow-hidden sm:block">
+        <div className="ml-auto flex w-fit items-center gap-3 rounded-md border border-border bg-muted/50 px-3 py-1 font-mono text-xs tabular-nums">
           {itemNodes}
         </div>
-      )}
+      </div>
+      <div className="grid grid-cols-3 gap-x-2 gap-y-1 rounded-md border border-border bg-muted/50 px-3 py-1 pb-1.5 font-mono tabular-nums sm:hidden">
+        {itemNodes}
+      </div>
     </div>
   );
 }
