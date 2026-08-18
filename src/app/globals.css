@@ -208,43 +208,63 @@ body {
 @layer utilities {
   /*
    * Card sheen — a hairline top highlight, the way a pane of glass catches
-   * light along its top edge rather than glowing all over. Deliberately
-   * subtle: an inset box-shadow, not a gradient fill, so it reads as an
-   * edge detail and composes cleanly with `.glass`'s translucent
-   * background-color underneath instead of a visible banded wash.
+   * light along its top edge rather than glowing all over. Some call sites
+   * use it alone (no translucent fill under it), so it carries its own
+   * box-shadow rather than assuming `.glass` is always present.
    */
   .card-sheen {
     box-shadow: inset 0 1px 0 0 color-mix(in oklch, white, transparent 88%);
   }
 
   /*
-   * Glass surface — the standard treatment for every top-level card/panel.
-   * Translucent instead of a flat opaque fill so the ambient glow
-   * (`.page-frame::before`) shows through, blurred, instead of stopping dead
-   * at the card edge. Backdrop-filter with no fallback is fine: browsers
-   * without support just render the translucent fill, which still reads
-   * fine over the mostly-flat black field.
+   * Glass surface — the standard translucent treatment for every top-level
+   * card/panel, plus the crisp all-round edge line and outer lift shadow
+   * that make it read as a genuinely distinct pane instead of translucency
+   * fading into the black field (the same two-stroke idea PopoverContent
+   * uses with a real `border`). Backdrop-filter with no fallback is fine:
+   * browsers without support just render the translucent fill, which still
+   * reads fine over the mostly-flat black field.
    *
-   * The real `border` here (on top of whichever `ring-foreground/*` each
-   * call site also carries) is deliberate, not redundant: it's the same
-   * two-stroke recipe PopoverContent already uses (`border border-border
-   * ... ring-1 ring-foreground/20`), which is the one surface in the app
-   * that reads as a genuinely crisp pane of glass instead of translucency
-   * that just fades into the black field. Applying it once here means
-   * every `.glass`/`.glass-well` call site gets that same edge for free.
+   * The edge/shadow live on `box-shadow`, never a real `border` property:
+   * `border` is a shorthand for all four sides, so a call site that adds
+   * its own directional border utility on top (e.g. PulseCard's
+   * `border-l-4 border-destructive` accent bar) would have that silently
+   * swallowed by whichever of the two same-specificity classes happens to
+   * come later in the compiled stylesheet — `box-shadow` never touches
+   * `border`/`border-*`, so directional border utilities keep working
+   * untouched on any `.glass` call site.
+   *
+   * `.card-sheen.glass` (both classes on one element, true at every call
+   * site that also wants the top-highlight) layers all three shadows in
+   * one box-shadow list — `box-shadow` is atomic, so `.card-sheen` and
+   * `.glass` each setting it separately would just have the later one in
+   * the stylesheet replace the other instead of combining.
    */
   .glass {
     background-color: color-mix(in oklch, var(--card), transparent 48%);
-    border: 1px solid var(--border);
     backdrop-filter: blur(28px) saturate(1.6);
     -webkit-backdrop-filter: blur(28px) saturate(1.6);
-    box-shadow: 0 12px 32px -16px color-mix(in oklch, black, transparent 15%);
+    box-shadow:
+      inset 0 0 0 1px var(--border),
+      0 12px 32px -16px color-mix(in oklch, black, transparent 15%);
+  }
+  .card-sheen.glass {
+    box-shadow:
+      inset 0 1px 0 0 color-mix(in oklch, white, transparent 88%),
+      inset 0 0 0 1px var(--border),
+      0 12px 32px -16px color-mix(in oklch, black, transparent 15%);
   }
   .glass-well {
     background-color: color-mix(in oklch, var(--muted), transparent 50%);
-    border: 1px solid color-mix(in oklch, var(--border), transparent 35%);
     backdrop-filter: blur(16px) saturate(1.4);
     -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    box-shadow: inset 0 0 0 1px
+      color-mix(in oklch, var(--border), transparent 35%);
+  }
+  .card-sheen.glass-well {
+    box-shadow:
+      inset 0 1px 0 0 color-mix(in oklch, white, transparent 88%),
+      inset 0 0 0 1px color-mix(in oklch, var(--border), transparent 35%);
   }
 }
 
