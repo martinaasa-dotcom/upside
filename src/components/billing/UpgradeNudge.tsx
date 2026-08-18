@@ -112,10 +112,11 @@ export function UpgradeNudge({
           </span>
           <DialogTitle className="mt-1">Upside Lab Pro</DialogTitle>
           <DialogDescription className="text-sm leading-relaxed">
-            Pro gets you everything — every feature, every edge, the whole
-            beautiful machine. Okay, just kidding — it&apos;s twelve euros a
-            month to help support the person building this, right now.
-            That&apos;s the whole pitch.
+            Upgrading to Pro gets you nothing new (literally, not a single
+            feature), but it does come with the smell of fresh coffee in the
+            morning, flipping to the cool side of the pillow, and a small army
+            of imaginary puppies. On a serious note, it&apos;s twelve euros a
+            month to directly support Upside making this. Pretty solid deal.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="sm:justify-start">

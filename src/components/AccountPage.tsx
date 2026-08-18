@@ -387,13 +387,14 @@ export function AccountPage() {
             ) : (
               <div className="flex flex-col gap-1">
                 <p className="text-sm font-medium text-foreground">
-                  Pro gets you everything. Every feature, every edge, the whole
-                  beautiful machine.
+                  Upgrading to Pro gets you nothing new (literally, not a
+                  single feature), but it does come with the smell of fresh
+                  coffee in the morning, flipping to the cool side of the
+                  pillow, and a small army of imaginary puppies.
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Okay, just kidding — it&apos;s twelve euros a month to help
-                  support the person building this, right now. That&apos;s
-                  the whole pitch.
+                  On a serious note, it&apos;s twelve euros a month to
+                  directly support Upside making this. Pretty solid deal.
                 </p>
               </div>
             )}
