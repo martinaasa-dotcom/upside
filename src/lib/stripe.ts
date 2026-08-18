@@ -35,6 +35,23 @@ export function stripeErrorMessage(err: unknown): string {
   return "Something went wrong talking to Stripe.";
 }
 
+/** Test-mode ids left on a live key (or the other way around) 404 like this. */
+export function isMissingStripeCustomer(err: unknown): boolean {
+  if (err instanceof Stripe.errors.StripeError) {
+    return err.code === "resource_missing" || /no such customer/i.test(err.message);
+  }
+  if (!(err instanceof Error)) return false;
+  return /no such customer/i.test(err.message);
+}
+
+export const CLEARED_BILLING_PATCH = {
+  stripe_customer_id: null,
+  stripe_subscription_id: null,
+  subscription_status: null,
+  plan: null,
+  current_period_end: null,
+} as const;
+
 /** The portfell_profiles columns that mirror a Stripe subscription's state. */
 export function stripeSubscriptionFields(subscription: Stripe.Subscription): {
   stripe_subscription_id: string;

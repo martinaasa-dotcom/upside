@@ -2,7 +2,14 @@ import { NextResponse } from "next/server";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
-import { getStripe, stripeErrorMessage, stripePriceId, stripeSubscriptionFields } from "@/lib/stripe";
+import {
+  CLEARED_BILLING_PATCH,
+  getStripe,
+  isMissingStripeCustomer,
+  stripeErrorMessage,
+  stripePriceId,
+  stripeSubscriptionFields,
+} from "@/lib/stripe";
 import { isActiveSubscription } from "@/lib/billing-status";
 import { observeRoute } from "@/lib/observe-route";
 
@@ -114,6 +121,16 @@ async function handlePOST(req: Request) {
 
     return NextResponse.json({ url: session.url });
   } catch (err) {
+    if (isMissingStripeCustomer(err) && profile?.stripe_customer_id) {
+      await supabase
+        .from(PORTFELL_TABLES.profiles)
+        .update({ ...CLEARED_BILLING_PATCH, updated_at: new Date().toISOString() })
+        .eq("id", auth.user.id);
+      return NextResponse.json(
+        { error: "That billing account is gone. Refresh, then use Upgrade." },
+        { status: 409 }
+      );
+    }
     return NextResponse.json({ error: stripeErrorMessage(err) }, { status: 502 });
   }
 }
