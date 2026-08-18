@@ -932,7 +932,7 @@ export const ForecastPanel = memo(function ForecastPanel({
   }, [labReady, planHydrated, model.rows, plan, fullyCovered, busy, cachedTickers, retryTick]);
 
   return (
-    <section className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
+    <section className="overflow-hidden rounded-xl glass ring-1 ring-foreground/10">
       <header className="border-b border-border p-6">
         <PanelHeader
           title="Forecast"

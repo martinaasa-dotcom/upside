@@ -120,31 +120,32 @@ import {
  * consultant's slide; "Price path" reads like a person wrote it.
  */
 
-/** Page-level box. shadcn Card shell: ring, not a gold hairline. */
+/** Page-level box. shadcn Card shell: ring, not a gold hairline. Glass:
+ * translucent + blurred so the ambient page glow shows through. */
 export const BOX =
-  "card-sheen rounded-xl bg-card text-sm text-card-foreground ring-1 ring-foreground/10";
+  "card-sheen glass rounded-xl text-sm text-card-foreground ring-1 ring-foreground/10";
 /** Nested well inside a box. Not a second card, and not for static facts. */
-export const CARD = "rounded-lg bg-muted";
+export const CARD = "glass-well rounded-lg";
 /** Panel padding. Comfortable density, same on phone and desktop. */
 export const PANEL_PAD = "p-6";
 /** Nested card / score-cell padding. Same step as the panel. */
 export const NESTED_PAD = "p-6";
 /** A Scoreboard cell. Separate card on the field, not a hairline slice. */
 export const SCORE_CELL =
-  "card-sheen min-w-0 rounded-xl bg-card p-6 ring-1 ring-foreground/10";
+  "card-sheen glass min-w-0 rounded-xl p-6 ring-1 ring-foreground/10";
 /** Member / row list on the field. */
 export const LIST =
-  "divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10";
+  "glass divide-y divide-border overflow-hidden rounded-xl ring-1 ring-foreground/10";
 /** Anchored ticker/search menu. Popover fill plus a real edge on black. */
 export const SUGGEST_MENU =
   "absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/20";
 
 const SHELL_TONES = {
-  default: "card-sheen bg-card ring-foreground/10",
-  plain: "card-sheen bg-card ring-foreground/10",
-  brand: "card-sheen bg-card ring-primary/20",
-  warn: "card-sheen bg-card ring-warning/35",
-  danger: "card-sheen bg-card ring-destructive/30",
+  default: "card-sheen glass ring-foreground/10",
+  plain: "card-sheen glass ring-foreground/10",
+  brand: "card-sheen glass ring-primary/20",
+  warn: "card-sheen glass ring-warning/35",
+  danger: "card-sheen glass ring-destructive/30",
 } as const;
 
 const FIGURE =
@@ -358,8 +359,8 @@ export function Reading({
     <div
       className={cn(
         nested
-          ? "rounded-lg bg-muted text-foreground"
-          : "rounded-xl bg-card text-foreground ring-1 ring-foreground/10",
+          ? "glass-well rounded-lg text-foreground"
+          : "card-sheen glass rounded-xl text-foreground ring-1 ring-foreground/10",
         "p-6",
         className
       )}
@@ -1006,7 +1007,7 @@ export function EmptyState({
   return (
     <Empty
       className={cn(
-        "flex-none border border-dashed border-border bg-card px-8 py-8",
+        "glass flex-none border border-dashed border-border px-8 py-8",
         className
       )}
     >

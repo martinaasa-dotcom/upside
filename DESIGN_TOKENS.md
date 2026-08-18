@@ -24,7 +24,7 @@ they're not the gap.
 | `--radius` | `0.625rem` | Unchanged; standard shadcn scale, already used everywhere. |
 | `--gain` / `--loss` | `oklch(0.696 0.17 162.48)` / `oklch(0.645 0.246 16.439)` | Semantic, not brand — explicitly out of scope for the accent retirement. Crisp emerald/rose, used only for gains/losses. |
 
-## What actually changed: `--primary`
+## Pass 1: gold → violet (superseded — see Pass 2 below)
 
 Old: `oklch(0.762 0.102 80)` — "Gold Delta," hue 80° (gold/amber territory).
 This is the color the muddy `bg-amber-950/20`-style tinted card washes and
@@ -61,14 +61,62 @@ New: `--warning` / `--chart-3`: `oklch(0.63 0.22 45)`.
 
 | Color | Token(s) | Allowed for |
 |---|---|---|
-| Violet | `--primary`, `--ring`, `--sidebar-primary`, `--sidebar-ring` | Primary buttons, focus rings, active/selected states, the main chart line/gradient, icon-badge accents (landing page bullet icons), card ring accents. This is the one brand accent. |
+| Warm yellow | `--primary`, `--ring`, `--sidebar-primary`, `--sidebar-ring` | Primary buttons, focus rings, active/selected states, the main chart line/gradient, icon-badge accents (landing page bullet icons), card ring accents. This is the one brand accent. |
 | Orange | `--warning`, `--chart-3` | Caution/warning states only (e.g. Pulse alert badges). Not a general-purpose accent — don't reach for it decoratively. |
 | Emerald | `--gain` | Gains only. Semantic, not brand. |
 | Rose | `--loss` / `--destructive` | Losses and destructive actions only. Semantic, not brand. |
 
 Four colors total, three of them semantic single-purpose (warning/gain/loss)
-and one general brand accent (violet). Nothing else gets a new color
+and one general brand accent (warm yellow). Nothing else gets a new color
 without adding a row here first.
+
+## Pass 2: violet → subtle warm yellow, plus glass surfaces
+
+The violet from Pass 1 (above) tested live and didn't land — the request
+this time was explicitly "white, or a subtle yellowish tone," landing on
+the yellow option. New value: `--primary: oklch(0.8 0.09 90)` (was
+`oklch(0.62 0.24 291)`). Lower chroma and a hue further from orange than
+the original "Gold Delta" (`oklch(0.762 0.102 80)`, hue 80°) — this reads
+as a quiet warm neutral, not a bright brand color, and sits far enough
+from `--warning`'s hue 45° that the two don't get confused.
+`--primary-foreground` moves back to near-black (`oklch(0.145 0 0)`), same
+reasoning as the original gold: light backgrounds need dark text.
+
+Same pass added two shared utility classes in `globals.css`:
+
+- **`.glass`** — `background-color: color-mix(in oklch, var(--card),
+  transparent 25%)` plus `backdrop-filter: blur(20px)`. The standard fill
+  for every top-level card/panel (`BOX`, `SCORE_CELL`, `SHELL_TONES`,
+  `LIST`, `Reading`, the shadcn `Card` primitive, and the hand-rolled
+  `bg-card ring-1 ring-foreground/10` pattern that recurred across ~13
+  files) — translucent instead of opaque so the ambient corner glow shows
+  through, blurred, instead of stopping dead at the card edge.
+- **`.glass-well`** — same idea for nested `bg-muted` wells, lighter
+  translucency (35% transparent), no blur of its own (it's already inside
+  a blurred ancestor).
+- **`.card-sheen`** changed from a `--card`-to-lighter-`--card` gradient
+  to a white-to-transparent specular wash. The old version's stops were
+  both opaque, so layering it over `.glass`'s translucent
+  `background-color` would have fully re-opaqued the card (`background-
+  image` paints over `background-color`) and silently cancelled the glass
+  effect. The new version never references `--card` at all, so it composes
+  with either an opaque or translucent base underneath.
+
+The ambient glow itself (`.page-frame::before`) also got stronger — 16%/12%
+opacity and 1200px/900px radii became 30%/22% and 1600px/1400px — since
+translucent cards dilute whatever glow sits behind them, and the ask was
+explicitly to see it through the cards, not just in the gutters between
+them.
+
+The button `default` variant's gradient changed from a two-stop
+lighten-toward-white wash to a three-stop highlight/base/shadow gradient
+(`white 25%` → base → `black 15%`) plus an inset top highlight
+(`box-shadow: inset 0 1px 0 ...`). The old version mixed a *light* primary
+toward white, which reads as almost no gradient at all — the fix for "no
+button looking boxes" (Pass 2) is not the same fix as "buttons look flat
+and gray" (this pass); the former was about affordance, this one is about
+the gradient having enough dynamic range to read as a lit surface instead
+of two adjacent shades of pale.
 
 ## Removed as dead code
 

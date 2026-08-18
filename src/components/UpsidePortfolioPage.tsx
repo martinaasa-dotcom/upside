@@ -1444,7 +1444,7 @@ export function UpsidePortfolioPage() {
                     return i === 0 ? (
                       <article
                         key={r.id}
-                        className="flex flex-col gap-2 rounded-xl bg-card ring-1 ring-foreground/10 p-6"
+                        className="flex flex-col gap-2 rounded-xl glass ring-1 ring-foreground/10 p-6"
                       >
                         <div className="flex flex-wrap items-baseline justify-between gap-2">
                           <RecapMeta r={r} />
@@ -1457,7 +1457,7 @@ export function UpsidePortfolioPage() {
                     ) : (
                       <details
                         key={r.id}
-                        className="group overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10"
+                        className="group overflow-hidden rounded-xl glass ring-1 ring-foreground/10"
                       >
                         <summary className="flex list-none flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 hover:bg-muted/50 [&::-webkit-details-marker]:hidden">
                           <ChevronRight
@@ -1490,7 +1490,7 @@ export function UpsidePortfolioPage() {
                 Daily reports
               </h2>
               {reports.length === 0 ? (
-                <p className="rounded-xl bg-card ring-1 ring-foreground/10 px-4 py-6 text-center text-sm text-muted-foreground">
+                <p className="rounded-xl glass ring-1 ring-foreground/10 px-4 py-6 text-center text-sm text-muted-foreground">
                   No reports yet. Margus&apos;s first daily decision runs
                   after today&apos;s market close.
                 </p>
@@ -1508,7 +1508,7 @@ export function UpsidePortfolioPage() {
                     return i === 0 ? (
                       <article
                         key={r.id}
-                        className="flex flex-col gap-2 rounded-xl bg-card ring-1 ring-foreground/10 p-6"
+                        className="flex flex-col gap-2 rounded-xl glass ring-1 ring-foreground/10 p-6"
                       >
                         <div className="flex flex-wrap items-baseline justify-between gap-2">
                           <ReportMeta r={r} />
@@ -1521,7 +1521,7 @@ export function UpsidePortfolioPage() {
                     ) : (
                       <details
                         key={r.id}
-                        className="group overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10"
+                        className="group overflow-hidden rounded-xl glass ring-1 ring-foreground/10"
                       >
                         <summary className="flex list-none flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 hover:bg-muted/50 [&::-webkit-details-marker]:hidden">
                           <ChevronRight
@@ -1554,7 +1554,7 @@ export function UpsidePortfolioPage() {
                 <h2 className="text-2xl font-semibold tracking-tight text-foreground">
                   Closed positions - {closedHoldings.length}
                 </h2>
-                <ul className="divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
+                <ul className="divide-y divide-border overflow-hidden rounded-xl glass ring-1 ring-foreground/10">
                   {closedHoldings.map((h) => (
                     <li key={h.id} className="px-4 py-2.5 text-sm">
                       <div className="flex items-baseline justify-between gap-2">

@@ -1617,7 +1617,7 @@ export function CommunityView({ communityId }: Props) {
                   </p>
                 ) : null}
                 {isClassroom && !myClassSheet ? (
-                  <div className="flex flex-wrap items-center gap-2 rounded-xl bg-card ring-1 ring-foreground/10 px-6 py-4">
+                  <div className="flex flex-wrap items-center gap-2 rounded-xl glass ring-1 ring-foreground/10 px-6 py-4">
                     <p className="min-w-0 flex-1 text-sm text-foreground">
                       {isAdmin
                         ? "You are watching the class. Get a paper portfolio if you want to trade alongside them."
@@ -1778,7 +1778,7 @@ export function CommunityView({ communityId }: Props) {
                     </WidgetErrorBoundary>
                   )}
                   {effectiveView === "play" && membersWithBooks.length > 0 && (
-                    <section className="overview-fade order-3 rounded-xl bg-card ring-1 ring-foreground/10 p-6">
+                    <section className="overview-fade order-3 rounded-xl glass ring-1 ring-foreground/10 p-6">
                       <div className="mb-4 flex items-start justify-between gap-3">
                         <div className="flex items-center gap-2.5">
                           <div className="rounded-xl bg-muted p-2 text-primary">
@@ -1827,7 +1827,7 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {effectiveView === "play" && achievements.length > 0 && (
-                    <section className="overview-fade order-2 rounded-xl bg-card ring-1 ring-foreground/10 p-6">
+                    <section className="overview-fade order-2 rounded-xl glass ring-1 ring-foreground/10 p-6">
                       <div className="mb-4 flex items-center gap-2.5">
                         <div className="rounded-lg bg-muted p-2 text-muted-foreground">
                           <Award className="size-4" />
@@ -1845,11 +1845,11 @@ export function CommunityView({ communityId }: Props) {
                         {achievements.map((a) => (
                           <div
                             key={a.id}
-                            className="card-sheen flex flex-col gap-2 rounded-lg bg-muted p-4"
+                            className="card-sheen glass-well flex flex-col gap-2 rounded-lg p-4 ring-1 ring-foreground/10"
                           >
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2.5">
                               <span
-                                className="text-2xl leading-none"
+                                className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-lg leading-none"
                                 aria-hidden
                               >
                                 {a.emoji}
@@ -1877,7 +1877,7 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {effectiveView === "overview" && membersWithBooks.length > 0 && (
-                    <section className="overview-fade order-1 rounded-xl bg-card ring-1 ring-foreground/10 p-6">
+                    <section className="overview-fade order-1 rounded-xl glass ring-1 ring-foreground/10 p-6">
                       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-2.5">
                           <div className="rounded-xl bg-muted p-2 text-primary">
@@ -1977,7 +1977,7 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {effectiveView === "overview" && !isClassroom && sharedNames.length > 0 && (
-                    <section className="overview-fade order-4 rounded-xl bg-card ring-1 ring-foreground/10 p-6">
+                    <section className="overview-fade order-4 rounded-xl glass ring-1 ring-foreground/10 p-6">
                       <div className="mb-4 flex items-center gap-2.5">
                         <div className="rounded-xl bg-gain/15 p-2 text-gain">
                           <Layers className="h-4 w-4" />
@@ -2008,7 +2008,7 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {effectiveView === "play" && communityThemeBreakdown.length > 0 && (
-                    <section className="overview-fade order-5 rounded-xl bg-card ring-1 ring-foreground/10 p-6">
+                    <section className="overview-fade order-5 rounded-xl glass ring-1 ring-foreground/10 p-6">
                       <div className="mb-4 flex items-center gap-2.5">
                         <div className="rounded-xl bg-muted p-2 text-primary">
                           <PieChart className="h-4 w-4" />
@@ -2049,7 +2049,7 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {effectiveView === "play" && (
-                  <section className="overview-fade order-6 rounded-xl bg-card ring-1 ring-foreground/10 p-6">
+                  <section className="overview-fade order-6 rounded-xl glass ring-1 ring-foreground/10 p-6">
                     <div className="mb-4 flex items-center justify-between gap-2.5">
                       <div className="flex items-center gap-2.5">
                         <div className="rounded-xl bg-muted p-2 text-primary">
@@ -2135,7 +2135,7 @@ export function CommunityView({ communityId }: Props) {
                       <Users className="h-4 w-4 text-muted-foreground" />
                       Members
                     </h2>
-                    <ul className="divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
+                    <ul className="divide-y divide-border overflow-hidden rounded-xl glass ring-1 ring-foreground/10">
                       {members.map((m) => {
                         const sheetIds = new Set(
                           ownership
@@ -3248,7 +3248,7 @@ function ReadOnlyHoldings({
         </p>
       ) : (
         <>
-          <div className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 md:hidden">
+          <div className="overflow-hidden rounded-xl glass ring-1 ring-foreground/10 md:hidden">
             <FluidTable template={tableCols(2, mixedListings)}>
               <FluidRow>
                 <div
@@ -3301,7 +3301,7 @@ function ReadOnlyHoldings({
               </FluidRow>
             </FluidTable>
           </div>
-          <div className="hidden overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 md:block">
+          <div className="hidden overflow-hidden rounded-xl glass ring-1 ring-foreground/10 md:block">
             <FluidTable template={tableCols(6, mixedListings)}>
               <FluidRow>
                 <div

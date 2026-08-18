@@ -339,8 +339,8 @@ run("power animals each keep their own color", () => {
   assert.ok(ANIMAL_CARD_TONE.octopus?.bar.includes("violet"));
   assert.ok(ANIMAL_CARD_TONE.fox?.bar.includes("orange"));
   assert.ok(!bars.some((bar) => /brand|mustard|gain|loss|muted/.test(bar)));
-  assert.equal(PALETTE.brand, "#8d5bff");
-  assert.equal(PALETTE.bronze, "#8d5bff");
+  assert.equal(PALETTE.brand, "#d4bc79");
+  assert.equal(PALETTE.bronze, "#d4bc79");
   assert.equal(PALETTE.teal, "#2dd4bf");
   assert.equal(PALETTE.steel, "#60a5fa");
   assert.equal(PALETTE.gain, "#34d399");
@@ -1783,7 +1783,7 @@ run("circle awards are a grid of cards, not a flat divided list", () => {
   );
   const awards = community.slice(awardsStart, awardsEnd);
   assert.match(awards, /grid grid-cols-1 gap-3 sm:grid-cols-2/);
-  assert.match(awards, /rounded-lg bg-muted p-4/);
+  assert.match(awards, /glass-well flex flex-col gap-2 rounded-lg p-4/);
   assert.doesNotMatch(awards, /<ItemGroup/);
   assert.doesNotMatch(awards, /<ItemSeparator/);
   assert.doesNotMatch(awards, /bg-pink-500/);
@@ -2176,7 +2176,7 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
     "utf8"
   );
   assert.match(css, /--background: oklch\(0 0 0\)/);
-  assert.match(css, /--primary: oklch\(0\.62 0\.24 291\)/);
+  assert.match(css, /--primary: oklch\(0\.8 0\.09 90\)/);
   assert.match(css, /--card: oklch\(0\.205 0 0\)/);
   assert.match(css, /--radius: 0\.625rem/);
   assert.match(css, /--gain:/);
@@ -2199,7 +2199,7 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
   assert.doesNotMatch(css, /--border: rgb\(237 232 220/);
   assert.doesNotMatch(css, /#d6ad69/);
   assert.doesNotMatch(css, /#dcad55/);
-  assert.match(palette, /brand: "#8d5bff"/);
+  assert.match(palette, /brand: "#d4bc79"/);
   assert.match(palette, /gain: "#34d399"/);
   assert.match(panel, /export function Reading/);
   assert.match(panel, /export function ScanList/);
@@ -2208,15 +2208,15 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
   assert.doesNotMatch(panel, /\(up\|down\)\(\\s\+about/);
   assert.match(
     panel.slice(panel.indexOf("export function Reading")),
-    /rounded-lg bg-muted/
+    /glass-well rounded-lg/
   );
   assert.doesNotMatch(
     panel.slice(panel.indexOf("export function Reading")),
     /bg-paper/
   );
-  assert.match(panel, /default: "card-sheen bg-card ring-foreground\/10"/);
+  assert.match(panel, /default: "card-sheen glass ring-foreground\/10"/);
   assert.match(panel, /rounded-lg bg-border/);
-  assert.match(panel, /SCORE_CELL =\n  "card-sheen min-w-0 rounded-xl bg-card p-6 ring-1 ring-foreground\/10"/);
+  assert.match(panel, /SCORE_CELL =\n  "card-sheen glass min-w-0 rounded-xl p-6 ring-1 ring-foreground\/10"/);
   assert.doesNotMatch(
     panel.slice(panel.indexOf("export function Stat")),
     /h-full rounded-xl/
@@ -2338,12 +2338,12 @@ run("boxes sit off the field, never the same color as the page", () => {
   assert.match(panel, /export const BOX/);
   assert.match(panel, /export const CARD/);
   assert.match(panel, /export const LIST/);
-  assert.match(panel, /rounded-xl bg-card text-sm text-card-foreground ring-1 ring-foreground\/10/);
+  assert.match(panel, /rounded-xl text-sm text-card-foreground ring-1 ring-foreground\/10/);
   assert.match(
     members,
-    /divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-foreground\/10/
+    /divide-y divide-border overflow-hidden rounded-xl glass ring-1 ring-foreground\/10/
   );
-  assert.match(share, /rounded-xl bg-card ring-1 ring-foreground\/10 p-6/);
+  assert.match(share, /rounded-xl glass ring-1 ring-foreground\/10 p-6/);
   assert.deepEqual(
     offendersOf(/bg-card\/(?:80|50)\b/),
     [],
@@ -3172,7 +3172,7 @@ run("Worth noticing names the two groups in plain English", () => {
   );
   assert.match(
     overview,
-    /<p className="text-base leading-relaxed text-foreground">\s*\{morning\.sentence\}/
+    /<Reading className="text-base leading-relaxed">\s*\{morning\.sentence\}/
   );
   const header = overview.slice(
     overview.indexOf("{morning.moveLabel}"),
