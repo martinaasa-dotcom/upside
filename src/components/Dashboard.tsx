@@ -343,7 +343,7 @@ function resolveSheetIdFromUrl(
 
 export function Dashboard() {
   const { push: toast } = useToast();
-  const { profile, signOut, refresh, user } = useAuth();
+  const { profile, signOut, refresh, user, ready: authReady } = useAuth();
   const { openManual } = useFeedback();
   const later = useTimeout();
   const router = useRouter();
@@ -358,6 +358,13 @@ export function Dashboard() {
   const [saveFlash, setSaveFlash] = useState(false);
   const [locked, setLocked] = useState(false);
   const [activeId, setActiveId] = useState<string>(OVERVIEW_TAB_ID);
+  // The mount layout effect below resolves the real starting tab from the
+  // URL/cache and calls setActiveId — but the URL write-back effect (which
+  // depends on activeId) can run its first pass against the OVERVIEW_TAB_ID
+  // placeholder before that update lands, stripping ?tab=pulse (etc.) from
+  // the URL before it was ever read. This ref keeps the write-back effect
+  // from touching the URL until the real initial tab has been resolved.
+  const initialSheetResolvedRef = useRef(false);
   const [quotes, setQuotes] = useState<Record<string, Quote>>({});
   const [options, setOptions] = useState<Record<string, OptionCandidate | null>>(
     {}
@@ -473,6 +480,7 @@ export function Dashboard() {
       bookFetchedAtRef.current = cached.fetchedAt;
       const fromUrl = resolveSheetIdFromUrl(book.portfolios, takeOpenTab());
       setActiveId(fromUrl ?? OVERVIEW_TAB_ID);
+      initialSheetResolvedRef.current = true;
     } else {
       if (signedIn) {
         setSource("supabase");
@@ -484,6 +492,7 @@ export function Dashboard() {
       }
       const fromUrl = resolveSheetIdFromUrl([], takeOpenTab());
       setActiveId(fromUrl ?? OVERVIEW_TAB_ID);
+      initialSheetResolvedRef.current = true;
     }
     const cachedQuotes = loadCachedQuotes();
     setQuotes(cachedQuotes.quotes);
@@ -1458,6 +1467,14 @@ export function Dashboard() {
   }, [activeId, ccVisible]);
 
   useEffect(() => {
+    // Skip until auth has actually settled and the mount layout effect has
+    // resolved the real starting tab. The layout effect's dependency on
+    // `user?.id` means it runs once with that value still undefined (auth
+    // resolving) and again once it settles to its final id/null — and this
+    // effect's own first pass can land in between, with activeId still on
+    // its OVERVIEW_TAB_ID placeholder, stripping a deep-linked ?tab= from
+    // the URL before it was ever actually read.
+    if (!authReady || !initialSheetResolvedRef.current) return;
     saveActiveSheetId(activeId);
     if (typeof window === "undefined") return;
     // Hidden keep-alive Dashboard still runs this. Do not rewrite Fund or
@@ -1509,7 +1526,7 @@ export function Dashboard() {
     }
 
     window.history.pushState(state, "", href);
-  }, [activeId, portfolios]);
+  }, [activeId, portfolios, authReady]);
 
   useEffect(() => {
     function onPopState(e: PopStateEvent) {
