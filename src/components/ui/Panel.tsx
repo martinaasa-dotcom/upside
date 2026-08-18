@@ -23,6 +23,7 @@ import {
   ItemDescription,
   ItemGroup,
   ItemMedia,
+  ItemSeparator,
   ItemTitle,
 } from "@/components/ui/item";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -37,6 +38,7 @@ import { cn, signedPercent, splitMoveTint } from "@/lib/format";
 import { ChevronRight, Info, Minus, TrendingDown, TrendingUp } from "lucide-react";
 import {
   Children,
+  Fragment,
   type CSSProperties,
   type ReactNode,
 } from "react";
@@ -470,16 +472,18 @@ export function ScanList({
 }) {
   const mixedListings = listingCurrenciesAreMixed(rows);
   const list = (
-    <ItemGroup>
-      {rows.map((row) => (
-        <ScanRow
-          key={row.ticker}
-          ticker={row.ticker}
-          text={row.text}
-          movePct={row.movePct}
-          mixedListings={mixedListings}
-          onOpen={onOpen}
-        />
+    <ItemGroup className={onOpen ? undefined : "gap-0"}>
+      {rows.map((row, i) => (
+        <Fragment key={row.ticker}>
+          {!onOpen && i > 0 ? <ItemSeparator /> : null}
+          <ScanRow
+            ticker={row.ticker}
+            text={row.text}
+            movePct={row.movePct}
+            mixedListings={mixedListings}
+            onOpen={onOpen}
+          />
+        </Fragment>
       ))}
     </ItemGroup>
   );
@@ -589,7 +593,7 @@ function ScanRow({
     );
   }
 
-  return <Item variant="outline">{body}</Item>;
+  return <Item className="px-0 py-2.5">{body}</Item>;
 }
 
 /** Label over a figure. Use in a grid inside a card, never as a lonely right-edge stack. */
@@ -868,7 +872,7 @@ export function Stat(props: ScoreProps) {
  * pill (background, input border, shadow), same as TabsTrigger.
  */
 const SEGMENTED_ITEM =
-  "rounded-md border border-transparent text-muted-foreground shadow-none group-data-[spacing=0]/toggle-group:rounded-md group-data-horizontal/toggle-group:data-[spacing=0]:first:rounded-md group-data-horizontal/toggle-group:data-[spacing=0]:last:rounded-md hover:bg-foreground/10 hover:text-foreground data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm data-[state=on]:hover:bg-background dark:data-[state=on]:border-input dark:data-[state=on]:bg-input/30 dark:data-[state=on]:text-foreground dark:data-[state=on]:hover:bg-input/30";
+  "rounded-md border border-transparent text-muted-foreground shadow-none group-data-[spacing=0]/toggle-group:rounded-md group-data-horizontal/toggle-group:data-[spacing=0]:first:rounded-md group-data-horizontal/toggle-group:data-[spacing=0]:last:rounded-md hover:bg-foreground/10 hover:text-foreground data-[state=on]:bg-background data-[state=on]:text-primary data-[state=on]:shadow-sm data-[state=on]:ring-1 data-[state=on]:ring-primary/40 data-[state=on]:hover:bg-background dark:data-[state=on]:border-input dark:data-[state=on]:bg-input/30 dark:data-[state=on]:text-primary dark:data-[state=on]:hover:bg-input/30";
 
 /**
  * The one segmented toggle. Overview's today/lifetime, the drawer's 3y/5y,
@@ -964,8 +968,8 @@ export function Segmented<T extends string>({
                 : "touch-target py-2.5 md:min-h-0 md:min-w-0",
               on
                 ? buttons
-                  ? "border-input bg-input/30 text-foreground shadow-sm"
-                  : "bg-background text-foreground"
+                  ? "border-input bg-input/30 text-primary shadow-sm"
+                  : "bg-background text-primary ring-1 ring-primary/40"
                 : buttons
                   ? "border-input bg-transparent text-muted-foreground hover:bg-foreground/10 hover:text-foreground"
                   : "bg-muted text-muted-foreground hover:bg-foreground/10 hover:text-foreground"

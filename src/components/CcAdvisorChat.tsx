@@ -892,7 +892,7 @@ export function CcAdvisorChat({
       className={
         open
           ? "pointer-events-none fixed z-40 flex flex-col items-end justify-end gap-3 p-3"
-          : "keyboard-chrome pointer-events-none fixed bottom-[max(1rem,calc(var(--dock-pad,1rem)+0.75rem))] right-[max(1rem,env(safe-area-inset-right))] z-40 flex flex-col items-end gap-3"
+          : "keyboard-chrome pointer-events-none fixed bottom-[max(1rem,calc(var(--dock-pad,1rem)+0.75rem))] right-[max(1rem,env(safe-area-inset-right))] z-40 flex flex-col items-end gap-3 lg:bottom-8 lg:right-8"
       }
       style={
         open
@@ -1411,7 +1411,7 @@ export function CcAdvisorChat({
       <Button
         type="button"
         size="icon-lg"
-        className="pointer-events-auto rounded-full"
+        className="pointer-events-auto size-14 rounded-full [&_svg:not([class*='size-'])]:size-6 lg:size-16"
         onClick={() => setOpen((o) => !o)}
         aria-label={open ? "Close Assistant Margus" : "Open Assistant Margus"}
         aria-expanded={open}

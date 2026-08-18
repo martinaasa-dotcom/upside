@@ -256,7 +256,7 @@ function SharedNameRow({
 }) {
   return (
     <Item size="sm" className="px-0">
-      <ItemMedia>
+      <ItemMedia className="w-20">
         <AvatarGroup>
           {people.map((name) => {
             const src = avatarByName.get(name);
@@ -1720,7 +1720,7 @@ export function CommunityView({ communityId }: Props) {
               </WidgetErrorBoundary>
 
               {(effectiveView === "overview" || effectiveView === "play") && (
-                <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-3">
                   {effectiveView === "overview" && isClassroom && (
                     <WidgetErrorBoundary name="Class roster" resetKey={communityId}>
                     <ClassroomRoster
@@ -1936,7 +1936,7 @@ export function CommunityView({ communityId }: Props) {
                                   >
                                     <ItemMedia>
                                       {i === 0 ? (
-                                        <Medal className="size-4 text-caution" />
+                                        <Medal className="size-4 text-primary" />
                                       ) : i === 1 ? (
                                         <Medal className="size-4 text-muted-foreground" />
                                       ) : i === 2 ? (

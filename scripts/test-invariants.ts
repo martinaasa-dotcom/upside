@@ -2615,7 +2615,7 @@ run("trend story board is Trend full-width then a 2-col grid, not a 5-wide row",
   assert.match(src, /story\.signals\.find\(\(s\) => s\.key === "trend"\)/);
   assert.doesNotMatch(src, /cols=\{5\}/);
   assert.doesNotMatch(src, /bullets=\{s\.detail\}/);
-  assert.match(src, /<Alert>/);
+  assert.match(src, /<Reading>/);
   assert.match(src, /Those come first/);
 });
 

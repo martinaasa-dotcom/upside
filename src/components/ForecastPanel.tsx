@@ -1170,7 +1170,7 @@ export const ForecastPanel = memo(function ForecastPanel({
 
       <div className="border-t border-border p-4">
         <div>
-          <h3 className="text-base font-semibold text-foreground">
+          <h3 className="text-lg font-semibold tracking-tight text-foreground">
             What Margus makes of it
           </h3>
           {plan?.generatedAt && (
@@ -1233,15 +1233,15 @@ export const ForecastPanel = memo(function ForecastPanel({
             )}
 
             {lastPlanDiffs.length > 0 && (
-              <div className="overflow-hidden rounded-lg bg-muted">
-                <div className="border-b border-border px-4 py-3">
+              <Card className="overflow-hidden p-0">
+                <div className="border-b border-border/50 px-4 py-3">
                   <p className="text-sm font-medium text-muted-foreground">Vs last plan</p>
                 </div>
                 <ul>
                   {lastPlanDiffs.map((d) => (
                     <li
                       key={d.ticker}
-                      className="flex gap-3 border-t border-border px-4 py-3.5 first:border-t-0"
+                      className="flex gap-3 border-t border-border/50 px-4 py-3.5 first:border-t-0"
                     >
                       <span
                         className={cn(
@@ -1260,15 +1260,12 @@ export const ForecastPanel = memo(function ForecastPanel({
                     </li>
                   ))}
                 </ul>
-              </div>
+              </Card>
             )}
 
             {soldTickersInPlan.length > 0 && (
-              <div
-                className={cn(
-                  SPLIT_ROW,
-                  "sm:items-center rounded-lg bg-muted px-4 py-4 text-sm text-foreground"
-                )}
+              <Card
+                className={cn(SPLIT_ROW, "sm:items-center text-sm text-foreground")}
               >
                 <span className={SPLIT_COPY}>
                   This still mentions {soldTickersInPlan.join(", ")}, which you
@@ -1285,7 +1282,7 @@ export const ForecastPanel = memo(function ForecastPanel({
                     Update it
                   </Button>
                 )}
-              </div>
+              </Card>
             )}
 
             {activePeriod && (

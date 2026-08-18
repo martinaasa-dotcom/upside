@@ -18,7 +18,7 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/input-group";
-import { EmptyState, InfoTip, Panel, PanelHeader } from "@/components/ui/Panel";
+import { EmptyState, InfoTip, Panel, PanelHeader, Reading } from "@/components/ui/Panel";
 import { cashtag, cn } from "@/lib/format";
 import { readJsonOrThrow } from "@/lib/http";
 import { buildTrendStory, type Signal, type Tone, type TrendRowLike } from "@/lib/market/trend-story";
@@ -389,14 +389,16 @@ export function TrendsPanel({ tickers }: { tickers: string[] }) {
 
       {rows != null && rows.length > 0 && (
         <>
-          <Alert>
-            <Info />
-            <AlertDescription>
-              {attentionCount === 0
-                ? "Nothing below is diverging or rolling over right now. Sorted by who is beating the S&P."
-                : `${attentionCount} name${attentionCount === 1 ? "" : "s"} below ${attentionCount === 1 ? "has" : "have"} something actually changing. Those come first.`}
-            </AlertDescription>
-          </Alert>
+          <Reading>
+            <span className="flex items-start gap-2.5">
+              <Info className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
+              <span>
+                {attentionCount === 0
+                  ? "Nothing below is diverging or rolling over right now. Sorted by who is beating the S&P."
+                  : `${attentionCount} name${attentionCount === 1 ? "" : "s"} below ${attentionCount === 1 ? "has" : "have"} something actually changing. Those come first.`}
+              </span>
+            </span>
+          </Reading>
 
           <div className="flex flex-col gap-8">
             {stories.map(({ row }) => (
