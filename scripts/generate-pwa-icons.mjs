@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const src = join(root, "public", "upside-fund-x-avatar.png");
-const BG = "#08090C";
+const BG = "#000000";
 
 mkdirSync(join(root, "public", "icons"), { recursive: true });
 
