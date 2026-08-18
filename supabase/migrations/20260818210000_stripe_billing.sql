@@ -10,8 +10,11 @@ alter table public.portfell_profiles
   add column if not exists plan text,
   add column if not exists current_period_end timestamptz;
 
--- Webhook handler looks users up by Stripe customer id.
-create unique index if not exists portfell_profiles_stripe_customer_id_idx
+-- Webhook handler looks users up by Stripe customer id. CONCURRENTLY: this
+-- table is read on every sheet load, a plain CREATE INDEX would lock writes.
+-- Apply via scripts/migrate-online.ts, not a wrapped-transaction migration
+-- runner -- CONCURRENTLY cannot run inside a transaction block.
+create unique index concurrently if not exists portfell_profiles_stripe_customer_id_idx
   on public.portfell_profiles (stripe_customer_id)
   where stripe_customer_id is not null;
 

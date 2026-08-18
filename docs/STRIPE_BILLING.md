@@ -22,7 +22,15 @@ src/components/billing/UpgradeButton.tsx                   Upgrade / Manage bill
 1. **Install the SDK** -- already added to `package.json` (`stripe`).
 
 2. **Run the migration** -- adds `stripe_customer_id`, `stripe_subscription_id`,
-   `subscription_status`, `plan`, `current_period_end` to `portfell_profiles`.
+   `subscription_status`, `plan`, `current_period_end` to `portfell_profiles`,
+   plus a `CONCURRENTLY` unique index. Apply it with the repo's own
+   zero-downtime runner, not a wrapped-transaction migration tool (see
+   `docs/ZERO_DOWNTIME_MIGRATIONS.md`):
+   ```
+   DATABASE_URL='postgresql://postgres:...@db.YOUR-REF.supabase.co:5432/postgres' \
+     npx tsx scripts/migrate-online.ts --apply supabase/migrations/20260818210000_stripe_billing.sql
+   ```
+   Use the **direct** port-5432 URI, not the pooler.
 
 3. `database.types.ts` has already been hand-patched with these 5 fields.
    Regenerate it from Supabase (`supabase gen types typescript ...`) after
