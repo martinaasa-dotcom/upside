@@ -87,6 +87,14 @@ function isWeekendKey(key: string): boolean {
   return dow === 0 || dow === 6;
 }
 
+/** Monday YYYY-MM-DD of the US week that contains `sessionDate`. */
+export function usWeekMondayKey(sessionDate: string): string {
+  const [y, m, d] = sessionDate.split("-").map(Number);
+  const dow = new Date(Date.UTC(y, (m ?? 1) - 1, d ?? 1, 12)).getUTCDay();
+  const sinceMon = (dow + 6) % 7;
+  return addDayKey(sessionDate, -sinceMon);
+}
+
 /**
  * US cash-session date the fund should write. After 16:00 ET on a weekday
  * that is today. Before the close, weekends, or Monday morning, that is

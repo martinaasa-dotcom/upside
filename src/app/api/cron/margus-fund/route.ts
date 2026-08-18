@@ -11,6 +11,7 @@ import { fetchQuotesWithFallback } from "@/lib/market/quotes";
 import {
   lastCompletedUsSessionKey,
   pinQuotesToSessionClose,
+  usWeekMondayKey,
 } from "@/lib/market/session";
 import { fetchFearGreedIndex } from "@/lib/market/fear-greed-fetch";
 import { logEvent } from "@/lib/telemetry";
@@ -36,6 +37,7 @@ import { stripReportSerialPrefix } from "@/lib/fund-copy";
 import {
   composeDailyFundPost,
   composeWeeklyFundPost,
+  type FundXPostInput,
 } from "@/lib/fund-x-copy";
 import { postTweet, xPostingConfigured } from "@/lib/x-post";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -127,7 +129,8 @@ async function maybeGenerateWeeklyRecap(
   supabase: SupabaseClient,
   weekEnding: string,
   fundStartingCapital: number,
-  pricedHoldings: PricedHolding[]
+  pricedHoldings: PricedHolding[],
+  xCard: Omit<FundXPostInput, "serial">
 ): Promise<void> {
   if (!isFridayKey(weekEnding)) return;
 
@@ -222,11 +225,7 @@ async function maybeGenerateWeeklyRecap(
     await maybeTweetFundUpdate(
       composeWeeklyFundPost({
         serial: (existingRecapCount ?? 0) + 1,
-        headline: recap.headline,
-        weekReturnPct,
-        weekChangeDollar: portfolioValueEnd - portfolioValueStart,
-        portfolioValue: portfolioValueEnd,
-        spyWeekReturnPct,
+        ...xCard,
       })
     );
   } catch (err) {
@@ -355,16 +354,27 @@ async function handleGET(req: Request) {
           count: "exact",
         })
         .order("report_date", { ascending: false })
-        .limit(5);
-    const recentHeadlines = (
-      (recentReportRows ?? []) as { headline: string; report_date: string }[]
-    ).map((r) => `${r.report_date}: ${stripReportSerialPrefix(r.headline)}`);
-    const previousValue =
-      (recentReportRows?.[0] as { portfolio_value?: number } | undefined)
-        ?.portfolio_value ?? null;
-    const previousSpy =
-      (recentReportRows?.[0] as { spy_price?: number | null } | undefined)
-        ?.spy_price ?? null;
+        .limit(30);
+    const reportHistory = (recentReportRows ?? []) as {
+      headline: string;
+      report_date: string;
+      portfolio_value: number;
+      spy_price: number | null;
+    }[];
+    const recentHeadlines = reportHistory
+      .slice(0, 5)
+      .map((r) => `${r.report_date}: ${stripReportSerialPrefix(r.headline)}`);
+    const previousValue = reportHistory[0]?.portfolio_value ?? null;
+    const previousSpy = reportHistory[0]?.spy_price ?? null;
+    const { data: firstReportRow } = await supabase
+      .from(PORTFELL_TABLES.margusFundReports)
+      .select("spy_price")
+      .order("report_date", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    const inceptionSpy =
+      (firstReportRow as { spy_price?: number | null } | null)?.spy_price ??
+      null;
 
     const heldTickers = holdings.map((h) => h.ticker);
     const { quotes: liveQuotes } = await fetchQuotesWithFallback([
@@ -685,15 +695,53 @@ async function handleGET(req: Request) {
       .single();
     if (reportErr) throw new Error(reportErr.message);
 
+    const startCap = Number(fundRow.starting_capital);
+    const monday = usWeekMondayKey(today);
+    const weekAnchor = reportHistory.find((r) => r.report_date < monday);
+    const weekStartValue = weekAnchor?.portfolio_value ?? startCap;
+    const weekStartSpy = weekAnchor?.spy_price ?? null;
+    const weekChangeDollar = totalValueAfter - weekStartValue;
+    const weekReturnPct =
+      weekStartValue > 0 ? weekChangeDollar / weekStartValue : null;
+    const spyWeekChangePct =
+      spyQuote?.price && weekStartSpy && weekStartSpy > 0
+        ? (spyQuote.price - weekStartSpy) / weekStartSpy
+        : null;
+    const totalChangeDollar = totalValueAfter - startCap;
+    const spyTotalChangePct =
+      spyQuote?.price && inceptionSpy && inceptionSpy > 0
+        ? (spyQuote.price - inceptionSpy) / inceptionSpy
+        : null;
+    const movers = pricedHoldings.map((h) => ({
+      ticker: h.ticker,
+      changePct: liveQuotes[h.ticker]?.changePercent ?? null,
+    }));
+    const xCard = {
+      daily: {
+        dollar: dayChangeDollar,
+        pct: dayChangePct,
+        spyPct: spyChangePct,
+      },
+      weekly: {
+        dollar: weekChangeDollar,
+        pct: weekReturnPct,
+        spyPct: spyWeekChangePct,
+      },
+      total: {
+        dollar: totalChangeDollar,
+        pct: totalReturnPct,
+        spyPct: spyTotalChangePct,
+      },
+      balance: totalValueAfter,
+      actions,
+      movers,
+      radar: watchlist,
+    };
+
     const tweeted = await maybeTweetFundUpdate(
       composeDailyFundPost({
         serial: (existingReportCount ?? 0) + 1,
-        headline: decision.headline,
-        dayChangePct,
-        dayChangeDollar,
-        portfolioValue: totalValueAfter,
-        spyChangePct,
-        actions,
+        ...xCard,
       })
     );
 
@@ -708,7 +756,8 @@ async function handleGET(req: Request) {
       supabase,
       today,
       Number(fundRow.starting_capital),
-      pricedHoldings.filter((h) => currentShares.has(h.id))
+      pricedHoldings.filter((h) => currentShares.has(h.id)),
+      xCard
     );
 
     return NextResponse.json({

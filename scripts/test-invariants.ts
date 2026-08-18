@@ -137,6 +137,7 @@ import {
   lastCompletedUsSessionKey,
   pinQuotesToSessionClose,
   quotePollMs,
+  usWeekMondayKey,
 } from "../src/lib/market/session";
 import {
   isLegacyHost,
@@ -844,6 +845,8 @@ run("fund reports date to the last closed US session, not Tallinn tomorrow", () 
     new Date("2026-08-18T21:30:00Z")
   );
   assert.equal(sameDay.NVDA?.price, 220);
+  assert.equal(usWeekMondayKey("2026-08-17"), "2026-08-17");
+  assert.equal(usWeekMondayKey("2026-08-14"), "2026-08-10");
 });
 
 run("sheet mark as-of a pin date uses that session's close, not last night's", () => {
@@ -965,84 +968,82 @@ run("fund report headlines number with digits, not spelled-out days", () => {
 run("Upside Fund X posts put P&L, ending value, and S&P on the same stretch", () => {
   const daily = composeDailyFundPost({
     serial: 3,
-    headline: "Day one: AI\u2011heavy paper portfolio holds steady amid modest market dip",
-    dayChangePct: 0.00361,
-    dayChangeDollar: 180.54,
-    portfolioValue: 50194.25,
-    spyChangePct: 0.004488,
+    daily: { dollar: 180.54, pct: 0.00361, spyPct: 0.004488 },
+    weekly: { dollar: 1240, pct: 0.0253, spyPct: 0.011 },
+    total: { dollar: 194.25, pct: 0.003885, spyPct: 0.0085 },
+    balance: 50194.25,
     actions: [],
+    movers: [
+      { ticker: "NVDA", changePct: 0.03 },
+      { ticker: "MSFT", changePct: -0.008 },
+    ],
+    radar: [
+      { ticker: "NVDA", waitFor: "earnings" },
+      { ticker: "BTC", waitFor: "" },
+      { ticker: "RKLB", waitFor: "launches" },
+    ],
   });
-  assert.match(daily, /^Day 3: /);
-  assert.match(daily, /AI-heavy paper portfolio/);
-  assert.doesNotMatch(daily, /\u2011/);
-  assert.match(daily, /Paper fund \+\$181 \(\+0\.36%\) to \$50,194\. S&P \+0\.45%\./);
-  assert.match(daily, /No trades\./);
-  assert.doesNotMatch(daily, /Paper money/);
-  assert.doesNotMatch(daily, /\bSPY\b/);
+  assert.equal(
+    daily,
+    [
+      "UPSIDE FUND - DAY 3 UPDATE 📊",
+      "🔴 Daily: +$181 (+0.36%) - $SPY +0.45%",
+      "🟢 Weekly: +$1,240 (+2.53%) - $SPY +1.10%",
+      "🔴 Total: +$194 (+0.39%) - $SPY +0.85%",
+      "",
+      "💼 Balance: $50,194",
+      "",
+      "⚡ PORTFOLIO ACTION",
+      "• No trades executed",
+      "• $NVDA +3.0% 🟢 $MSFT -0.8% 🔴",
+      "• Thesis intact across all holdings",
+      "",
+      "👀 ON RADAR",
+      "$NVDA earnings · $BTC · $RKLB launches",
+    ].join("\n")
+  );
   assert.doesNotMatch(daily, /\u2014/);
-  assert.ok([...daily].length <= 280);
 
   const firstDay = composeDailyFundPost({
     serial: 1,
-    headline: "built an 8-position paper portfolio",
-    dayChangePct: 0,
-    dayChangeDollar: 0,
-    portfolioValue: 50000,
-    spyChangePct: null,
+    daily: { dollar: 0, pct: 0, spyPct: null },
+    weekly: { dollar: 0, pct: 0, spyPct: null },
+    total: { dollar: 0, pct: 0, spyPct: null },
+    balance: 50000,
     actions: [{ type: "buy", ticker: "NVDA" }],
   });
-  assert.match(firstDay, /Paper fund \$0 \(0\.00%\) to \$50,000\./);
-  assert.doesNotMatch(firstDay, /S&P/);
+  assert.match(firstDay, /^UPSIDE FUND - DAY 1 UPDATE/);
+  assert.match(firstDay, /🟢 Daily: \$0 \(0\.00%\)/);
+  assert.doesNotMatch(firstDay, /\$SPY/);
+  assert.match(firstDay, /Opened \$NVDA/);
 
   const traded = composeDailyFundPost({
     serial: 4,
-    headline: "Opened a power name and trimmed a runner",
-    dayChangePct: -0.012,
-    dayChangeDollar: -640,
-    portfolioValue: 49360,
-    spyChangePct: -0.004,
+    daily: { dollar: -640, pct: -0.012, spyPct: -0.004 },
+    weekly: { dollar: -640, pct: -0.012, spyPct: -0.004 },
+    total: { dollar: -640, pct: -0.012, spyPct: -0.004 },
+    balance: 49360,
     actions: [
       { type: "buy", ticker: "AMD" },
       { type: "trim", ticker: "NVDA" },
       { type: "hold", ticker: "MSFT" },
     ],
   });
-  assert.match(traded, /Opened \$AMD/);
-  assert.match(traded, /Trimmed \$NVDA/);
-  assert.match(traded, /S&P -0\.40%\./);
+  assert.match(traded, /Opened \$AMD · Trimmed \$NVDA/);
+  assert.match(traded, /Thesis intact across all holdings/);
   assert.doesNotMatch(traded, /\$MSFT/);
-  assert.ok([...traded].length <= 280);
 
   const weekly = composeWeeklyFundPost({
     serial: 1,
-    headline: "Quiet week, held the line",
-    weekReturnPct: 0.003885,
-    weekChangeDollar: 194.25,
-    portfolioValue: 50194.25,
-    spyWeekReturnPct: 0.007005,
+    daily: { dollar: 180.54, pct: 0.00361, spyPct: 0.004488 },
+    weekly: { dollar: 194.25, pct: 0.003885, spyPct: 0.007005 },
+    total: { dollar: 194.25, pct: 0.003885, spyPct: 0.007005 },
+    balance: 50194.25,
+    actions: [],
   });
-  assert.match(weekly, /^Week 1: /);
-  assert.match(weekly, /Paper fund \+\$194 \(\+0\.39%\) to \$50,194\. S&P \+0\.70%\./);
-  assert.doesNotMatch(weekly, /Paper money/);
-  assert.doesNotMatch(weekly, /\bSPY\b/);
-  assert.ok([...weekly].length <= 280);
-
-  const long = composeDailyFundPost({
-    serial: 12,
-    headline: `${"Word ".repeat(80)}end`,
-    dayChangePct: 0.01,
-    dayChangeDollar: 500,
-    portfolioValue: 50500,
-    spyChangePct: 0.008,
-    actions: [
-      { type: "buy", ticker: "RKLB" },
-      { type: "buy", ticker: "VST" },
-      { type: "exit", ticker: "RIOT" },
-    ],
-  });
-  assert.ok([...long].length <= 280);
-  assert.match(long, /to \$50,500/);
-  assert.doesNotMatch(long, /Paper money/);
+  assert.match(weekly, /^UPSIDE FUND - WEEK 1 UPDATE/);
+  assert.match(weekly, /🔴 Weekly: \+\$194 \(\+0\.39%\) - \$SPY \+0\.70%/);
+  assert.match(weekly, /No trades executed/);
 });
 
 run("fund cron posts to X after a new daily report", () => {

@@ -1,11 +1,27 @@
-import { humanizeMargusText } from "@/lib/ai/humanize-copy";
-import { stripReportSerialPrefix } from "@/lib/fund-copy";
 import { cashtag, currency, signedCurrency, signedPercent } from "@/lib/format";
 import type { FundAction } from "@/lib/margus-fund";
 import { FUND_X_HANDLE, FUND_X_URL } from "@/lib/product";
 
 export { FUND_X_HANDLE, FUND_X_URL };
-export const TWEET_MAX = 280;
+/** Long enough for the scoreboard card. Premium X, not the 280 cap. */
+export const TWEET_MAX = 4000;
+
+export type FundStretch = {
+  dollar?: number | null;
+  pct?: number | null;
+  spyPct?: number | null;
+};
+
+export type FundXPostInput = {
+  serial: number;
+  daily?: FundStretch | null;
+  weekly?: FundStretch | null;
+  total?: FundStretch | null;
+  balance?: number | null;
+  actions?: Array<Pick<FundAction, "type" | "ticker">>;
+  movers?: Array<{ ticker: string; changePct: number | null | undefined }>;
+  radar?: Array<{ ticker: string; waitFor?: string | null }>;
+};
 
 const TRADE_VERB: Record<Exclude<FundAction["type"], "hold">, string> = {
   buy: "Opened",
@@ -14,68 +30,47 @@ const TRADE_VERB: Record<Exclude<FundAction["type"], "hold">, string> = {
   add: "Added to",
 };
 
-function charCount(s: string): number {
-  return [...s].length;
-}
-
-function clipHeadline(headline: string, budget: number): string {
-  if (budget <= 0) return "";
-  if (charCount(headline) <= budget) return headline;
-  const sliced = [...headline]
-    .slice(0, Math.max(0, budget - 1))
-    .join("")
-    .trimEnd();
-  const cut = sliced.lastIndexOf(" ");
-  const base = cut >= 12 ? sliced.slice(0, cut) : sliced;
-  return `${base.replace(/[.,;:]+$/, "")}.`;
-}
-
 function finite(n: number | null | undefined): n is number {
   return n != null && Number.isFinite(n);
 }
 
-/** Two decimals so a +$14 day does not round to 0.0%. */
-function pct(n: number): string {
+function pct2(n: number): string {
   return signedPercent(n, 2);
 }
 
-/**
- * Dollar P&L, percent, ending value, and the S&P over the same stretch.
- * Missing S&P is omitted (first day has no prior close in this book).
- */
-export function fundScoreboard(input: {
-  changePct?: number | null;
-  changeDollar?: number | null;
-  portfolioValue?: number | null;
-  spyChangePct?: number | null;
-}): string | null {
-  const value = finite(input.portfolioValue)
-    ? currency(input.portfolioValue, 0)
-    : null;
-  const dollar = finite(input.changeDollar)
-    ? signedCurrency(input.changeDollar, 0)
-    : null;
-  const change = finite(input.changePct) ? pct(input.changePct) : null;
-  if (!value && !dollar && !change) return null;
-
-  const move =
-    dollar && change
-      ? `${dollar} (${change})`
-      : dollar ?? change ?? "flat";
-  const to = value ? ` to ${value}` : "";
-  const spy = finite(input.spyChangePct)
-    ? `. S&P ${pct(input.spyChangePct)}.`
-    : ".";
-  return `Paper fund ${move}${to}${spy}`;
+function pct1(n: number): string {
+  return signedPercent(n, 1);
 }
 
-function tradeLine(
+function vsSpyMark(fundPct: number | null, spyPct: number | null): string {
+  if (!finite(fundPct)) return "🔴";
+  if (!finite(spyPct)) return fundPct >= 0 ? "🟢" : "🔴";
+  return fundPct >= spyPct ? "🟢" : "🔴";
+}
+
+function moneyPct(dollar: number | null, change: number | null): string | null {
+  const d = finite(dollar) ? signedCurrency(dollar, 0) : null;
+  const p = finite(change) ? pct2(change) : null;
+  if (d && p) return `${d} (${p})`;
+  return d ?? p;
+}
+
+function stretchLine(
+  label: string,
+  stretch: FundStretch | null | undefined
+): string | null {
+  if (!stretch) return null;
+  const move = moneyPct(stretch.dollar ?? null, stretch.pct ?? null);
+  if (!move) return null;
+  const spy = finite(stretch.spyPct) ? ` - $SPY ${pct2(stretch.spyPct)}` : "";
+  return `${vsSpyMark(stretch.pct ?? null, stretch.spyPct ?? null)} ${label}: ${move}${spy}`;
+}
+
+function tradeBullet(
   actions: Array<Pick<FundAction, "type" | "ticker">>
 ): string {
-  const trades = actions.filter(
-    (a) => a.type !== "hold" && a.ticker.trim()
-  );
-  if (trades.length === 0) return "No trades.";
+  const trades = actions.filter((a) => a.type !== "hold" && a.ticker.trim());
+  if (trades.length === 0) return "No trades executed";
 
   const grouped = new Map<string, string[]>();
   for (const a of trades) {
@@ -90,73 +85,104 @@ function tradeLine(
 
   const parts: string[] = [];
   for (const [verb, tags] of grouped) {
-    const shown = tags.slice(0, 3);
-    const extra = tags.length - shown.length;
-    const names =
-      extra > 0 ? `${shown.join(", ")}, and more` : joinAnd(shown);
-    parts.push(`${verb} ${names}.`);
+    parts.push(`${verb} ${tags.join(" · ")}`);
   }
-  return parts.join(" ") || "No trades.";
+  return parts.join(" · ") || "No trades executed";
 }
 
-function joinAnd(items: string[]): string {
-  if (items.length === 0) return "";
-  if (items.length === 1) return items[0]!;
-  if (items.length === 2) return `${items[0]} and ${items[1]}`;
-  return `${items.slice(0, -1).join(", ")}, and ${items[items.length - 1]}`;
+function moverBullet(
+  movers: Array<{ ticker: string; changePct: number | null | undefined }>
+): string | null {
+  const ranked = movers
+    .filter((m) => m.ticker.trim() && finite(m.changePct))
+    .sort((a, b) => Math.abs(b.changePct!) - Math.abs(a.changePct!))
+    .slice(0, 2);
+  if (ranked.length === 0) return null;
+  return ranked
+    .map((m) => {
+      const n = m.changePct!;
+      return `${cashtag(m.ticker)} ${pct1(n)} ${n >= 0 ? "🟢" : "🔴"}`;
+    })
+    .join(" ");
 }
 
-function assemble(headline: string, mid: string): string {
-  const wrap = (h: string) => `${h}\n\n${mid}`;
-  const full = wrap(headline);
-  if (charCount(full) <= TWEET_MAX) return full;
-  const overhead = charCount(wrap(""));
-  const budget = Math.max(24, TWEET_MAX - overhead);
-  return wrap(clipHeadline(headline, budget));
+function thesisBullet(
+  actions: Array<Pick<FundAction, "type" | "ticker">>
+): string {
+  const exits = [
+    ...new Set(
+      actions
+        .filter((a) => a.type === "exit" && a.ticker.trim())
+        .map((a) => cashtag(a.ticker))
+        .filter((tag) => tag !== "—")
+    ),
+  ];
+  if (exits.length === 0) return "Thesis intact across all holdings";
+  return `Thesis broken on ${exits.join(" · ")}`;
 }
 
-function cleanHeadline(raw: string): string {
-  return stripReportSerialPrefix(humanizeMargusText(raw))
-    .replace(/[\u2010\u2011\u2212]/g, "-")
+function shortWait(waitFor: string): string {
+  const trimmed = waitFor
+    .replace(/^wait(?:ing)? for\s+/i, "")
+    .replace(/[\u2010\u2011\u2212\u2014]/g, "-")
     .trim();
+  if (!trimmed) return "";
+  return trimmed.split(/\s+/).slice(0, 3).join(" ").replace(/[.,;:]+$/, "");
 }
 
-export function composeDailyFundPost(input: {
-  serial: number;
-  headline: string;
-  dayChangePct?: number | null;
-  dayChangeDollar?: number | null;
-  portfolioValue?: number | null;
-  spyChangePct?: number | null;
-  actions: Array<Pick<FundAction, "type" | "ticker">>;
-}): string {
-  const title = `Day ${input.serial}: ${cleanHeadline(input.headline)}`;
-  const money = fundScoreboard({
-    changePct: input.dayChangePct,
-    changeDollar: input.dayChangeDollar,
-    portfolioValue: input.portfolioValue,
-    spyChangePct: input.spyChangePct,
-  });
-  const trades = tradeLine(input.actions);
-  const mid = [money, trades].filter(Boolean).join(" ");
-  return assemble(title, mid);
+function radarLine(
+  radar: Array<{ ticker: string; waitFor?: string | null }>
+): string | null {
+  const parts: string[] = [];
+  for (const item of radar) {
+    const tag = cashtag(item.ticker);
+    if (tag === "—") continue;
+    const wait = shortWait(item.waitFor ?? "");
+    const bit = wait ? `${tag} ${wait}` : tag;
+    if (!parts.includes(bit)) parts.push(bit);
+  }
+  return parts.length > 0 ? parts.join(" · ") : null;
 }
 
-export function composeWeeklyFundPost(input: {
-  serial: number;
-  headline: string;
-  weekReturnPct?: number | null;
-  weekChangeDollar?: number | null;
-  portfolioValue?: number | null;
-  spyWeekReturnPct?: number | null;
-}): string {
-  const title = `Week ${input.serial}: ${cleanHeadline(input.headline)}`;
-  const money =
-    fundScoreboard({
-      changePct: input.weekReturnPct,
-      changeDollar: input.weekChangeDollar,
-      portfolioValue: input.portfolioValue,
-      spyChangePct: input.spyWeekReturnPct,
-    }) ?? "Quiet week on the paper fund.";
-  return assemble(title, money);
+function composeFundXPost(
+  period: "DAY" | "WEEK",
+  input: FundXPostInput
+): string {
+  const lines: string[] = [
+    `UPSIDE FUND - ${period} ${input.serial} UPDATE 📊`,
+  ];
+  const daily = stretchLine("Daily", input.daily);
+  const weekly = stretchLine("Weekly", input.weekly);
+  const total = stretchLine("Total", input.total);
+  if (daily) lines.push(daily);
+  if (weekly) lines.push(weekly);
+  if (total) lines.push(total);
+
+  if (finite(input.balance)) {
+    lines.push("", `💼 Balance: ${currency(input.balance, 0)}`);
+  }
+
+  const actions = input.actions ?? [];
+  const actionLines = [
+    tradeBullet(actions),
+    moverBullet(input.movers ?? []),
+    thesisBullet(actions),
+  ].filter((line): line is string => Boolean(line));
+  lines.push("", "⚡ PORTFOLIO ACTION");
+  for (const line of actionLines) lines.push(`• ${line}`);
+
+  const radar = radarLine(input.radar ?? []);
+  if (radar) {
+    lines.push("", "👀 ON RADAR", radar);
+  }
+
+  return lines.join("\n");
+}
+
+export function composeDailyFundPost(input: FundXPostInput): string {
+  return composeFundXPost("DAY", input);
+}
+
+export function composeWeeklyFundPost(input: FundXPostInput): string {
+  return composeFundXPost("WEEK", input);
 }
