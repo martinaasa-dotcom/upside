@@ -1003,7 +1003,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
               label="Of that, growth"
               value={show(result.totalInterest)}
               explain="Money the market made for you, on top of everything you put in yourself."
-              valueClassName="text-caution"
+              valueClassName="text-gain"
             />
             <Score
               label="You put in"
@@ -1293,13 +1293,13 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
                       </div>
                       <div>
                         <p className="text-muted-foreground">Growth that year</p>
-                        <p className="tabular-nums text-caution">
+                        <p className="tabular-nums text-gain">
                           {show(row.interest)}
                         </p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Growth so far</p>
-                        <p className="tabular-nums text-caution">
+                        <p className="tabular-nums text-gain">
                           {show(row.accruedInterest)}
                         </p>
                       </div>
@@ -1321,7 +1321,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
                     <th className={cn(htmlCell, "font-medium")}>Year</th>
                     <th className={cn(htmlCell, "font-medium")}>Your money in</th>
                     <th className={cn(htmlCell, "font-medium")}>Growth that year</th>
-                    <th className={cn(htmlCell, "bg-caution/15 font-medium text-caution")}>
+                    <th className={cn(htmlCell, "bg-gain/15 font-medium text-gain")}>
                       Growth so far
                     </th>
                     <th className={cn(htmlCell, "bg-gain/10 font-medium text-gain")}>
@@ -1345,10 +1345,10 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
                         <td className={cn(htmlCell, "tabular-nums text-muted-foreground")}>
                           {show(principalShown)}
                         </td>
-                        <td className={cn(htmlCell, "tabular-nums text-caution")}>
+                        <td className={cn(htmlCell, "tabular-nums text-gain")}>
                           {show(row.interest)}
                         </td>
-                        <td className={cn(htmlCell, "bg-caution/10 tabular-nums text-caution")}>
+                        <td className={cn(htmlCell, "bg-gain/10 tabular-nums text-gain")}>
                           {show(row.accruedInterest)}
                         </td>
                         <td className={cn(htmlCell, "bg-gain/5 tabular-nums font-semibold text-gain")}>

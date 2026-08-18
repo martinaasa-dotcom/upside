@@ -6,7 +6,7 @@ import { WatchlistStrip } from "@/components/WatchlistStrip";
 import {
   BookNavChart,
   useBookNavHistory,
-} from "@/components/mobile/GoldNavChart";
+} from "@/components/mobile/BookNavChart";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";

@@ -28,7 +28,7 @@ import {
   percent,
   signedCurrency,
 } from "@/lib/format";
-import { compactAxis, niceScale } from "@/components/mobile/GoldNavChart";
+import { compactAxis, niceScale } from "@/components/mobile/BookNavChart";
 import { ChartXRail, ChartYAxis } from "@/components/ui/ChartAxis";
 import type { ForecastModel, ForecastYear } from "@/lib/forecast";
 import {

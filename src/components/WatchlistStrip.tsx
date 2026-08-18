@@ -121,7 +121,7 @@ function WatchCard({
 
   if (waiting) {
     return (
-      <div className="flex h-12 items-center justify-between gap-3 rounded-md border border-border bg-card px-4">
+      <div className="glass-well flex h-12 items-center justify-between gap-3 rounded-md border border-border px-4">
         <Badge variant="secondary" className="h-6">{cashtag(ticker)}</Badge>
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">Waiting on today&apos;s price</span>
@@ -153,7 +153,7 @@ function WatchCard({
   }
 
   return (
-    <div className="flex h-full flex-col gap-4 rounded-lg border border-border bg-card p-4">
+    <div className="card-sheen glass-well flex h-full flex-col gap-4 rounded-lg border border-border p-4">
       <div className="flex items-start justify-between gap-3">
         <Badge variant="secondary" className="h-6 font-heading text-sm font-semibold">
           {cashtag(ticker)}

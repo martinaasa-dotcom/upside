@@ -32,7 +32,7 @@ import {
   startNavFromYtdPct,
 } from "../src/lib/market/assumed-nav";
 import { playbookBullets } from "../src/lib/forecast-playbook";
-import { niceScale } from "../src/components/mobile/GoldNavChart";
+import { niceScale } from "../src/components/mobile/BookNavChart";
 import {
   buildFallbackForecastPlan,
   isFallbackForecastPlan,
@@ -2134,7 +2134,7 @@ run("chart ticks stay HTML text-xs, never SVG text", () => {
   const files = [
     "src/components/ComparisonChart.tsx",
     "src/components/CompoundInterestSheet.tsx",
-    "src/components/mobile/GoldNavChart.tsx",
+    "src/components/mobile/BookNavChart.tsx",
     "src/components/ForecastPanel.tsx",
   ];
   for (const file of files) {
@@ -2159,7 +2159,7 @@ run("chart ticks stay HTML text-xs, never SVG text", () => {
   assert.match(fund, /Compare my portfolio/);
   assert.doesNotMatch(fund, /Compare my sheet/);
   const nav = readFileSync(
-    join(process.cwd(), "src/components/mobile/GoldNavChart.tsx"),
+    join(process.cwd(), "src/components/mobile/BookNavChart.tsx"),
     "utf8"
   );
   assert.match(nav, /preserveAspectRatio="none"/);

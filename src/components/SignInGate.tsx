@@ -184,7 +184,7 @@ export function SignInGate({ children }: Props) {
                 size="lg"
                 disabled={busy || !ageOk}
                 onClick={() => void onSignIn()}
-                className="h-11 w-full gap-2.5 rounded-full text-base shadow-[0_18px_40px_-16px_var(--primary)] md:w-auto md:min-w-[17rem]"
+                className="h-11 w-full gap-2.5 rounded-full text-base md:w-auto md:min-w-[17rem]"
               >
                 {busy ? <Spinner data-icon="inline-start" /> : <GoogleMark />}
                 {busy ? "Redirecting …" : "Continue with Google"}

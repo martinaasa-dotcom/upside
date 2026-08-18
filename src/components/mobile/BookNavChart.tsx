@@ -389,10 +389,10 @@ function monthTicks(
 }
 
 /**
- * Book NAV as a gold line, same language as Forecast's path chart.
+ * Book NAV as a brand-colored line, same language as Forecast's path chart.
  * Axis copy lives in HTML so it stays text-xs instead of scaling with the SVG.
  */
-export function GoldNavChart({
+export function MobileBookNavChart({
   points,
   className,
 }: {
@@ -773,7 +773,7 @@ export function BookNavChart({
           Working out this year’s path …
         </p>
       ) : (
-        <GoldNavChart points={points} />
+        <MobileBookNavChart points={points} />
       )}
       {assumed && hasChart && (
         <div className="flex flex-col mt-4 gap-3">
