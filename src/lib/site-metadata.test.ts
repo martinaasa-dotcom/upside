@@ -8,7 +8,7 @@ import {
   canonicalUrl,
   privatePageMetadata,
 } from "@/lib/site-metadata";
-import { isNonPublicHost } from "@/lib/site-url";
+import { isCanonicalAppHost, isNonPublicHost } from "@/lib/site-url";
 
 describe("site metadata", () => {
   it("pins public share cards to upsidelab.app", () => {
@@ -32,6 +32,9 @@ describe("site metadata", () => {
   it("does not treat the CI placeholder host as public", () => {
     expect(isNonPublicHost("ci.upsidelab.test")).toBe(true);
     expect(isNonPublicHost("upsidelab.app")).toBe(false);
+    expect(isCanonicalAppHost("upsidelab.app")).toBe(true);
+    expect(isCanonicalAppHost("www.upsidelab.app")).toBe(true);
+    expect(isCanonicalAppHost("localhost")).toBe(false);
   });
 
   it("marks authenticated rooms noindex, nofollow", () => {

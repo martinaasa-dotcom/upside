@@ -171,17 +171,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [loadProfile, refresh]);
 
   const signInWithGoogle = useCallback(async () => {
-    const supabase = createSupabaseBrowser();
-    if (!supabase) throw new Error("Supabase is not configured");
-    const origin = window.location.origin;
     const next = encodeURIComponent(currentInternalNext());
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${origin}/auth/callback?next=${next}`,
-      },
-    });
-    if (error) throw error;
+    // Route Handler 302s to Google. router.push would treat this as a page.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- full document navigation
+    window.location.assign(
+      `${window.location.origin}/auth/google?next=${next}`
+    );
   }, []);
 
   const signOut = useCallback(async () => {

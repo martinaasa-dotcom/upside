@@ -53,6 +53,12 @@ export function isLocalHost(hostname: string): boolean {
   );
 }
 
+/** Live app host, including the www alias that 301s to the apex. */
+export function isCanonicalAppHost(hostname: string): boolean {
+  const h = normalizeHostname(hostname);
+  return h === PRODUCT_DOMAIN || h === `www.${PRODUCT_DOMAIN}`;
+}
+
 /** RFC 2606 / 6761 names. CI sets NEXT_PUBLIC_SITE_URL to *.test; never advertise it. */
 export function isNonPublicHost(hostname: string): boolean {
   if (isLocalHost(hostname)) return true;

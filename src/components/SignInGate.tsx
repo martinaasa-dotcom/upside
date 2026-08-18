@@ -53,6 +53,15 @@ export function SignInGate({ children }: Props) {
 
   useEffect(() => {
     const url = new URL(window.location.href);
+    if (url.searchParams.get("signin") === "failed") {
+      setErr("Google sign-in didn't finish. Try again.");
+      url.searchParams.delete("signin");
+      window.history.replaceState(
+        window.history.state,
+        "",
+        `${url.pathname}${url.search}`
+      );
+    }
     const kind = url.searchParams.get("accountDeleted");
     if (kind === "full" || kind === "data") {
       setDeletedNotice(kind);

@@ -7,13 +7,13 @@ import { NextResponse } from "next/server";
 import { supabaseAnonKey, supabaseUrl } from "@/lib/supabase/env";
 import { supabaseFetch } from "@/lib/supabase/http";
 
-/** Cookie-session Supabase client (RLS as the signed-in user). */
-export async function createSupabaseServerAuth(): Promise<AppSupabaseClient | null> {
+function attachCookies(
+  cookieStore: Awaited<ReturnType<typeof cookies>>,
+  response?: NextResponse
+): AppSupabaseClient | null {
   const url = supabaseUrl();
   const key = supabaseAnonKey();
   if (!url || !key) return null;
-
-  const cookieStore = await cookies();
 
   return createServerClient<Database>(url, key, {
     global: { fetch: supabaseFetch },
@@ -25,13 +25,28 @@ export async function createSupabaseServerAuth(): Promise<AppSupabaseClient | nu
         try {
           cookiesToSet.forEach(({ name, value, options }) => {
             cookieStore.set(name, value, options);
+            response?.cookies.set(name, value, options);
           });
         } catch {
-          // Called from a Server Component — middleware/proxy refreshes sessions.
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response?.cookies.set(name, value, options);
+          });
         }
       },
     },
   });
+}
+
+/** Cookie-session Supabase client (RLS as the signed-in user). */
+export async function createSupabaseServerAuth(): Promise<AppSupabaseClient | null> {
+  return attachCookies(await cookies());
+}
+
+/** Same client, but session cookies are copied onto a redirect response. */
+export async function createSupabaseAuthForResponse(
+  response: NextResponse
+): Promise<AppSupabaseClient | null> {
+  return attachCookies(await cookies(), response);
 }
 
 export async function getAuthUser(): Promise<User | null> {

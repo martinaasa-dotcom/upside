@@ -6282,12 +6282,18 @@ run("sign-in returns to the page you were on", () => {
     "utf8"
   );
   const site = readFileSync(join(process.cwd(), "src/lib/site-url.ts"), "utf8");
+  const google = readFileSync(
+    join(process.cwd(), "src/app/auth/google/callback/route.ts"),
+    "utf8"
+  );
   assert.ok(
-    /auth\/callback\?next=/.test(auth),
+    /auth\/google\?next=/.test(auth),
     "Google sign-in must pass the current path as next"
   );
   assert.ok(/function currentInternalNext/.test(site));
   assert.ok(/path\.startsWith\("\/auth\/"\)/.test(site));
+  assert.match(google, /signInWithIdToken/);
+  assert.doesNotMatch(google, /supabase\.co\/auth\/v1\/callback/);
 });
 
 run("pages reconnect after offline and back-forward cache", () => {
