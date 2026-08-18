@@ -7,11 +7,8 @@ import type { AdvisorAction } from "@/components/CcAdvisorChat";
 import { CommandPalette, type CommandItem } from "@/components/CommandPalette";
 import { CsvImportModal } from "@/components/CsvImportModal";
 import { CostBasisModal, type CostBasisRow } from "@/components/CostBasisModal";
-import { CoveredCallPanel, COVERED_CALLS_ANCHOR } from "@/components/CoveredCallPanel";
-import { ForecastPanel, ForecastOffStub } from "@/components/ForecastPanel";
+import { ForecastOffStub } from "@/components/ForecastPanel";
 import { HoldingModal, type HoldingFormValues } from "@/components/HoldingModal";
-import { CompoundInterestSheet } from "@/components/CompoundInterestSheet";
-import { LabSheet } from "@/components/LabSheet";
 import { useFeedback } from "@/components/FeedbackHost";
 import { HeaderOverflowMenu, type HeaderMenuItem } from "@/components/HeaderOverflowMenu";
 import { OverviewDashboard, type LabDeepLink } from "@/components/OverviewDashboard";
@@ -21,7 +18,6 @@ import {
 } from "@/components/PortfolioTable";
 import { PortfolioTabs } from "@/components/PortfolioTabs";
 import { hrefForDockTarget, stashDockTab } from "@/components/BookModeDock";
-import { PulsePage } from "@/components/PulsePage";
 import { RenameSheetModal } from "@/components/RenameSheetModal";
 import { ClassTradeBanner } from "@/components/ClassTradeBanner";
 import { sheetCashBalance, tracksTradeCash } from "@/lib/cash-balance";
@@ -210,6 +206,41 @@ import { addPulseStamp } from "@/lib/conviction";
 const CcAdvisorChat = dynamic(
   () => import("@/components/CcAdvisorChat").then((m) => m.CcAdvisorChat),
   { ssr: false }
+);
+
+/**
+ * These are per-tab panels: only one is on screen at a time (Overview is
+ * the default), but before this they were all imported eagerly, so every
+ * visit to the book shipped Pulse, Lab (which itself pulls in Seasonality,
+ * Trends, and the scenario simulator), Compound, Forecast, and Covered
+ * Calls whether or not the tab was ever opened. Split like BookRoom/
+ * FundRoom/AccountPage etc. in WorkspaceShell — ssr: true keeps a direct
+ * link or refresh on a non-Overview tab (e.g. "/?tab=pulse") server-
+ * rendered instead of flashing a loading state.
+ */
+const PulsePage = dynamic(
+  () => import("@/components/PulsePage").then((m) => m.PulsePage),
+  { ssr: true }
+);
+const LabSheet = dynamic(
+  () => import("@/components/LabSheet").then((m) => m.LabSheet),
+  { ssr: true }
+);
+const CompoundInterestSheet = dynamic(
+  () =>
+    import("@/components/CompoundInterestSheet").then(
+      (m) => m.CompoundInterestSheet
+    ),
+  { ssr: true }
+);
+const ForecastPanel = dynamic(
+  () => import("@/components/ForecastPanel").then((m) => m.ForecastPanel),
+  { ssr: true }
+);
+const CoveredCallPanel = dynamic(
+  () =>
+    import("@/components/CoveredCallPanel").then((m) => m.CoveredCallPanel),
+  { ssr: true }
 );
 
 type DataSource = "demo" | "supabase";
@@ -1490,7 +1521,7 @@ export function Dashboard() {
     if (!ccVisible) return;
     const t = window.setTimeout(() => {
       document
-        .getElementById(COVERED_CALLS_ANCHOR)
+        .getElementById("covered-calls")
         ?.scrollIntoView({ behavior: "smooth", block: "start" });
       sheetFocusRef.current = null;
     }, 80);
