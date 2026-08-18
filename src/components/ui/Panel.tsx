@@ -54,7 +54,7 @@ import {
  * The rules, so a new surface can't drift again:
  *
  *   Radius     shell rounded-xl · nested muted rounded-lg · control rounded-lg
- *   Shell      black field, lifted cards. Primary is violet. Nested is muted.
+ *   Shell      black field, lifted cards. Primary is warm yellow. Nested is muted.
  *              Green is an up number, not a wash.
  *   Stack      field is bg-background. A box on the field is bg-card.
  *              Floating menus are bg-popover, never muted (muted is hover).
@@ -216,7 +216,7 @@ export function PanelHeader({
   title: ReactNode;
   subtitle?: ReactNode;
   icon?: ReactNode;
-  iconTone?: "brand" | "violet" | "emerald" | "zinc";
+  iconTone?: "brand" | "emerald" | "zinc";
   /** Slightly larger, for the one panel that opens a page. */
   hero?: boolean;
   actions?: ReactNode;
@@ -224,7 +224,6 @@ export function PanelHeader({
 }) {
   const iconTones = {
     brand: "bg-muted text-muted-foreground",
-    violet: "bg-muted text-foreground",
     emerald: "bg-gain/15 text-gain",
     zinc: "bg-muted text-muted-foreground",
   } as const;
