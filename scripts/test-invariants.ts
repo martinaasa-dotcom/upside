@@ -1782,8 +1782,8 @@ run("circle awards are a grid of cards, not a flat divided list", () => {
     "effectiveView === \"overview\" && membersWithBooks.length > 0"
   );
   const awards = community.slice(awardsStart, awardsEnd);
-  assert.match(awards, /grid grid-cols-1 gap-3 sm:grid-cols-2/);
-  assert.match(awards, /glass-well flex flex-col gap-2 rounded-lg p-4/);
+  assert.match(awards, /grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3/);
+  assert.match(awards, /glass-well flex flex-col gap-1\.5 rounded-lg p-3/);
   assert.doesNotMatch(awards, /<ItemGroup/);
   assert.doesNotMatch(awards, /<ItemSeparator/);
   assert.doesNotMatch(awards, /bg-pink-500/);
@@ -2266,7 +2266,7 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
   );
   assert.match(panel, /const FIGURE/);
   assert.match(panel, /font-mono text-2xl font-bold tabular-nums/);
-  assert.match(header, /bg-background\/95 backdrop-blur/);
+  assert.match(header, /bg-background\/75 backdrop-blur-xl/);
   assert.match(header, /border-b border-border/);
   assert.doesNotMatch(header, /border-b border-white\/10/);
   assert.match(home, /morning.notices.map/);

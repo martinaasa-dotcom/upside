@@ -1841,15 +1841,15 @@ export function CommunityView({ communityId }: Props) {
                           </p>
                         </div>
                       </div>
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                         {achievements.map((a) => (
                           <div
                             key={a.id}
-                            className="card-sheen glass-well flex flex-col gap-2 rounded-lg p-4 ring-1 ring-foreground/10"
+                            className="card-sheen glass-well flex flex-col gap-1.5 rounded-lg p-3 ring-1 ring-foreground/10"
                           >
-                            <div className="flex items-center gap-2.5">
+                            <div className="flex items-center gap-2">
                               <span
-                                className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-lg leading-none"
+                                className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/15 text-sm leading-none"
                                 aria-hidden
                               >
                                 {a.emoji}
