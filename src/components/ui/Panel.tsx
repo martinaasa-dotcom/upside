@@ -88,9 +88,10 @@ import {
  *              the 24px figure style on a word like "Weakening".
  *              Do not park a paragraph in the sub line.
  *              Do not park unlabeled numbers on the far right of a row.
- *   Reading    a bordered card, quiet label, same type as the page. Thesis
- *              and Worth noticing live in a box. Not a cream slab, and
- *              not loose type on the field.
+ *   Reading    a bordered card, one-step-up label (text-base, over a
+ *              text-sm sentence) so the heading doesn't blend into its
+ *              own body copy. Thesis and Worth noticing live in a box.
+ *              Not a cream slab, and not loose type on the field.
  *   Body       text-sm leading-relaxed text-muted-foreground for chrome
  *   Floor      reading copy is text-sm. text-xs is ticks, Badge, kbd.
  *   Air        padding and gaps do the explaining. Do not stack a subtitle,
@@ -338,22 +339,45 @@ export function MicroLabel({
   );
 }
 
+const READING_LABEL_TONES = {
+  /** Default. An observation, not a flag. */
+  neutral: "text-foreground",
+  /** A gap or risk worth acting on — same orange as every other caution use. */
+  warn: "text-warning",
+  /** A read that's working in your favor. */
+  good: "text-gain",
+} as const;
+
+export type ReadingTone = keyof typeof READING_LABEL_TONES;
+
 /**
  * Long sentences a person actually reads. A dark card that lifts off
  * the field, quiet label, warm type. Not a cream slab, and not loose
  * type sitting on the page.
+ *
+ * The label is one step up from body copy (text-base, not text-sm) so it
+ * reads as a heading over the sentence below it instead of blending into
+ * it — this is the one heading style for every "label + sentence" card in
+ * the app (Thesis, Sell if, Worth noticing, What's missing, and so on).
+ * `tone`/`icon` let two Reading tiles sitting side by side (an upside and
+ * a downside, say) read as visibly different kinds of note, not just
+ * different words.
  */
 export function Reading({
   label,
   children,
   className,
   nested = false,
+  tone = "neutral",
+  icon,
 }: {
   label?: ReactNode;
   children: ReactNode;
   className?: string;
   /** Inside a Panel. No second card ring. */
   nested?: boolean;
+  tone?: ReadingTone;
+  icon?: ReactNode;
 }) {
   return (
     <div
@@ -366,13 +390,23 @@ export function Reading({
       )}
     >
       {label != null && label !== "" ? (
-        <div className="text-sm font-semibold tracking-tight text-foreground">
+        <div
+          className={cn(
+            "flex items-center gap-2 font-heading text-base font-semibold tracking-tight",
+            READING_LABEL_TONES[tone]
+          )}
+        >
+          {icon ? (
+            <span className="flex size-4 shrink-0 [&>svg]:size-4" aria-hidden>
+              {icon}
+            </span>
+          ) : null}
           {label}
         </div>
       ) : null}
       <div
         className={cn(
-          label != null && label !== "" && "mt-2",
+          label != null && label !== "" && "mt-2.5",
           "text-sm leading-relaxed text-foreground"
         )}
       >

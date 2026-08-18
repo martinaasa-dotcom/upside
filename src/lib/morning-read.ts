@@ -42,6 +42,10 @@ export type SundayRecap = {
 export type MorningNotice = {
   label: string;
   text: string;
+  /** notice = an observation. gap = something missing worth acting on.
+   * Lets the two render as visibly different kinds of read, not just
+   * different labels on the same box. */
+  kind: "notice" | "gap";
 };
 
 export type MorningRead = {
@@ -210,15 +214,17 @@ export function buildMorningRead(
     notices.push({
       label: when === "friday" ? "Friday's close" : "Worth noticing",
       text: insights.dayMove,
+      kind: "notice",
     });
   } else if (!quiet && insights.rotation) {
     notices.push({
       label: when === "friday" ? "Friday's close" : "Worth noticing",
       text: insights.rotation,
+      kind: "notice",
     });
   }
   if (!quiet && insights.idea) {
-    notices.push({ label: "What's missing", text: insights.idea });
+    notices.push({ label: "What's missing", text: insights.idea, kind: "gap" });
   }
   return {
     quiet: quiet && awayLines.length === 0,

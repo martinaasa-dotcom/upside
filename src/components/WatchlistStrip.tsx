@@ -1,6 +1,5 @@
 "use client";
 
-import { ADVICE_DISCLAIMER_SHORT } from "@/lib/disclaimer";
 import {
   cashtag,
   cn,
@@ -540,7 +539,6 @@ export function WatchlistStrip({
               );
             })}
           </ul>
-          <p className="text-sm text-muted-foreground">{ADVICE_DISCLAIMER_SHORT}</p>
         </>
       )}
     </div>

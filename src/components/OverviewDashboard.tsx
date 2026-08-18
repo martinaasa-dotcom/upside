@@ -22,6 +22,7 @@ import {
   InsightText,
   Panel,
   PanelHeader,
+  Pill,
   Reading,
   Score,
   Scoreboard,
@@ -54,7 +55,14 @@ import {
   type VisitDiff,
 } from "@/lib/visit-diff";
 import { finiteNumber } from "@/lib/money";
-import { ArrowRight, Plus, TrendingDown, TrendingUp } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowRight,
+  Plus,
+  Sparkles,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
 import {
   memo,
   useEffect,
@@ -286,6 +294,73 @@ function signedMovePct(pct: number): string {
   return n;
 }
 
+/**
+ * One visual language for "a ticker moved the number" — used for the
+ * Sunday best/worst pair, the weekday drivers list, and (separately) the
+ * Movers panel below. Same colored accent bar, ticker badge, and
+ * icon-on-figure treatment everywhere a card exists to say "here's who
+ * did it," instead of three different card styles for the same idea.
+ */
+function DriverTile({
+  ticker,
+  primary,
+  secondary,
+  isUp,
+  onOpen,
+}: {
+  ticker: string;
+  primary: string;
+  secondary?: string;
+  isUp: boolean;
+  onOpen?: () => void;
+}) {
+  const toneCls = isUp ? "text-gain" : "text-loss";
+  const body = (
+    <>
+      <span
+        className={cn("absolute inset-y-0 left-0 w-1", isUp ? "bg-gain" : "bg-loss")}
+        aria-hidden
+      />
+      <Badge variant="secondary" className="w-fit font-heading text-sm font-semibold">
+        {cashtag(ticker)}
+      </Badge>
+      <span
+        className={cn(
+          "flex items-center gap-1.5 font-mono text-2xl font-bold tabular-nums",
+          toneCls
+        )}
+      >
+        {isUp ? (
+          <TrendingUp className="size-4 shrink-0" />
+        ) : (
+          <TrendingDown className="size-4 shrink-0" />
+        )}
+        {primary}
+      </span>
+      {secondary ? (
+        <span className={cn("text-sm", toneCls)}>{secondary}</span>
+      ) : null}
+    </>
+  );
+  const shellClass = cn(
+    "card-sheen glass group relative flex h-full min-w-0 flex-col justify-center gap-1.5 overflow-hidden rounded-lg p-6 text-left ring-1 transition",
+    isUp ? "ring-gain/20" : "ring-loss/20",
+    onOpen &&
+      cn(
+        "hover:scale-[1.01] hover:bg-accent active:scale-[0.995]",
+        isUp ? "hover:ring-gain/40" : "hover:ring-loss/40"
+      )
+  );
+  if (onOpen) {
+    return (
+      <button type="button" onClick={onOpen} className={shellClass}>
+        {body}
+      </button>
+    );
+  }
+  return <div className={shellClass}>{body}</div>;
+}
+
 function MorningStack({
   morning,
   previousAt,
@@ -306,24 +381,35 @@ function MorningStack({
             {morning.sentence}
           </Reading>
           {(sunday.best || sunday.worst) && (
-            <Scoreboard cols={sunday.best && sunday.worst ? 2 : 1}>
+            <div
+              className={cn(
+                "grid grid-cols-1 gap-4",
+                sunday.best && sunday.worst && "sm:grid-cols-2"
+              )}
+            >
               {sunday.best && (
-                <Score
-                  label={cashtag(sunday.best.ticker)}
-                  value={signedMovePct(sunday.best.pct)}
-                  sub="Biggest week move"
-                  valueClassName={tone(sunday.best.pct)}
+                <DriverTile
+                  ticker={sunday.best.ticker}
+                  primary={signedMovePct(sunday.best.pct)}
+                  secondary="Biggest week move"
+                  isUp={sunday.best.pct >= 0}
+                  onOpen={
+                    onOpenPulse ? () => onOpenPulse(sunday.best!.ticker) : undefined
+                  }
                 />
               )}
               {sunday.worst && (
-                <Score
-                  label={cashtag(sunday.worst.ticker)}
-                  value={signedMovePct(sunday.worst.pct)}
-                  sub="Biggest drop"
-                  valueClassName={tone(sunday.worst.pct)}
+                <DriverTile
+                  ticker={sunday.worst.ticker}
+                  primary={signedMovePct(sunday.worst.pct)}
+                  secondary="Biggest drop"
+                  isUp={sunday.worst.pct >= 0}
+                  onOpen={
+                    onOpenPulse ? () => onOpenPulse(sunday.worst!.ticker) : undefined
+                  }
                 />
               )}
-            </Scoreboard>
+            </div>
           )}
         </div>
       ) : (
@@ -332,30 +418,28 @@ function MorningStack({
             {morning.sentence}
           </Reading>
           {!morning.quiet && morning.drivers.length > 0 && (
-            <Scoreboard
-              cols={
-                morning.drivers.length === 1
-                  ? 1
-                  : morning.drivers.length === 2
-                    ? 2
-                    : 3
-              }
+            <div
+              className={cn(
+                "grid grid-cols-1 gap-4",
+                morning.drivers.length > 1 && "sm:grid-cols-2",
+                morning.drivers.length > 2 && "lg:grid-cols-3"
+              )}
             >
               {morning.drivers.map((d) => (
-                <Score
+                <DriverTile
                   key={d.ticker}
-                  label={cashtag(d.ticker)}
-                  value={signedCurrency(d.dollar, 0)}
-                  sub={
+                  ticker={d.ticker}
+                  primary={signedCurrency(d.dollar, 0)}
+                  secondary={
                     d.share != null
                       ? `${Math.round(d.share * 100)}% of today's move`
                       : undefined
                   }
-                  valueClassName={tone(d.dollar)}
-                  subClassName={tone(d.dollar)}
+                  isUp={d.dollar >= 0}
+                  onOpen={onOpenPulse ? () => onOpenPulse(d.ticker) : undefined}
                 />
               ))}
-            </Scoreboard>
+            </div>
           )}
         </>
       )}
@@ -400,7 +484,18 @@ function MorningStack({
           )}
         >
           {morning.notices.map((notice) => (
-            <Reading key={notice.label} label={notice.label}>
+            <Reading
+              key={notice.label}
+              label={notice.label}
+              tone={notice.kind === "gap" ? "warn" : "neutral"}
+              icon={
+                notice.kind === "gap" ? (
+                  <AlertTriangle />
+                ) : (
+                  <Sparkles />
+                )
+              }
+            >
               <InsightText text={notice.text} />
             </Reading>
           ))}
@@ -506,26 +601,35 @@ function PortfolioLane({
   const width =
     maxValue > 0 ? Math.max(10, (sheet.totalValue / maxValue) * 100) : 10;
   const hot = sheet.roiPct >= 0;
+  const initial = sheet.portfolio.name.trim().charAt(0).toUpperCase() || "?";
 
   return (
     <button
       type="button"
       onClick={onOpen}
-      className="card-sheen glass-well group min-h-11 w-full rounded-lg p-6 text-left ring-1 ring-foreground/10 transition hover:scale-[1.01] hover:bg-accent hover:ring-primary/25"
+      className="card-sheen glass-well group flex w-full flex-col gap-4 rounded-lg p-6 text-left ring-1 ring-foreground/10 transition hover:scale-[1.01] hover:bg-accent hover:ring-primary/25"
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="truncate font-heading text-base font-semibold text-foreground">
-            {sheet.portfolio.name}
-          </p>
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            {plural(sheet.holdingCount, "holding")}
-            {sheetCashBalance(sheet.portfolio) !== 0
-              ? ` · ${currency(sheetCashBalance(sheet.portfolio), 0)} cash`
-              : ""}
-          </p>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <span
+            className="flex size-11 shrink-0 items-center justify-center rounded-full bg-muted font-heading text-base font-semibold text-foreground"
+            aria-hidden
+          >
+            {initial}
+          </span>
+          <div className="min-w-0">
+            <p className="truncate font-heading text-base font-semibold text-foreground">
+              {sheet.portfolio.name}
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {plural(sheet.holdingCount, "holding")}
+              {sheetCashBalance(sheet.portfolio) !== 0
+                ? ` · ${currency(sheetCashBalance(sheet.portfolio), 0)} cash`
+                : ""}
+            </p>
+          </div>
         </div>
-        <p className="shrink-0 text-right font-mono text-sm font-semibold tabular-nums text-foreground">
+        <p className="shrink-0 text-right font-mono text-xl font-bold tabular-nums text-foreground">
           {currency(sheet.totalValue, 0)}
         </p>
       </div>
@@ -537,26 +641,26 @@ function PortfolioLane({
           // track would be invisible against its own container — use the
           // darker bg-card token instead so the fill reads as "X% of a
           // whole," not a floating bar.
-          "mt-4 h-2 bg-card [&_[data-slot=progress-indicator]]:bg-primary",
+          "h-2 bg-card [&_[data-slot=progress-indicator]]:bg-primary",
           hot
             ? "[&_[data-slot=progress-indicator]]:bg-gain"
             : "[&_[data-slot=progress-indicator]]:bg-loss"
         )}
       />
 
-      <p className="mt-3 text-sm tabular-nums text-muted-foreground">
-        <span className={tone(sheet.roiPct)}>{percent(sheet.roiPct)}</span>
-        {" all time"}
+      <div className="flex flex-wrap items-center gap-2">
+        <Pill tone={sheet.roiPct >= 0 ? "good" : "bad"} className="font-mono">
+          {percent(sheet.roiPct)} all time
+        </Pill>
         {sheet.todayDollar !== 0 ? (
-          <>
-            {" · "}
-            <span className={tone(sheet.todayDollar)}>
-              {signedCurrency(sheet.todayDollar, 0)}
-            </span>
-            {" today"}
-          </>
+          <Pill
+            tone={sheet.todayDollar >= 0 ? "good" : "bad"}
+            className="font-mono"
+          >
+            {signedCurrency(sheet.todayDollar, 0)} today
+          </Pill>
         ) : null}
-      </p>
+      </div>
     </button>
   );
 }

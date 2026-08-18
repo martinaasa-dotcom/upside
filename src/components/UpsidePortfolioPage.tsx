@@ -4,16 +4,19 @@ import { AppHeader } from "@/components/AppHeader";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { ComparisonChart, type ComparisonSeries } from "@/components/ComparisonChart";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
-import { MicroLabel, Panel, PanelHeader, Score, Scoreboard, SwatchLegend } from "@/components/ui/Panel";
-import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  BOX,
+  MicroLabel,
+  Panel,
+  PanelHeader,
+  Pill,
+  Reading,
+  Score,
+  Scoreboard,
+  SwatchLegend,
+} from "@/components/ui/Panel";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Item,
   ItemContent,
@@ -461,7 +464,7 @@ function FundMetric({
       <MicroLabel>{label}</MicroLabel>
       <p
         className={cn(
-          "mt-1 truncate text-sm font-semibold tabular-nums text-foreground",
+          "mt-1.5 truncate font-mono text-base font-semibold tabular-nums text-foreground",
           valueClassName
         )}
       >
@@ -476,6 +479,9 @@ function FundMetric({
   );
 }
 
+/** Thesis / Sell-if pair. Same nested Reading tile used everywhere else a
+ * card explains itself in a sentence (Worth noticing, What's missing) —
+ * one label style, so this doesn't drift into its own smaller heading. */
 function FundNote({
   label,
   items,
@@ -484,24 +490,19 @@ function FundNote({
   items: string[];
 }) {
   return (
-    <Item variant="muted" size="sm" className="items-start">
-      <ItemContent>
-        <ItemTitle>{label}</ItemTitle>
-        {items.length > 0 ? (
-          <ul className="flex flex-col gap-1">
-            {items.map((item) => (
-              <li key={item} className="text-sm leading-relaxed text-foreground">
-                {item}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <ItemDescription className="line-clamp-none">
-            Not written yet.
-          </ItemDescription>
-        )}
-      </ItemContent>
-    </Item>
+    <Reading nested label={label}>
+      {items.length > 0 ? (
+        <ul className="flex flex-col gap-1.5">
+          {items.map((item) => (
+            <li key={item} className="text-sm leading-relaxed text-foreground">
+              {item}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <span className="text-muted-foreground">Not written yet.</span>
+      )}
+    </Reading>
   );
 }
 
@@ -521,45 +522,40 @@ function FundPosition({
   const shares = holding.shares.toLocaleString("en-US");
   const holdFor = holding.target_timeframe?.trim();
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{cashtag(holding.ticker)}</CardTitle>
-        <CardDescription>
-          {shares} sh · entered {fmtDate(holding.entry_date)}
-          {holdFor ? ` · Hold for ${holdFor}` : ""}
-        </CardDescription>
-        <CardAction>
-          <span
-            className={cn(
-              "text-sm font-semibold tabular-nums",
-              signedTone(pnlPct)
-            )}
-          >
-            {percent(pnlPct)}
-          </span>
-        </CardAction>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <FundMetric label="Cost" value={currency(holding.cost_basis)} />
-          <FundMetric
-            label="Now"
-            value={currency(price)}
-            valueClassName={signedTone(pnlPct, "text-foreground")}
-          />
-          <FundMetric label="Portfolio" value={currency(marketValue, 0)} />
-          <FundMetric
-            label="Since buy"
-            value={signedCurrency(pnlDollar, 0)}
-            valueClassName={signedTone(pnlDollar)}
-          />
+    <div className={cn(BOX, "flex flex-col gap-4 p-6")}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <Badge variant="secondary" className="font-heading text-sm font-semibold">
+            {cashtag(holding.ticker)}
+          </Badge>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            {shares} sh · entered {fmtDate(holding.entry_date)}
+            {holdFor ? ` · Hold for ${holdFor}` : ""}
+          </p>
         </div>
-        <div className="grid items-start gap-3 sm:grid-cols-2">
-          <FundNote label="Thesis" items={thesis} />
-          <FundNote label="Sell if" items={exit} />
-        </div>
-      </CardContent>
-    </Card>
+        <Pill tone={pnlPct > 0 ? "good" : pnlPct < 0 ? "bad" : "neutral"} className="shrink-0">
+          {percent(pnlPct)}
+        </Pill>
+      </div>
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <FundMetric label="Cost" value={currency(holding.cost_basis)} />
+        <FundMetric
+          label="Now"
+          value={currency(price)}
+          valueClassName={signedTone(pnlPct, "text-foreground")}
+        />
+        <FundMetric label="Portfolio" value={currency(marketValue, 0)} />
+        <FundMetric
+          label="Since buy"
+          value={signedCurrency(pnlDollar, 0)}
+          valueClassName={signedTone(pnlDollar)}
+        />
+      </div>
+      <div className="grid items-start gap-4 sm:grid-cols-2">
+        <FundNote label="Thesis" items={thesis} />
+        <FundNote label="Sell if" items={exit} />
+      </div>
+    </div>
   );
 }
 
