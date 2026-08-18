@@ -109,7 +109,11 @@ export function AppHeader({
               {children}
               <UpgradeNudge />
               <FeedbackHeaderButton />
+              {showWorkspaceNav && (
+                <span className="h-5 w-px shrink-0 bg-border" aria-hidden />
+              )}
               {showWorkspaceNav && <WorkspaceSwitcher />}
+              <span className="h-5 w-px shrink-0 bg-border" aria-hidden />
               {end ?? <DefaultAccountEnd />}
             </div>
           </div>
