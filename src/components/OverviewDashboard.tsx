@@ -303,12 +303,16 @@ function DriverTile({
   secondary,
   isUp,
   onOpen,
+  nested = false,
 }: {
   ticker: string;
   primary: string;
   secondary?: string;
   isUp: boolean;
   onOpen?: () => void;
+  /** Sits inside a Reading shell (the sentence above it) instead of
+   * floating as its own top-level card. Muted well, no second ring. */
+  nested?: boolean;
 }) {
   const toneCls = isUp ? "text-gain" : "text-loss";
   const body = (
@@ -339,13 +343,17 @@ function DriverTile({
     </>
   );
   const shellClass = cn(
-    "card-sheen glass group relative flex h-full min-w-0 flex-col justify-center gap-1.5 overflow-hidden rounded-lg p-6 text-left ring-1 transition",
-    isUp ? "ring-gain/20" : "ring-loss/20",
+    "group relative flex h-full min-w-0 flex-col justify-center gap-1.5 overflow-hidden rounded-lg p-6 text-left transition",
+    nested
+      ? "glass-well"
+      : cn("card-sheen glass ring-1", isUp ? "ring-gain/20" : "ring-loss/20"),
     onOpen &&
-      cn(
-        "hover:scale-[1.01] hover:bg-accent active:scale-[0.995]",
-        isUp ? "hover:ring-gain/40" : "hover:ring-loss/40"
-      )
+      (nested
+        ? "hover:scale-[1.01] hover:bg-accent/70 active:scale-[0.995]"
+        : cn(
+            "hover:scale-[1.01] hover:bg-accent active:scale-[0.995]",
+            isUp ? "hover:ring-gain/40" : "hover:ring-loss/40"
+          ))
   );
   if (onOpen) {
     return (
@@ -372,19 +380,18 @@ function MorningStack({
   return (
     <div className={cn("flex flex-col gap-6", className)}>
       {sunday ? (
-        <div className="flex flex-col gap-6">
-          <Reading label="Sunday">
-            {morning.sentence}
-          </Reading>
+        <Reading label="Sunday">
+          {morning.sentence}
           {(sunday.best || sunday.worst) && (
             <div
               className={cn(
-                "grid grid-cols-1 gap-4",
+                "mt-4 grid grid-cols-1 gap-3",
                 sunday.best && sunday.worst && "sm:grid-cols-2"
               )}
             >
               {sunday.best && (
                 <DriverTile
+                  nested
                   ticker={sunday.best.ticker}
                   primary={signedMovePct(sunday.best.pct)}
                   secondary="Biggest week move"
@@ -396,6 +403,7 @@ function MorningStack({
               )}
               {sunday.worst && (
                 <DriverTile
+                  nested
                   ticker={sunday.worst.ticker}
                   primary={signedMovePct(sunday.worst.pct)}
                   secondary="Biggest drop"
@@ -407,22 +415,21 @@ function MorningStack({
               )}
             </div>
           )}
-        </div>
+        </Reading>
       ) : (
-        <>
-          <Reading className="text-base leading-relaxed">
-            {morning.sentence}
-          </Reading>
+        <Reading className="text-base leading-relaxed">
+          {morning.sentence}
           {!morning.quiet && morning.drivers.length > 0 && (
             <div
               className={cn(
-                "grid grid-cols-1 gap-4",
+                "mt-4 grid grid-cols-1 gap-3",
                 morning.drivers.length > 1 && "sm:grid-cols-2",
                 morning.drivers.length > 2 && "lg:grid-cols-3"
               )}
             >
               {morning.drivers.map((d) => (
                 <DriverTile
+                  nested
                   key={d.ticker}
                   ticker={d.ticker}
                   primary={signedCurrency(d.dollar, 0)}
@@ -437,7 +444,7 @@ function MorningStack({
               ))}
             </div>
           )}
-        </>
+        </Reading>
       )}
       {morning.awayLines.length > 0 && (
         <Reading
@@ -498,26 +505,28 @@ function MorningStack({
         </div>
       )}
       {morning.pulseFlags.length > 0 && (
-        <div className="flex flex-col gap-2">
-          {morning.pulseFlags.map((flag) => (
-            <button
-              key={flag.ticker}
-              type="button"
-              onClick={() => onOpenPulse?.(flag.ticker)}
-              className="group/flag flex w-full items-center gap-4 rounded-xl bg-card p-6 text-left ring-1 ring-foreground/10 transition hover:scale-[1.01] hover:bg-accent hover:ring-primary/30"
-            >
-              <span className="min-w-0 flex-1">
-                <p className="text-sm font-semibold tracking-tight text-foreground">
-                  Pulse · {cashtag(flag.ticker)} · {statusLabel(flag.status)}
-                </p>
-                <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                  {flag.line}
-                </p>
-              </span>
-              <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover/flag:translate-x-0.5" />
-            </button>
-          ))}
-        </div>
+        <Reading label="Worth noticing">
+          <div className="flex flex-col gap-2">
+            {morning.pulseFlags.map((flag) => (
+              <button
+                key={flag.ticker}
+                type="button"
+                onClick={() => onOpenPulse?.(flag.ticker)}
+                className="group/flag glass-well flex w-full items-center gap-4 rounded-lg p-4 text-left transition hover:scale-[1.01] hover:bg-accent/70 active:scale-[0.995]"
+              >
+                <span className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold tracking-tight text-foreground">
+                    {cashtag(flag.ticker)} · {statusLabel(flag.status)}
+                  </p>
+                  <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                    {flag.line}
+                  </p>
+                </span>
+                <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover/flag:translate-x-0.5" />
+              </button>
+            ))}
+          </div>
+        </Reading>
       )}
     </div>
   );

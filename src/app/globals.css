@@ -181,11 +181,17 @@ body {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background-image: radial-gradient(
-    1400px 1100px at 0% 0%,
-    oklch(from var(--primary) l c h / 16%),
-    transparent 70%
-  );
+  background-image:
+    radial-gradient(
+      1700px 1300px at 0% 0%,
+      oklch(from var(--primary) l c h / 24%),
+      transparent 70%
+    ),
+    radial-gradient(
+      1300px 1000px at 100% 100%,
+      oklch(from var(--primary) l c h / 12%),
+      transparent 72%
+    );
 }
 
 /*
@@ -220,12 +226,14 @@ body {
    * fine over the mostly-flat black field.
    */
   .glass {
-    background-color: color-mix(in oklch, var(--card), transparent 40%);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
+    background-color: color-mix(in oklch, var(--card), transparent 58%);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
   }
   .glass-well {
-    background-color: color-mix(in oklch, var(--muted), transparent 45%);
+    background-color: color-mix(in oklch, var(--muted), transparent 60%);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
   }
 }
 
