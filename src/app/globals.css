@@ -160,6 +160,38 @@ body {
   padding-right: env(safe-area-inset-right);
 }
 
+/*
+ * Ambient corner glow shared by every signed-in page — one gold, one
+ * gain-green, both barely-there. `.page-frame` (PAGE_FRAME_CLASS) wraps
+ * every screen and paints its own opaque bg-background, which would
+ * otherwise hide a glow set on body. `isolation: isolate` gives it a
+ * stacking context so the negative z-index pseudo below sits above that
+ * fill but under the page's real content. Fixed position so it reads as
+ * the room's light while scrolling, not a decoration tied to page length.
+ */
+.page-frame {
+  position: relative;
+  isolation: isolate;
+}
+.page-frame::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(
+      1100px 800px at -10% -10%,
+      oklch(from var(--primary) l c h / 7%),
+      transparent 60%
+    ),
+    radial-gradient(
+      1100px 800px at 110% 110%,
+      oklch(from var(--gain) l c h / 6%),
+      transparent 60%
+    );
+}
+
 h1,
 h2,
 h3,

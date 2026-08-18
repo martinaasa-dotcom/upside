@@ -55,13 +55,44 @@ import {
 } from "@/lib/visit-diff";
 import { finiteNumber } from "@/lib/money";
 import { ArrowRight, Plus } from "lucide-react";
-import { memo, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import {
+  memo,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 
 export type LabDeepLink = "seasonality";
 
 /** Signed numbers use gain/loss. Neutral figures stay on the cream. */
 const tone = (value: number | null | undefined) =>
   signedTone(value, "text-muted-foreground");
+
+/** Tinted pill for a signed delta, instead of plain colored text. */
+function DeltaBadge({
+  value,
+  children,
+}: {
+  value: number | null | undefined;
+  children: ReactNode;
+}) {
+  const up = value != null && value > 0;
+  const down = value != null && value < 0;
+  return (
+    <Badge
+      variant="outline"
+      className={cn(
+        "font-mono tabular-nums",
+        up && "border-gain/20 bg-gain/10 text-gain",
+        down && "border-loss/20 bg-loss/10 text-loss"
+      )}
+    >
+      {children}
+    </Badge>
+  );
+}
 
 /** Enough to see the shape of the day. Eight was a wall of cards. */
 const MOVERS_SHOWN = 5;
@@ -417,7 +448,7 @@ function MoverTile({
     >
       <span
         className={cn(
-          "absolute inset-y-0 left-0 w-0.5",
+          "absolute inset-y-0 left-0 w-1",
           isUp ? "bg-gain" : "bg-loss"
         )}
         aria-hidden
@@ -740,16 +771,26 @@ export const OverviewDashboard = memo(function OverviewDashboard({
         <Score
           label={morning.moveLabel}
           value={signedCurrency(totals.todayDollar, 0)}
-          sub={totals.todayPct != null ? percent(totals.todayPct) : "—"}
+          sub={
+            totals.todayPct != null ? (
+              <DeltaBadge value={totals.todayDollar}>
+                {percent(totals.todayPct)}
+              </DeltaBadge>
+            ) : (
+              "—"
+            )
+          }
           valueClassName={tone(totals.todayDollar)}
-          subClassName={tone(totals.todayDollar)}
         />
         <Score
           label="All time"
           value={signedCurrency(totals.roiDollar, 0)}
-          sub={percent(totals.roiPct)}
+          sub={
+            <DeltaBadge value={totals.roiDollar}>
+              {percent(totals.roiPct)}
+            </DeltaBadge>
+          }
           valueClassName={tone(totals.roiDollar)}
-          subClassName={tone(totals.roiDollar)}
         />
         <Score
           label="Cash"
