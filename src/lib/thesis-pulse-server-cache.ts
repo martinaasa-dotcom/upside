@@ -22,7 +22,13 @@ export const PULSE_SERVER_STALE_TTL_MS = 4 * 60 * 60 * 1000;
 const MAX_CACHE_SIZE = 300;
 
 const PULSE_SERVER_CACHE = new Map<string, PulseServerCacheEntry>();
-let LATEST_SUMMARY_CACHE: { summary: string; cachedAt: number } | null = null;
+// Keyed by the requesting user's id. The summary is "one short sentence on
+// the portfolio as a whole" (specific tickers, whether a call left Hold) --
+// unlike the per-ticker check cache above, this is inherently one person's
+// book and must never be handed to a different signed-in user who happens
+// to hit the same rate-limit / busy-slot fallback within the TTL window.
+const SUMMARY_CACHE = new Map<string, { summary: string; cachedAt: number }>();
+const MAX_SUMMARY_CACHE_SIZE = 300;
 
 export function getMoveBucket(effectivePct: number | null): string {
   if (effectivePct == null || !Number.isFinite(effectivePct)) return "flat";
@@ -91,20 +97,30 @@ export function setCachedPulseCheck(
   });
 }
 
-export function getCachedPulseSummary(): string | null {
-  if (!LATEST_SUMMARY_CACHE) return null;
-  if (Date.now() - LATEST_SUMMARY_CACHE.cachedAt > PULSE_SERVER_FRESH_TTL_MS) {
+export function getCachedPulseSummary(userId: string): string | null {
+  const entry = SUMMARY_CACHE.get(userId);
+  if (!entry) return null;
+  if (Date.now() - entry.cachedAt > PULSE_SERVER_FRESH_TTL_MS) {
+    SUMMARY_CACHE.delete(userId);
     return null;
   }
-  return LATEST_SUMMARY_CACHE.summary;
+  return entry.summary;
 }
 
-export function setCachedPulseSummary(summary: string) {
+export function setCachedPulseSummary(userId: string, summary: string) {
   if (!summary || !summary.trim()) return;
-  LATEST_SUMMARY_CACHE = {
+  if (SUMMARY_CACHE.size > MAX_SUMMARY_CACHE_SIZE) {
+    const sorted = [...SUMMARY_CACHE.entries()].sort(
+      (a, b) => a[1].cachedAt - b[1].cachedAt
+    );
+    for (let i = 0; i < 50; i++) {
+      if (sorted[i]) SUMMARY_CACHE.delete(sorted[i][0]);
+    }
+  }
+  SUMMARY_CACHE.set(userId, {
     summary: summary.trim(),
     cachedAt: Date.now(),
-  };
+  });
 }
 
 export function clearPulseCacheForTicker(ticker: string) {

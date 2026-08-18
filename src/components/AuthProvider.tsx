@@ -114,12 +114,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }),
       ]);
       const next = result.data.user ?? null;
-      setUser(next);
-      setReady(true);
       if (next) {
+        // A different account than whatever this browser last had signed
+        // in (shared/borrowed device, or a session that expired without an
+        // explicit Sign out) — purge per-user local caches (Lab conviction
+        // notes, watchlist, Pulse history, community lists, …) *before*
+        // exposing the new user, so nothing from the previous account is
+        // still sitting in localStorage for a child effect to read and,
+        // worse, push up into this account's own Supabase rows.
+        const last = loadLastUser();
+        if (last && last.id !== next.id) {
+          await purgeClientSession();
+        }
         saveLastUser({ id: next.id, email: next.email ?? null });
+        setUser(next);
+        setReady(true);
         void loadProfile(next);
       } else {
+        setUser(null);
+        setReady(true);
         saveLastUser(null);
         setProfile(null);
         clearBookCache();
@@ -151,6 +164,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } = supabase.auth.onAuthStateChange((event, session) => {
       const next = session?.user ?? null;
       if (next) {
+        // Same account-switch guard as `refresh()` above — this listener
+        // also fires on a fresh sign-in on a device that still has another
+        // account's local caches sitting in localStorage.
+        const last = loadLastUser();
+        if (last && last.id !== next.id) {
+          void purgeClientSession().then(() => {
+            saveLastUser({ id: next.id, email: next.email ?? null });
+            setUser(next);
+            setReady(true);
+            void loadProfile(next, profileCtrl.signal);
+          });
+          return;
+        }
         setUser(next);
         setReady(true);
         saveLastUser({ id: next.id, email: next.email ?? null });

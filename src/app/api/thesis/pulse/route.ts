@@ -76,12 +76,13 @@ function checksForCandidates(
 }
 
 function reuseCachedPulse(
+  userId: string,
   candidates: PulseCandidate[],
   cachedMap: Map<string, CachedPulse>,
   headlines: Record<string, PulseHeadline[]>
 ) {
   const report: PulseReport = {
-    summary: humanizeMargusText(getCachedPulseSummary() ?? ""),
+    summary: humanizeMargusText(getCachedPulseSummary(userId) ?? ""),
     checks: checksForCandidates(candidates, cachedMap, headlines),
     generatedAt: new Date().toISOString(),
   };
@@ -255,21 +256,21 @@ async function handlePOST(req: Request) {
   }
 
   if (uncachedCandidates.length === 0) {
-    return reuseCachedPulse(candidates, cachedMap, headlines);
+    return reuseCachedPulse(auth.user.id, candidates, cachedMap, headlines);
   }
 
   const limit = await takeDurableRateLimit(`pulse:${auth.user.id}`, 12, 10 * 60_000);
   if (!limit.ok) {
-    return reuseCachedPulse(candidates, cachedMap, headlines);
+    return reuseCachedPulse(auth.user.id, candidates, cachedMap, headlines);
   }
 
   const providerChain = buildAdvisorProviderChain({ reasoning: true });
   if (providerChain.length === 0) {
-    return reuseCachedPulse(candidates, cachedMap, headlines);
+    return reuseCachedPulse(auth.user.id, candidates, cachedMap, headlines);
   }
 
   if (chatIsBusy() || !beginBackgroundLlm()) {
-    return reuseCachedPulse(candidates, cachedMap, headlines);
+    return reuseCachedPulse(auth.user.id, candidates, cachedMap, headlines);
   }
   const heldSlot = true;
   stampAdvisorUse(auth.user.id);
@@ -337,13 +338,13 @@ async function handlePOST(req: Request) {
     }
 
     if (object.summary?.trim()) {
-      setCachedPulseSummary(object.summary);
+      setCachedPulseSummary(auth.user.id, object.summary);
     }
 
     const checks = checksForCandidates(candidates, cachedMap, headlines);
 
     const report: PulseReport = humanizeMargusTree({
-      summary: object.summary || getCachedPulseSummary() || "",
+      summary: object.summary || getCachedPulseSummary(auth.user.id) || "",
       checks,
       generatedAt: new Date().toISOString(),
     });
@@ -365,7 +366,7 @@ async function handlePOST(req: Request) {
     );
   } catch (err) {
     console.error("Pulse report failed", err);
-    return reuseCachedPulse(candidates, cachedMap, headlines);
+    return reuseCachedPulse(auth.user.id, candidates, cachedMap, headlines);
   } finally {
     if (heldSlot) endBackgroundLlm();
   }
