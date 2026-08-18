@@ -6367,7 +6367,7 @@ run("legal pages name the operator and match the product", () => {
   assert.match(product, /LEGAL_VAT_ID = "EE102590654"/);
   assert.match(product, /Aiandi tn 8\/2-28/);
   assert.match(product, /PRODUCT_CONTACT_EMAIL = "privacy@upsidelab.app"/);
-  assert.match(product, /PRODUCT_SUPPORT_EMAIL = "support@upsidelab.app"/);
+  assert.match(product, /PRODUCT_SUPPORT_EMAIL = "app.support@upthink.ee"/);
 
   for (const src of [terms, privacy]) {
     assert.match(src, /LEGAL_OPERATOR/);

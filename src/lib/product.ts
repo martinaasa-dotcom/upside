@@ -31,8 +31,8 @@ export const SIGNIN_POINTS = [
 /** Live inbox. Named on /terms and /privacy. */
 export const PRODUCT_CONTACT_EMAIL = "privacy@upsidelab.app";
 
-/** Product help. Alias this to the same mailbox as privacy@ if you only have one. */
-export const PRODUCT_SUPPORT_EMAIL = "support@upsidelab.app";
+/** Product help. Named on Account, sign-in, /terms, and /privacy. */
+export const PRODUCT_SUPPORT_EMAIL = "app.support@upthink.ee";
 
 /** Public X account for the paper fund. Cron posts weekday notes here. */
 export const FUND_X_HANDLE = "UpsideFund";
