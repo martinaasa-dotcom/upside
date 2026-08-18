@@ -12,11 +12,20 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { track } from "@vercel/analytics";
 import {
   currency,
   percent,
   signedCurrency,
+  signedPercent,
   cn,
   plural,
   signedTone,
@@ -468,6 +477,82 @@ async function fetchQuote(
   }
 }
 
+const ACTION_SUMMARY_ORDER: PulseAction[] = ["sell", "trim", "add", "watch", "hold"];
+
+type ActionSummaryRow = {
+  ticker: string;
+  pct: number | null;
+  reason: string;
+};
+
+/**
+ * Every checked name, grouped by what it's actually asking you to do —
+ * sell/trim/add first, hold last — instead of making someone scroll the
+ * whole scan to piece that together themselves. Sits above the scan so
+ * it's the first thing on the page: a punch list, not another card.
+ */
+function PulseActionSummary({
+  groups,
+  onOpen,
+}: {
+  groups: Partial<Record<PulseAction, ActionSummaryRow[]>>;
+  onOpen: (ticker: string) => void;
+}) {
+  const activeActions = ACTION_SUMMARY_ORDER.filter(
+    (action) => (groups[action]?.length ?? 0) > 0
+  );
+  if (activeActions.length === 0) return null;
+  return (
+    <Panel className="gap-4">
+      <PanelHeader
+        title="What to do today"
+        subtitle="Every name you've checked, grouped by what it's asking for."
+      />
+      <div className="overflow-hidden rounded-lg border border-border">
+        <Table>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead>Action</TableHead>
+              <TableHead>Ticker</TableHead>
+              <TableHead className="hidden sm:table-cell">Why</TableHead>
+              <TableHead className="text-right">Today</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {activeActions.flatMap((action) =>
+              (groups[action] ?? []).map((row) => (
+                <TableRow
+                  key={`${action}-${row.ticker}`}
+                  className="cursor-pointer"
+                  onClick={() => onOpen(row.ticker)}
+                >
+                  <TableCell>
+                    <ActionBadge action={action} />
+                  </TableCell>
+                  <TableCell className="font-heading text-sm font-semibold text-foreground">
+                    {cashtag(row.ticker)}
+                  </TableCell>
+                  <TableCell className="hidden max-w-md truncate text-sm text-muted-foreground sm:table-cell">
+                    {row.reason}
+                  </TableCell>
+                  <TableCell
+                    className={cn(
+                      "text-right font-mono text-sm tabular-nums",
+                      signedTone(row.pct)
+                    )}
+                  >
+                    {row.pct != null ? signedPercent(row.pct) : "—"}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </Panel>
+  );
+}
+
 async function resolveListedTicker(
   raw: string,
   signal?: AbortSignal
@@ -649,9 +734,17 @@ export const PulsePage = memo(function PulsePage({
     return left;
   }, [candidates, checksByTicker, pinnedTicker]);
 
+  const actionByTicker = useMemo(() => {
+    const out: Record<string, PulseCheck["action"] | undefined> = {};
+    for (const key of Object.keys(checksByTicker)) {
+      out[key] = checksByTicker[key]?.action;
+    }
+    return out;
+  }, [checksByTicker]);
+
   const ranked = useMemo(
-    () => sortPulseCandidates(candidates, { leftHoldTickers }),
-    [candidates, leftHoldTickers]
+    () => sortPulseCandidates(candidates, { leftHoldTickers, actionByTicker }),
+    [candidates, leftHoldTickers, actionByTicker]
   );
 
   const attention = useMemo(
@@ -698,6 +791,35 @@ export const PulsePage = memo(function PulsePage({
       ),
     [ranked, leftHoldTickers, checksByTicker, headlinesByTicker]
   );
+
+  const scrollToPulseCard = useCallback((ticker: string) => {
+    document
+      .getElementById(`pulse-card-${ticker}`)
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
+
+  const actionSummaryGroups = useMemo(() => {
+    const groups: Partial<Record<PulseAction, ActionSummaryRow[]>> = {};
+    const scanLineByTicker: Record<string, string> = {};
+    for (const row of scanRows) {
+      scanLineByTicker[row.ticker.toUpperCase()] = scanLineBody(
+        row.ticker,
+        humanizeMargusText(row.line)
+      );
+    }
+    for (const c of ranked) {
+      const key = c.ticker.toUpperCase();
+      const check = checksByTicker[key];
+      if (!check || isEmptyPulseCheck(check)) continue;
+      const action = reconcilePulseCheck(check).action;
+      (groups[action] ??= []).push({
+        ticker: key,
+        pct: c.effectivePct,
+        reason: scanLineByTicker[key] ?? actionLabel(action),
+      });
+    }
+    return groups;
+  }, [ranked, checksByTicker, scanRows]);
 
   useEffect(() => {
     for (const c of candidates) hydrateTicker(c.ticker);
@@ -1088,6 +1210,13 @@ export const PulsePage = memo(function PulsePage({
         )}
       </Panel>
 
+      {!pinnedTicker && (
+        <PulseActionSummary
+          groups={actionSummaryGroups}
+          onOpen={scrollToPulseCard}
+        />
+      )}
+
         {scanRows.length > 0 && !pinnedTicker && (
         <ScanList
           label="Today's scan"
@@ -1102,11 +1231,7 @@ export const PulsePage = memo(function PulsePage({
               movePct: candidate?.effectivePct,
             };
           })}
-          onOpen={(ticker) => {
-            document
-              .getElementById(`pulse-card-${ticker}`)
-              ?.scrollIntoView({ behavior: "smooth", block: "start" });
-          }}
+          onOpen={scrollToPulseCard}
         />
       )}
 

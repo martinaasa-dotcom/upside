@@ -334,10 +334,10 @@ export const LabSheet = memo(function LabSheet({
                 ))}
               </div>
               {tabOverflow.left && (
-                <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-card/85 to-transparent" />
+                <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-card/85 to-card/0" />
               )}
               {tabOverflow.right && (
-                <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-card/85 to-transparent" />
+                <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-card/85 to-card/0" />
               )}
             </div>
           </div>
