@@ -29,7 +29,7 @@ export const SIGNIN_POINTS = [
 ] as const;
 
 /** Live inbox. Named on /terms and /privacy. */
-export const PRODUCT_CONTACT_EMAIL = "privacy@upsidelab.app";
+export const PRODUCT_CONTACT_EMAIL = "privacy@upthink.ee";
 
 /** Product help. Named on Account, sign-in, /terms, and /privacy. */
 export const PRODUCT_SUPPORT_EMAIL = "app.support@upthink.ee";
