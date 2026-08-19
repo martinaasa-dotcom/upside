@@ -67,7 +67,7 @@ function JoinInner() {
             Your partner invited you to edit this portfolio together. Paste the
             code if the link did not fill it in.
           </p>
-          {!code && (
+          {(!code || error) && (
             <form
               className="flex flex-col gap-2"
               onSubmit={(e) => {
