@@ -150,32 +150,50 @@ unilaterally have all been decided and implemented:
 
 ## What is still open
 
-Nothing Critical or High, and nothing blocking. What remains is genuinely
-deferred rather than forgotten, and each row in the relevant fix log says
-why. The substantive ones:
+Nothing Critical or High, and nothing blocking. This section is kept
+current rather than left as a historical snapshot — every fix log linked
+below has the day-by-day detail; this is only the rollup. As of
+2026-08-19:
 
-- **Two human actions**, neither of which code can do: create the 45-day
-  R2 bucket lifecycle rule in Cloudflare, and re-verify the Supabase
-  cookie name against a real signed-in session before publishing it
-  externally (`docs/COOKIES.md`).
-- **Product decisions** nobody should make on Martin's behalf: whether
-  classmates should see each other's cost basis in a Classroom (Pass 8
-  M1), whether pasting a ticker with no price should land at $0.01 rather
-  than be skipped (Pass 7 M2), whether invite copy should say "Circle"
-  where it currently says "community" for both circles and classrooms
-  (Pass 7 M3), whether open invite links should expire (Pass 2 M5), and
-  whether every small icon button in the app should grow to a 44px touch
-  target (Pass 5 M1).
-- **Infrastructure the project doesn't have**: distributed rate limiting
-  and a shared circuit-breaker store both need Redis/Upstash/Vercel KV
-  (Pass 2 M1, Pass 4 L2), and the CSP `unsafe-inline` widening needs
-  Next.js to ship noncing for cached Flight payloads (Pass 2 M2).
+- **One human action left**, and code can't do it: apply
+  `supabase/migrations/20260819160000_community_last_admin_and_classroom_unpin.sql`
+  and `20260819170000_purge_email_seed_tables_on_deletion.sql` in the
+  Supabase SQL editor (Pass 8 M2/L1, Pass 9 L2) — written and reviewed,
+  not yet applied. Everything else that once needed a Cloudflare console
+  action or a real Stripe payment has since been done and confirmed by
+  Martin (R2 cold-copy backup is live, `docs/DISASTER_RECOVERY.md`; a
+  live end-to-end payment has gone through, `docs/STRIPE_BILLING.md`).
+- **Product decisions that were made**, not left open: classmates no
+  longer see each other's cost basis in a Classroom, only the teacher and
+  their own sheet (Pass 8 M1); a missing buy price still gets skipped
+  rather than defaulted to $0.01, with the skip message now naming the
+  fix (Pass 7 M2); generic invite copy says "a group" where the kind is
+  unknown and "Circle" or "class" where it is (Pass 7 M3, L1); open
+  invite links now default to a 30-day expiry instead of never expiring
+  (Pass 2 M5); icon-sm/icon-xs buttons now get a 44px hit area on any
+  touch device without growing on desktop (Pass 5 M1).
+- **Infrastructure the project doesn't have**: the CSP `unsafe-inline`
+  widening still needs Next.js to ship noncing for cached Flight payloads
+  (Pass 2 M2) — nothing to do until that ships. Distributed rate limiting
+  turned out not to need new infrastructure at all: `takeDurableRateLimit`
+  was already Postgres-backed and already in the codebase, so the four
+  endpoints that genuinely needed it (feedback, telemetry, log-error, the
+  invite peek) now use it (Pass 2 M1). A billing reconciliation cron was
+  built the same way once Pro started taking real payments (Pass 6 M1).
 - **Deliberately not "cleaned up"**: the `plainError` identity entries
   (Pass 5 L3) are load-bearing — they short-circuit before
-  `looksTechnical()`, guaranteeing those sentences reach the user — and
-  the household/alias email tables (Pass 9 L2) are data `AGENTS.md`
-  explicitly rules out touching.
+  `looksTechnical()`, guaranteeing those sentences reach the user. The
+  household/alias/seed-claim tables (Pass 9 L2) stay data `AGENTS.md`
+  guards — nothing about their **content** changed — but they are no
+  longer an erasure gap: account deletion now sweeps a matching email out
+  of all three the same way it already scrubbed the error log.
 - **One design question**: whether overlay chrome (Dialog, Sheet,
   Popover, Select, Command) should become glass now that top-level cards
   are (Pass 1). They are deliberately opaque and self-consistent today,
   and blur behind small menu text risks legibility.
+- **Not needed**: a published per-cookie table. The Supabase session
+  cookie name in `docs/COOKIES.md` is derived from the `@supabase/ssr`
+  naming convention rather than independently observed, but that only
+  matters if a per-cookie table is ever published externally — Martin has
+  said that isn't happening, and the Privacy Policy stays at category
+  level, which is what regulators expect for an app this size.
