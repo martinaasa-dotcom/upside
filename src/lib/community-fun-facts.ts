@@ -187,14 +187,15 @@ const MAKERS: FactMaker[] = [
       `Don't underestimate ${f.name}'s Falcon book, few positions, big bets.`,
     ]);
   },
-  // Octopus: most kinds of stocks.
+  // Most kinds of stocks (Octopus, Squid, or Crab — whichever this book landed on).
   ({ members, rng }) => {
-    const octopi = members.filter((m) => m.personality?.animal === "Octopus");
-    if (octopi.length === 0) return null;
-    const o = pick(rng, octopi);
+    const spread = members.filter((m) => (m.personality?.themeCount ?? 0) >= 3);
+    if (spread.length === 0) return null;
+    const s = pick(rng, spread);
+    const p = s.personality!;
     return pick(rng, [
-      `${o.name} is an Octopus: ${o.personality!.themeCount} kinds of stocks, a tentacle in every pond.`,
-      `Most kinds of stocks in the circle: ${o.name} the Octopus (${o.personality!.themeCount} groups).`,
+      `${s.name} is a ${p.animal}: ${p.themeCount} kinds of stocks, a tentacle in every pond.`,
+      `Most kinds of stocks in the circle: ${s.name} the ${p.animal} (${p.themeCount} groups).`,
     ]);
   },
   // Squirrel cash stash.
@@ -228,14 +229,16 @@ const MAKERS: FactMaker[] = [
       `Biggest single bet in the circle: ${top.name}, ${top.personality!.convictionScore}% in ${name}.`,
     ]);
   },
-  // Panda specialist.
+  // Single-diet specialist (Panda, Beaver, Rhino, Badger, Scorpion, Otter,
+  // Chameleon, or Flamingo — whichever this book's dominant theme lands on).
   ({ members, rng }) => {
-    const pandas = members.filter((m) => m.personality?.animal === "Panda");
-    if (pandas.length === 0) return null;
-    const p = pick(rng, pandas);
+    const specialists = members.filter((m) => (m.personality?.specialistScore ?? 0) >= 68);
+    if (specialists.length === 0) return null;
+    const s = pick(rng, specialists);
+    const p = s.personality!;
     return pick(rng, [
-      `${p.name} is a Panda: ${p.personality!.specialistScore}% in one kind of business. When that bamboo moves, the whole book moves.`,
-      `One-kind diet: ${p.name} the Panda, ${p.personality!.specialistScore}% in a single group.`,
+      `${s.name} is a ${p.animal}: ${p.specialistScore}% in one kind of business. When that group moves, the whole book moves.`,
+      `One-kind diet: ${s.name} the ${p.animal}, ${p.specialistScore}% in a single group.`,
     ]);
   },
 ];
