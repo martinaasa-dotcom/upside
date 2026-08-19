@@ -136,6 +136,8 @@ export const communityInvitePostSchema = z.looseObject({
   email: z.string().max(2000).optional(),
   role: z.enum(["admin", "member"]).optional(),
   daysValid: z.union([z.string(), finite, z.null()]).optional(),
+  /** Opt out of the 30-day default. A link that never ages out. */
+  neverExpires: z.boolean().optional(),
 });
 
 export const communityInvitePatchSchema = z.looseObject({

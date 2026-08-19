@@ -22,6 +22,9 @@ import { observeRoute } from "@/lib/observe-route";
 import { communityInvitePostSchema } from "@/lib/api-schemas";
 import { parseJsonBody } from "@/lib/parse-json-body";
 
+/** How long a community invite link lives when nobody says otherwise. */
+const DEFAULT_INVITE_DAYS = 30;
+
 export const dynamic = "force-dynamic";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -56,8 +59,17 @@ async function handlePOST(req: NextRequest, ctx: Ctx) {
   }
 
   const token = randomBytes(24).toString("base64url");
-  let expiresAt: string | null = null;
-  if (body.daysValid != null && body.daysValid !== "") {
+
+  // Invite links expire by default. An open (email-less) link is a bearer
+  // credential: whoever holds it joins. One pasted into a public repo, a
+  // forum, or a screenshot used to grant membership forever, because "no
+  // days given" meant "never expires". Now it means 30 days, and never
+  // expiring is something you have to ask for. The portfolio-invite route
+  // has defaulted to 14 days all along; this brings circles in line.
+  let expiresAt: string | null;
+  if (body.neverExpires === true) {
+    expiresAt = null;
+  } else if (body.daysValid != null && body.daysValid !== "") {
     const days = Math.floor(Number(body.daysValid));
     if (!Number.isFinite(days) || days < 1) {
       return NextResponse.json(
@@ -67,6 +79,10 @@ async function handlePOST(req: NextRequest, ctx: Ctx) {
     }
     expiresAt = new Date(
       Date.now() + Math.min(365, days) * 86400000
+    ).toISOString();
+  } else {
+    expiresAt = new Date(
+      Date.now() + DEFAULT_INVITE_DAYS * 86400000
     ).toISOString();
   }
 
@@ -99,7 +115,7 @@ async function handlePOST(req: NextRequest, ctx: Ctx) {
       .maybeSingle();
     const meta = community as { name?: string; kind?: string } | null;
     const classroom = meta?.kind === "classroom";
-    const name = meta?.name?.trim() || (classroom ? "a class" : "a community");
+    const name = meta?.name?.trim() || (classroom ? "a class" : "a Circle");
     const copy = communityInviteCopy({
       name,
       url: `${PRODUCT_ORIGIN}${path}`,

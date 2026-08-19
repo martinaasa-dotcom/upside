@@ -1,5 +1,6 @@
 import { logError } from "@/lib/error-log";
-import { checkRateLimit, clientIp } from "@/lib/rate-limit";
+import { clientIp } from "@/lib/rate-limit";
+import { takeDurableRateLimit } from "@/lib/rate-limit-durable";
 import { getAuthUser } from "@/lib/supabase/server-auth";
 import { sanitizeContext } from "@/lib/telemetry";
 import { NextRequest, NextResponse } from "next/server";
@@ -17,7 +18,7 @@ export const dynamic = "force-dynamic";
  */
 async function handlePOST(req: NextRequest) {
   const ip = clientIp(req);
-  const limit = checkRateLimit(`log-error:${ip}`, 20, 5 * 60_000);
+  const limit = await takeDurableRateLimit(`log-error:${ip}`, 20, 5 * 60_000);
   if (!limit.ok) {
     return NextResponse.json({ ok: false }, { status: 429 });
   }

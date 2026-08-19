@@ -35,8 +35,8 @@ export function inviteLandingCopy(invite: InviteLanding): {
   return {
     title: name
       ? `You've been invited to join ${name}.`
-      : "You've been invited to join a community.",
-    detail: "Sign in with Google to accept. Then the community opens.",
+      : "You've been invited to join a group.",
+    detail: "Sign in with Google to accept. Then the group opens.",
   };
 }
 

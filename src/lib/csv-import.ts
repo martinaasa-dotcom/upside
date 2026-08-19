@@ -173,7 +173,8 @@ export function parseHoldingsCsv(text: string): CsvImportResult {
       result.skipped.push({
         line: i + 1,
         raw,
-        reason: "Buy price is missing, isn't a number, or is enormous",
+        reason:
+          "Buy price is missing, isn't a number, or is enormous. Put the price you paid per share in that column, like 85.10",
       });
       continue;
     }
@@ -204,13 +205,14 @@ CASH,,2500,
  * Paste box: one holding per line.
  * `NBIS 500 85.10` or `NBIS, 500, 85.10`.
  *
- * The buy price is **required**: a line without one is skipped with
- * "Need a buy price after the share count". This comment used to promise
- * a 0.01 placeholder so the row could land and cost be fixed later —
- * nothing in `parseHoldingsPaste` has ever done that. Whether to add that
- * fast path (paste tickers and share counts now, fix cost basis after) is
- * a product decision, not a doc fix; until it's made, this describes what
- * the code actually does.
+ * The buy price is **required**: a line without one is skipped, and the
+ * skip reason names the fix rather than only the problem. This comment
+ * used to promise a 0.01 placeholder so the row could land and the cost
+ * be fixed later — nothing in `parseHoldingsPaste` has ever done that,
+ * and it stays that way on purpose: a 0.01 basis reads as a +1,000,000%
+ * gain, which then feeds the Sunday letter's trim suggestions, the
+ * position-size arithmetic and Pulse. Skipping the line and saying what
+ * to type is the honest failure.
  */
 export function parseHoldingsPaste(text: string): CsvImportResult {
   const result: CsvImportResult = { rows: [], cash: null, skipped: [] };
@@ -241,7 +243,8 @@ export function parseHoldingsPaste(text: string): CsvImportResult {
       result.skipped.push({
         line: i + 1,
         raw,
-        reason: "Need a share count after the ticker",
+        reason:
+          "Need how many shares you own, right after the ticker. Like: NBIS 500 85.10",
       });
       return;
     }
@@ -250,7 +253,8 @@ export function parseHoldingsPaste(text: string): CsvImportResult {
       result.skipped.push({
         line: i + 1,
         raw,
-        reason: "Need a buy price after the share count",
+        reason:
+          "Need the price you paid per share, after the share count. Like: NBIS 500 85.10",
       });
       return;
     }

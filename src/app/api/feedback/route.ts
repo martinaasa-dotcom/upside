@@ -4,7 +4,7 @@ import {
   parseManualFeedback,
   parseWeeklyFeedback,
 } from "@/lib/feedback";
-import { checkRateLimit } from "@/lib/rate-limit";
+import { takeDurableRateLimit } from "@/lib/rate-limit-durable";
 import { noteEmailConfigured, sendNoteEmail } from "@/lib/send-note";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { NextRequest, NextResponse } from "next/server";
@@ -18,7 +18,11 @@ async function handlePOST(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
 
-  const limit = checkRateLimit(`feedback:${auth.user.id}`, 6, 60 * 60_000);
+  const limit = await takeDurableRateLimit(
+    `feedback:${auth.user.id}`,
+    6,
+    60 * 60_000
+  );
   if (!limit.ok) {
     return NextResponse.json(
       { error: "Give it a minute. You already sent a few." },

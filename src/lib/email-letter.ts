@@ -172,7 +172,7 @@ export function communityInviteCopy(input: {
   url: string;
   classroom: boolean;
 }): { subject: string; text: string; html: string } {
-  const name = input.name.trim() || (input.classroom ? "a class" : "a community");
+  const name = input.name.trim() || (input.classroom ? "a class" : "a Circle");
   const subject = `Join ${name}`;
   const lead = input.classroom
     ? `You've been invited into ${name}. Sign in with Google and you get a paper portfolio to work from.`

@@ -332,12 +332,18 @@ html[data-keyboard="open"] .keyboard-chrome:focus-within {
   padding-bottom: 0.25rem;
 }
 
-/* Comfortable touch targets on phones/tablets.
+/* Comfortable touch targets on anything you tap.
  * Do not put this on inline chrome next to a label (InfoTip).
  * min-height here stretches the whole row and the figure below
  * sits in a hole that no other metric uses. Expand the hit area
- * with an absolute inset instead. */
-@media (max-width: 1023px) {
+ * with an absolute inset instead.
+ *
+ * Gated on the pointer, not the viewport. A width query missed every
+ * touch device wide enough to be a "desktop" — an iPad in landscape, a
+ * touchscreen laptop — which is exactly where a 28px control is hardest
+ * to hit. `pointer: coarse` catches those and still leaves a mouse
+ * untouched, so no desktop pixel moves. */
+@media (max-width: 1023px), (pointer: coarse) {
   .touch-target {
     min-height: 2.75rem;
     min-width: 2.75rem;

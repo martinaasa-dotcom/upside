@@ -2,7 +2,8 @@ import { createHash } from "crypto";
 import { provisionClassroomSheet } from "@/lib/classroom";
 import { shareOwnedSheetsIntoCommunity } from "@/lib/community-share";
 import { clipInviteName } from "@/lib/invite-landing";
-import { checkRateLimit, clientIp } from "@/lib/rate-limit";
+import { clientIp } from "@/lib/rate-limit";
+import { takeDurableRateLimit } from "@/lib/rate-limit-durable";
 import {
   getSupabaseDataClient,
   getSupabaseServer,
@@ -33,7 +34,7 @@ async function handleGET(req: NextRequest) {
   }
 
   const ip = clientIp(req);
-  const limit = checkRateLimit(`invite-peek:${ip}`, 30, 5 * 60_000);
+  const limit = await takeDurableRateLimit(`invite-peek:${ip}`, 30, 5 * 60_000);
   if (!limit.ok) {
     return NextResponse.json(
       { error: "Try again in a minute." },

@@ -58,6 +58,11 @@ async function handleGET(req: NextRequest, ctx: Ctx) {
   const classroom = isClassroomKind(
     (communityRow as { kind?: string } | null)?.kind
   );
+  // Derived from the members rows already fetched above, so this costs no
+  // extra round trip.
+  const viewerIsAdmin = ((members ?? []) as { user_id: string; role?: string }[]).some(
+    (m) => m.user_id === auth.user.id && m.role === "admin"
+  );
 
   const memberIds = ((members ?? []) as { user_id: string }[]).map(
     (m) => m.user_id
@@ -166,12 +171,25 @@ async function handleGET(req: NextRequest, ctx: Ctx) {
         .order("sort_order"),
     ]);
     portfolios = p ?? [];
-    // Circles hide cost. A class needs it so the teacher can see what
-    // students actually paid on the paper sheet.
-    holdings = ((h ?? []) as Array<Record<string, unknown>>).map((row) => ({
-      ...row,
-      buy_price: classroom ? row.buy_price : 0,
-    }));
+    // Circles hide cost outright. A class shows it to the **teacher**, and
+    // to each student on their own sheet. That was the stated intent ("so
+    // the teacher can see what students actually paid"), but the check was
+    // on `classroom` alone, so every student saw every classmate's cost
+    // basis. Comparing picks is the teaching goal and that works on
+    // returns, which stay visible to everyone; what someone paid is theirs.
+    const ownIds = new Set(
+      ((ownership ?? []) as { portfolio_id: string; user_id: string }[])
+        .filter((o) => o.user_id === auth.user.id)
+        .map((o) => o.portfolio_id)
+    );
+    const showAllCost = classroom && viewerIsAdmin;
+    holdings = ((h ?? []) as Array<Record<string, unknown>>).map((row) => {
+      const own = ownIds.has(String(row.portfolio_id));
+      return {
+        ...row,
+        buy_price: showAllCost || (classroom && own) ? row.buy_price : 0,
+      };
+    });
   }
 
   const userToPerson = new Map<string, string>();
