@@ -121,7 +121,7 @@ export default function PrivacyPage() {
             </li>
             <li>
               <strong className="text-foreground">AI model providers</strong>{" "}
-              (OpenRouter and fallbacks such as Groq and Gemini). Chat,
+              (OpenRouter and fallbacks such as Groq, Gemini, and Cerebras). Chat,
               Pulse, weekday notes, Forecast, and screenshot import send the
               relevant context, and for screenshots the image itself, to
               whichever provider answers. Some of those providers process
@@ -179,9 +179,15 @@ export default function PrivacyPage() {
           We keep your data while your account is active. Nightly snapshots
           of book data are kept for backup and recovery. Only the people who
           run the app can read a restore. That is a short list of operator
-          accounts, not every signed-in user. You can permanently delete
-          your profile and solely-owned sheets yourself at any time (see
-          below). This removes them from active use immediately.
+          accounts, not every signed-in user. We also keep a separate,
+          encrypted backup copy outside our main database, used only to
+          rebuild the app if our database provider had a serious failure.
+          We do not yet have a fixed deletion schedule for that backup copy,
+          so it can persist longer than the nightly snapshots above, and
+          deleting your account does not remove it from that copy. You can
+          permanently delete your profile and solely-owned sheets yourself
+          at any time (see below). This removes them from active use
+          immediately.
         </Section>
 
         <Section title="8. Your rights (export &amp; deletion)">
@@ -194,7 +200,9 @@ export default function PrivacyPage() {
           own, and your sign-in credential itself (sheets you share with a
           co-owner stay with them). If for any reason the sign-in credential
           can&apos;t be removed at the same time, your {PRODUCT_NAME} data is
-          still fully wiped immediately. You&apos;d just want to also revoke{" "}
+          still fully wiped from active use immediately (see &ldquo;Data
+          retention&rdquo; above for the separate backup copy). You&apos;d
+          just want to also revoke{" "}
           {PRODUCT_NAME}&apos;s access from your Google account if you want that
           connection severed too. EU/EEA residents have rights under GDPR
           (access, rectification, erasure, portability, objection). The
@@ -256,7 +264,7 @@ export default function PrivacyPage() {
   );
 }
 
-const LAST_UPDATED = "18 August 2026";
+const LAST_UPDATED = "19 August 2026";
 
 function Section({
   title,
