@@ -71,7 +71,10 @@ export function MobileTopBar({
   return (
     <header
       className={cn(
-        "sticky top-0 z-40 bg-background pt-[env(safe-area-inset-top)] md:hidden",
+        // Translucent glass, matching AppHeader on desktop. A fully opaque
+        // bar here made mobile the only surface with no translucent chrome
+        // at all, and clipped the page's ambient glow at a hard edge.
+        "sticky top-0 z-40 bg-background/75 backdrop-blur-xl pt-[env(safe-area-inset-top)] md:hidden",
         className
       )}
     >
