@@ -70,18 +70,29 @@ Passes 1, 8 and 10 had nothing left to close in code: what remains in
 each is a design, product, or legal decision, or database hardening that
 would add to the unapplied-migration queue.
 
-## Migrations awaiting a production apply
+## Migrations — all applied and verified
 
-Operational, not code. Both are written and merged; neither is live until
-applied:
+Nothing is outstanding. All three were applied to production on
+2026-08-19 and verified rather than assumed:
 
 1. ~~**`20260819120000_classroom_real_book_share_rls.sql`** (Pass 8's
-   Critical)~~ — **applied and verified 2026-08-19.** Policy read back from
-   `pg_policy` matches the migration, and a rolled-back fixture test as a
-   student returned `real book blocked = yes | paper sheet allowed = yes`.
-   Verifying it surfaced a new Medium (N1 in the Pass 8 fix log): the
-   separate `_admin` policy still allows for a class admin what this now
-   denies for a student.
+   Critical)~~ — **applied and verified.** Policy read back from
+   `pg_policy` matches the migration clause for clause. Verifying it
+   surfaced a new Medium (N1 in the Pass 8 fix log), fixed by migration 3
+   below.
+1b. ~~**`20260819150000_classroom_admin_share_rls.sql`** (N1)~~ —
+   **applied and verified.** A single rolled-back fixture test covering
+   both roles returned:
+
+   ```
+   student: real blocked = yes  |  paper allowed = yes
+   teacher: real blocked = yes  |  paper allowed = yes
+   ```
+
+   All four branches. "Never share a real book into a class" now holds
+   against students *and* class admins, and the positive half confirms
+   neither policy is over-tight — a policy that rejected everything would
+   look secure while breaking every classroom.
 2. ~~**`20260819140000_lab_watchlist.sql`**~~ — **applied and verified
    2026-08-19** (`information_schema` shows `watchlist jsonb` defaulting to
    `'[]'::jsonb`). Adds the `watchlist` column to
