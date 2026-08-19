@@ -40,6 +40,7 @@ describe("cold export", () => {
         encryptionKey: undefined,
         accessToken: undefined,
         backupMaxAgeHours: 36,
+        coldRetentionDays: 90,
         cold: {
           endpoint: "https://abc.r2.cloudflarestorage.com",
           region: "auto",

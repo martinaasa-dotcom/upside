@@ -24,6 +24,10 @@ export {
   type LockFinding,
 } from "@/lib/dr/migration-locks";
 export {
+  purgeExpiredColdSnapshots,
+  type ColdRetentionResult,
+} from "@/lib/dr/retention";
+export {
   restoreInMemory,
   restoreSnapshot,
   type RestoreReport,

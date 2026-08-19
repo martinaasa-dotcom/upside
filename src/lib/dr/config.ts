@@ -11,6 +11,7 @@ export type DrConfig = {
   encryptionKey: string | undefined;
   accessToken: string | undefined;
   backupMaxAgeHours: number;
+  coldRetentionDays: number;
   cold: ColdStorageConfig | null;
 };
 
@@ -28,11 +29,14 @@ export function readDrConfig(
   const endpoint = trim(env.DR_S3_ENDPOINT);
   const hasCold = Boolean(bucket && accessKeyId && secretAccessKey);
   const rawAge = Number(env.DR_BACKUP_MAX_AGE_HOURS);
+  const rawRetention = Number(env.DR_COLD_RETENTION_DAYS);
   return {
     encryptionKey: trim(env.SNAPSHOT_ENCRYPTION_KEY),
     accessToken: trim(env.SUPABASE_ACCESS_TOKEN),
     backupMaxAgeHours:
       Number.isFinite(rawAge) && rawAge > 0 ? rawAge : 36,
+    coldRetentionDays:
+      Number.isFinite(rawRetention) && rawRetention > 0 ? rawRetention : 90,
     cold: hasCold
       ? {
           endpoint,

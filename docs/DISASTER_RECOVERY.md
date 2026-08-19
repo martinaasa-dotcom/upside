@@ -175,6 +175,16 @@ other crons):
    A sibling `.manifest.json` stores the checksum and the backup check, not
    the holdings.
 
+5. Delete any cold snapshot + manifest object older than
+   `DR_COLD_RETENTION_DAYS` (default 90, unset elsewhere). This is a whole-book
+   export — one encrypted blob per day, covering every sheet and every
+   owner — so there is no way to cut a single deleted account out of an
+   already-written copy. Bounding the whole object's age is what the privacy
+   policy promises instead: a deleted account's data can persist in that
+   day's backup for up to the retention window, then the object is gone.
+   A purge failure is logged as a warning; it does not fail the job or block
+   the next day's upload.
+
 Local dry run (uses `.env.local`):
 
 ```bash
