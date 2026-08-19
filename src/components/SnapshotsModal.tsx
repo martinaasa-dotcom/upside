@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/item";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { plainError } from "@/lib/plain-error";
+import { formatDateTime } from "@/lib/timezone";
 import { History, Loader2, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
@@ -31,16 +32,14 @@ type Props = {
 };
 
 function formatWhen(iso: string) {
-  try {
-    return new Date(iso).toLocaleString(undefined, {
+  return (
+    formatDateTime(iso, {
       month: "short",
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
-    });
-  } catch {
-    return iso;
-  }
+    }) || iso
+  );
 }
 
 export function SnapshotsModal({

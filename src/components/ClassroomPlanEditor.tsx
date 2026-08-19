@@ -12,6 +12,7 @@ import {
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { formatDateTime } from "@/lib/timezone";
 import {
   Item,
   ItemActions,
@@ -99,11 +100,11 @@ export function ClassroomPlanEditor({
         <p className="mt-2 text-sm text-foreground">
           Now: {trade.label}
           {trade.until
-            ? ` until ${new Date(trade.until).toLocaleString(undefined, {
+            ? ` until ${formatDateTime(trade.until, {
                 weekday: "short",
                 month: "short",
                 day: "numeric",
-                hour: "numeric",
+                hour: "2-digit",
                 minute: "2-digit",
               })}`
             : ""}
@@ -136,17 +137,17 @@ export function ClassroomPlanEditor({
               <ItemContent>
                 <ItemTitle>{classPeriodLabel(p.kind)}</ItemTitle>
                 <ItemDescription className="line-clamp-none">
-                  {new Date(p.startsAt).toLocaleString(undefined, {
+                  {formatDateTime(p.startsAt, {
                     month: "short",
                     day: "numeric",
-                    hour: "numeric",
+                    hour: "2-digit",
                     minute: "2-digit",
                   })}
                   {p.endsAt
-                    ? ` → ${new Date(p.endsAt).toLocaleString(undefined, {
+                    ? ` → ${formatDateTime(p.endsAt, {
                         month: "short",
                         day: "numeric",
-                        hour: "numeric",
+                        hour: "2-digit",
                         minute: "2-digit",
                       })}`
                     : ""}

@@ -9,6 +9,7 @@ import { Score, Scoreboard } from "@/components/ui/Panel";
 import { isSuperadminEmail } from "@/lib/auth/superadmin";
 import { PAGE_FRAME_CLASS, PAGE_MAIN_CLASS } from "@/lib/page-shell";
 import { plainError } from "@/lib/plain-error";
+import { formatDateTime } from "@/lib/timezone";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,14 +78,7 @@ type AdminErrorLog = {
 
 function fmtDate(iso: string | null | undefined): string {
   if (!iso) return "—";
-  try {
-    return new Date(iso).toLocaleString(undefined, {
-      dateStyle: "medium",
-      timeStyle: "short",
-    });
-  } catch {
-    return iso;
-  }
+  return formatDateTime(iso) || iso;
 }
 
 export function AdminPage() {

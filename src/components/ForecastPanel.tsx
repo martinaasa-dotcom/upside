@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { FORECAST_DISCLAIMER } from "@/lib/disclaimer";
 import { listingCurrenciesAreMixed } from "@/lib/listing-currency";
 import { PALETTE } from "@/lib/palette";
+import { formatDateTime } from "@/lib/timezone";
 import { isAbortError } from "@/lib/abort";
 import {
   cn,
@@ -213,16 +214,14 @@ export function ForecastOffStub({ onShow }: { onShow: () => void }) {
 }
 
 function formatGeneratedAt(iso: string) {
-  try {
-    return new Date(iso).toLocaleString(undefined, {
+  return (
+    formatDateTime(iso, {
       month: "short",
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
-    });
-  } catch {
-    return iso;
-  }
+    }) || iso
+  );
 }
 
 function EoyPriceInput({
