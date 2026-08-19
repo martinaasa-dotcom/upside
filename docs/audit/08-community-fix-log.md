@@ -17,7 +17,7 @@ without fresh re-verification evidence attached.
 
 | # | Finding | Severity | Status | Evidence | Notes |
 |---|---|---|---|---|---|
-| C1 | RLS let a student pin their real book into a classroom, bypassing the app's own rule | Critical | **Resolved in code — needs a production migration apply** | `supabase/migrations/20260819120000_classroom_real_book_share_rls.sql`; report §Critical 1 | Written when the pass first ran and merged to `main`. The app-side rule was already correct; this closes the direct-PostgREST path around it. Not effective in production until the migration is applied. |
+| C1 | RLS let a student pin their real book into a classroom, bypassing the app's own rule | Critical | **Resolved — applied and verified in production** | `supabase/migrations/20260819120000_classroom_real_book_share_rls.sql`; report §Critical 1. Verified two ways on 2026-08-19: `pg_get_expr(polwithcheck, polrelid)` for `portfell_community_portfolios_owner_insert` matches the migration clause for clause (the `kind = 'classroom'` / `classroom_community_id` branch is live), and a fixture test — throwaway classroom, run as the student via `set local role authenticated` and `request.jwt.claims`, whole block rolled back — returned `real book blocked = yes \| paper sheet allowed = yes`. | The app-side rule was already correct; this closes the direct-PostgREST path around it. The positive half of the test matters as much as the negative one: a policy that rejected everything would look "secure" while breaking every classroom, and it doesn't. See **N1** for the sibling path this verification exposed. |
 | H2 | Removing or re-roling one classroom student could silently sweep in their household partner | High | **Resolved** (prior session) | Report §High 2; covered by the `classroom membership actions stay per person, not household-mirrored` invariant, which passes | Fixed when the pass was first run. |
 | H3 | A private community's existence leaked through 404-vs-403 on join-request | High | **Resolved** (prior session) | Report §High 3; covered by the `a private community's existence does not leak through join-request` invariant, which passes | Fixed when the pass was first run. |
 | M1 | Classroom `buy_price` is visible to every classmate, not just the teacher | Medium | **Deferred — needs Martin's decision** | — | A real product question, not a defect. The gate is `classroom`, not `isAdmin`, so every student sees every classmate's cost basis on their paper trades — server and UI agree, so this isn't a client-only slip. The code's own comment says "so the teacher can see what students actually paid", which suggests narrower intent, but compare-your-picks-with-classmates is a plausible teaching goal and this is paper money, not a real book. Changing it without asking would quietly remove a feature a teacher may be relying on. |
@@ -27,9 +27,15 @@ without fresh re-verification evidence attached.
 
 ## Deferred summary
 
-Three items left unfixed, none silently. **M1** is a genuine product
-decision for Martin about what a classroom is meant to show. **M2** and
-**L1** are both database-side hardening for self-inflicted cases, and
-both would add another migration to a queue that already has one
-unapplied — the honest sequencing is to land the Critical migration
-first, then decide whether these are worth their own.
+Four items left unfixed, none silently. **M1** is a genuine product
+decision for Martin about what a classroom is meant to show. **N1** is
+the one that actually weakens a stated guarantee — "never share a real
+book into a class" now holds against students but not against a class
+admin — and it needs a decision because the fix narrows an admin
+permission that circle admins may rely on. **M2** and **L1** are
+database-side hardening for self-inflicted cases, worth doing only if a
+migration is being applied anyway.
+
+With the Critical migration now applied, the "don't add to the unapplied
+queue" argument that deferred M2 and L1 no longer holds on its own — if
+N1 gets written, folding those two in at the same time is the cheap move.
