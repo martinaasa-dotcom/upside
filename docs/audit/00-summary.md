@@ -155,14 +155,16 @@ current rather than left as a historical snapshot — every fix log linked
 below has the day-by-day detail; this is only the rollup. As of
 2026-08-19:
 
-- **One human action left**, and code can't do it: apply
-  `supabase/migrations/20260819160000_community_last_admin_and_classroom_unpin.sql`
-  and `20260819170000_purge_email_seed_tables_on_deletion.sql` in the
-  Supabase SQL editor (Pass 8 M2/L1, Pass 9 L2) — written and reviewed,
-  not yet applied. Everything else that once needed a Cloudflare console
-  action or a real Stripe payment has since been done and confirmed by
-  Martin (R2 cold-copy backup is live, `docs/DISASTER_RECOVERY.md`; a
-  live end-to-end payment has gone through, `docs/STRIPE_BILLING.md`).
+- **No open human actions.** The two migrations written for Pass 8
+  M2/L1 and Pass 9 L2
+  (`20260819160000_community_last_admin_and_classroom_unpin.sql`,
+  `20260819170000_purge_email_seed_tables_on_deletion.sql`) have been
+  applied to production by Martin, same as the earlier Cloudflare R2
+  setup and the first live Stripe payment
+  (`docs/DISASTER_RECOVERY.md`, `docs/STRIPE_BILLING.md`). None of this
+  is independently re-verified from this session — no reachable
+  production Supabase project — so it's recorded as Martin's word,
+  not fresh evidence.
 - **Product decisions that were made**, not left open: classmates no
   longer see each other's cost basis in a Classroom, only the teacher and
   their own sheet (Pass 8 M1); a missing buy price still gets skipped
