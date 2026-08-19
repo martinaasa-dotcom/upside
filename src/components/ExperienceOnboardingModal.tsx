@@ -172,7 +172,6 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
   const [appPage, setAppPage] = useState<AppPage>("intro");
   const [q1, setQ1] = useState<Q1Answer | null>(null);
   const [q2, setQ2] = useState<Q2Answer | null>(null);
-  const [noteMorning, setNoteMorning] = useState(false);
   const [noteSunday, setNoteSunday] = useState(true);
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<ExperienceTier | null>(null);
@@ -233,8 +232,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
         tier,
         knowsOptions,
       });
-      await postJsonOrQueue("/api/account/morning-note", {
-        morning: noteMorning,
+      await postJsonOrQueue("/api/account/weekly-note", {
         sunday: noteSunday,
       });
     } catch {
@@ -782,29 +780,15 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
             <div className="flex flex-col gap-3">
               <div className="mb-1">
                 <h2 className="text-lg font-semibold text-foreground">
-                  Want a report in your inbox?
+                  Want the Sunday email?
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Sunday is on. Weekdays only if you want them. These start
-                  once there are names in your portfolio. Change this anytime
-                  in Account.
+                  One email a week, nothing else. It starts
+                  once there are names in your portfolio. Change this
+                  anytime in Account.
                 </p>
               </div>
               <FieldGroup>
-                <Field orientation="horizontal">
-                  <Checkbox
-                    id="note-morning"
-                    checked={noteMorning}
-                    onCheckedChange={(v) => setNoteMorning(v === true)}
-                  />
-                  <FieldContent>
-                    <FieldLabel htmlFor="note-morning">Weekdays</FieldLabel>
-                    <FieldDescription>
-                      What to watch before the open, then a recap after the US
-                      close.
-                    </FieldDescription>
-                  </FieldContent>
-                </Field>
                 <Field orientation="horizontal">
                   <Checkbox
                     id="note-sunday"
@@ -812,9 +796,12 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                     onCheckedChange={(v) => setNoteSunday(v === true)}
                   />
                   <FieldContent>
-                    <FieldLabel htmlFor="note-sunday">Sundays</FieldLabel>
+                    <FieldLabel htmlFor="note-sunday">
+                      The Sunday email
+                    </FieldLabel>
                     <FieldDescription>
-                      The week that just finished, plus a look at the next ones.
+                      How your week went, what looks worth a second look, and
+                      what to think about for the week ahead.
                     </FieldDescription>
                   </FieldContent>
                 </Field>

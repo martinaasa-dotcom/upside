@@ -10,19 +10,17 @@ import { hasLiveHoldings } from "@/lib/empty-book-nudge";
 import { fetchQuotesWithFallback } from "@/lib/market/quotes";
 import { fetchMarketEvents, fetchWeekReturns } from "@/lib/market/yahoo";
 import {
-  buildNoteReport,
-  noteReportHtml,
-  noteReportText,
-  noteSubject,
+  buildWeeklyLetter,
   parseConviction,
-  type NoteKind,
-} from "@/lib/note-report";
-import { writeMargusNoteTake } from "@/lib/note-margus";
+  weeklyLetterHtml,
+  weeklyLetterText,
+  weeklySubject,
+} from "@/lib/weekly-letter";
+import { sanitizeWatchlist } from "@/lib/lab-bundle";
+import { writeWeeklyTake } from "@/lib/weekly-margus";
 import { noteEmailConfigured, sendNoteEmail } from "@/lib/send-note";
 import { getSupabaseServer, supabaseUsesServiceRole } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
-
-export type { NoteKind };
 
 export type NoteDispatchOpts = {
   /** When set, only these addresses get a note. Scheduled cron leaves this off. */
@@ -37,8 +35,8 @@ export function noteTestAudience(req: Request): NoteDispatchOpts {
   return { onlyEmails: [SUPERADMIN_NOTE_EMAIL] };
 }
 
-export async function dispatchOptedInNotes(
-  kind: NoteKind,
+/** The Sunday letter is the only scheduled email, so there is no kind. */
+export async function dispatchWeeklyLetters(
   opts: NoteDispatchOpts = {}
 ): Promise<{
   ok: boolean;
@@ -73,11 +71,10 @@ export async function dispatchOptedInNotes(
     };
   }
 
-  const flag = kind === "sunday" ? "note_sunday" : "note_morning";
   const { data: profiles, error } = await supabase
     .from(PORTFELL_TABLES.profiles)
     .select("id, email, display_name")
-    .eq(flag, true);
+    .eq("note_sunday", true);
   if (error) {
     return {
       ok: false,
@@ -162,13 +159,7 @@ export async function dispatchOptedInNotes(
         ? (await fetchQuotesWithFallback(tickers)).quotes
         : {};
     const weekReturns =
-      kind === "sunday" && tickers.length > 0
-        ? await fetchWeekReturns(tickers)
-        : undefined;
-    const earnings =
-      tickers.length > 0
-        ? (await fetchMarketEvents(tickers)).earnings
-        : undefined;
+      tickers.length > 0 ? await fetchWeekReturns(tickers) : undefined;
     const cash = (
       noteBooks as {
         cash_balance?: number;
@@ -180,11 +171,31 @@ export async function dispatchOptedInNotes(
     }), 0);
     const { data: lab } = await supabase
       .from(PORTFELL_TABLES.labState)
-      .select("conviction")
+      .select("conviction, watchlist")
       .eq("owner_id", profile.id)
       .maybeSingle();
-    const report = buildNoteReport({
-      kind,
+
+    // Watchlist names are quoted separately: they are not held, so they
+    // never reach the holdings fetch above.
+    const held = new Set(tickers);
+    const watchlist = sanitizeWatchlist(lab?.watchlist).filter(
+      (t) => !held.has(t)
+    );
+    const watchQuotes =
+      watchlist.length > 0
+        ? (await fetchQuotesWithFallback(watchlist)).quotes
+        : {};
+    const watchWeekReturns =
+      watchlist.length > 0 ? await fetchWeekReturns(watchlist) : undefined;
+
+    // One calendar call covering everything the letter can mention.
+    const calendarTickers = [...new Set([...tickers, ...watchlist])];
+    const earnings =
+      calendarTickers.length > 0
+        ? (await fetchMarketEvents(calendarTickers)).earnings
+        : undefined;
+
+    const letter = buildWeeklyLetter({
       name: profile.display_name as string | null,
       cash,
       holdings,
@@ -192,13 +203,16 @@ export async function dispatchOptedInNotes(
       conviction: parseConviction(lab?.conviction),
       weekReturns,
       earnings,
+      watchlist,
+      watchQuotes,
+      watchWeekReturns,
     });
-    report.margus = await writeMargusNoteTake(report);
+    letter.margus = await writeWeeklyTake(letter);
     const ok = await sendNoteEmail({
       to: email,
-      subject: noteSubject(report),
-      text: noteReportText(report),
-      html: noteReportHtml(report),
+      subject: weeklySubject(letter),
+      text: weeklyLetterText(letter),
+      html: weeklyLetterHtml(letter),
     });
     if (ok) sent += 1;
     else skipped += 1;

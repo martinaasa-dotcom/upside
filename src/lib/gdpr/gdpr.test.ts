@@ -81,9 +81,9 @@ describe("export csv and encryption", () => {
     const dump: UserDataExport = {
       exported_at: "2026-08-17T12:00:00.000Z",
       account: { user_id: "u1", email: "a@b.c" },
-      profile: { id: "u1", note_morning: true, note_sunday: false },
+      profile: { id: "u1", note_sunday: true },
       settings: {
-        email_notes: { weekday: true, sunday: false },
+        email_notes: { sunday: true },
         experience_tier: "investor",
         knows_options: false,
       },

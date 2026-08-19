@@ -74,14 +74,14 @@ export const experienceTierPostSchema = z.looseObject({
   knowsOptions: z.boolean().optional(),
 });
 
-export const morningNotePostSchema = z.looseObject({
+export const weeklyNotePostSchema = z.looseObject({
   enabled: z.boolean().optional(),
-  morning: z.boolean().optional(),
   sunday: z.boolean().optional(),
 });
 
 export const labPutSchema = z.looseObject({
   conviction: z.record(z.string().max(24), z.unknown()).optional(),
+  watchlist: z.array(z.string().max(12)).max(40).optional(),
   updatedAt: z.string().max(40).optional(),
 });
 

@@ -4,18 +4,23 @@ import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { NextRequest, NextResponse } from "next/server";
 import { observeRoute } from "@/lib/observe-route";
-import { morningNotePostSchema } from "@/lib/api-schemas";
+import { weeklyNotePostSchema } from "@/lib/api-schemas";
 import { parseJsonBody } from "@/lib/parse-json-body";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * The Sunday letter is the only email this app sends on a schedule. The
+ * old weekday/after-close notes are gone, so `note_sunday` is the single
+ * preference. `morning_note` is still written for the legacy column's
+ * sake; nothing reads it to decide what to send any more.
+ */
 async function handleGET() {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
   const supabase = await getSupabaseDataClient();
   if (!supabase) {
     return NextResponse.json({
-      morning: false,
       sunday: false,
       enabled: false,
       canSend: noteEmailConfigured(),
@@ -23,16 +28,14 @@ async function handleGET() {
   }
   const { data, error } = await supabase
     .from(PORTFELL_TABLES.profiles)
-    .select("note_morning, note_sunday, morning_note")
+    .select("note_sunday, morning_note")
     .eq("id", auth.user.id)
     .maybeSingle();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  const morning = Boolean(data?.note_morning ?? data?.morning_note);
   const sunday = Boolean(data?.note_sunday ?? data?.morning_note);
   return NextResponse.json({
-    morning,
     sunday,
-    enabled: morning || sunday,
+    enabled: sunday,
     canSend: noteEmailConfigured(),
   });
 }
@@ -40,19 +43,12 @@ async function handleGET() {
 async function handlePOST(req: NextRequest) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
-  const parsed = await parseJsonBody(req, morningNotePostSchema);
+  const parsed = await parseJsonBody(req, weeklyNotePostSchema);
   if (!parsed.ok) return parsed.response;
-  const body = parsed.data;
-  const enabled = body.enabled;
-  let morning = body.morning;
-  let sunday = body.sunday;
-  if (enabled !== undefined && morning === undefined && sunday === undefined) {
-    morning = enabled;
-    sunday = enabled;
-  }
-  if (morning === undefined && sunday === undefined) {
+  const next = parsed.data.sunday ?? parsed.data.enabled;
+  if (next === undefined) {
     return NextResponse.json(
-      { error: "morning or sunday required" },
+      { error: "sunday required" },
       { status: 400 }
     );
   }
@@ -60,31 +56,23 @@ async function handlePOST(req: NextRequest) {
   if (!supabase) {
     return NextResponse.json({ error: "Supabase not configured" }, { status: 400 });
   }
-  const { data: current } = await supabase
-    .from(PORTFELL_TABLES.profiles)
-    .select("note_morning, note_sunday")
-    .eq("id", auth.user.id)
-    .maybeSingle();
-  const nextMorning = morning ?? Boolean(current?.note_morning);
-  const nextSunday = sunday ?? Boolean(current?.note_sunday);
   const { error } = await supabase
     .from(PORTFELL_TABLES.profiles)
     .update({
-      note_morning: nextMorning,
-      note_sunday: nextSunday,
-      morning_note: nextMorning || nextSunday,
+      note_sunday: next,
+      note_morning: false,
+      morning_note: next,
       updated_at: new Date().toISOString(),
     })
     .eq("id", auth.user.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({
     ok: true,
-    morning: nextMorning,
-    sunday: nextSunday,
-    enabled: nextMorning || nextSunday,
+    sunday: next,
+    enabled: next,
     canSend: noteEmailConfigured(),
   });
 }
 
-export const GET = observeRoute(handleGET, '/api/account/morning-note');
-export const POST = observeRoute(handlePOST, '/api/account/morning-note');
+export const GET = observeRoute(handleGET, "/api/account/weekly-note");
+export const POST = observeRoute(handlePOST, "/api/account/weekly-note");

@@ -23,7 +23,7 @@ export type UserDataExport = {
   };
   profile: Record<string, unknown> | null;
   settings: {
-    email_notes: { weekday: boolean; sunday: boolean };
+    email_notes: { sunday: boolean };
     experience_tier: string | null;
     knows_options: boolean | null;
   };
@@ -85,7 +85,6 @@ export function toExportCsv(payload: UserDataExport): string {
     csvSection("profile", payload.profile ? [payload.profile] : []),
     csvSection("settings", [
       {
-        weekday_email: payload.settings.email_notes.weekday,
         sunday_email: payload.settings.email_notes.sunday,
         experience_tier: payload.settings.experience_tier,
         knows_options: payload.settings.knows_options,
@@ -224,7 +223,8 @@ export async function collectUserExport(
     .filter((row): row is NonNullable<typeof row> => row != null);
 
   const profile = asRecord(profileRes.data);
-  const weekday = Boolean(profile?.note_morning ?? profile?.morning_note);
+  // The Sunday letter is the only scheduled email; the weekday and
+  // after-close notes were removed, so there is one preference to export.
   const sunday = Boolean(profile?.note_sunday ?? profile?.morning_note);
 
   const invites = asRows(inviteRes.data).map((row) =>
@@ -239,7 +239,7 @@ export async function collectUserExport(
     },
     profile,
     settings: {
-      email_notes: { weekday, sunday },
+      email_notes: { sunday },
       experience_tier:
         typeof profile?.experience_tier === "string"
           ? profile.experience_tier

@@ -532,18 +532,21 @@ export type Database = {
           id: string
           owner_id: string | null
           updated_at: string
+          watchlist: Json
         }
         Insert: {
           conviction?: Json
           id?: string
           owner_id?: string | null
           updated_at?: string
+          watchlist?: Json
         }
         Update: {
           conviction?: Json
           id?: string
           owner_id?: string | null
           updated_at?: string
+          watchlist?: Json
         }
         Relationships: [
           {

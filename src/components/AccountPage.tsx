@@ -127,10 +127,9 @@ export function AccountPage() {
     loadStoredKnowsOptions
   );
   const [knowsOptionsSaved, setKnowsOptionsSaved] = useState(false);
-  const [noteMorning, setNoteMorning] = useState(false);
   const [noteSunday, setNoteSunday] = useState(false);
-  const [morningSaved, setMorningSaved] = useState(false);
-  const [morningCanSend, setMorningCanSend] = useState(false);
+  const [weeklySaved, setWeeklySaved] = useState(false);
+  const [emailConfigured, setEmailConfigured] = useState(false);
   const [analyticsConsent, setAnalyticsConsent] =
     useState<AnalyticsConsent | null>(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
@@ -186,24 +185,21 @@ export function AccountPage() {
         }
       })
       .catch(() => {});
-    void fetch("/api/account/morning-note", { signal: ctrl.signal })
+    void fetch("/api/account/weekly-note", { signal: ctrl.signal })
       .then((r) => (r.ok ? r.json() : null))
       .then(
         (
           data: {
-            morning?: boolean;
             sunday?: boolean;
             enabled?: boolean;
             canSend?: boolean;
           } | null
         ) => {
         if (ctrl.signal.aborted) return;
-        if (typeof data?.morning === "boolean") setNoteMorning(data.morning);
-        else if (typeof data?.enabled === "boolean") setNoteMorning(data.enabled);
         if (typeof data?.sunday === "boolean") setNoteSunday(data.sunday);
         else if (typeof data?.enabled === "boolean") setNoteSunday(data.enabled);
         if (typeof data?.canSend === "boolean") {
-          setMorningCanSend(data.canSend);
+          setEmailConfigured(data.canSend);
         }
         }
       )
@@ -404,66 +400,44 @@ export function AccountPage() {
 
           <Panel>
             <PanelHeader
-              title="Email notes"
+              title="The Sunday email"
               subtitle={
-                morningCanSend
-                  ? "Sunday is on. Weekdays and the after-close recap are extra if you want them."
-                  : "Notes also land in the app. Email is not set up on this server yet."
+                emailConfigured
+                  ? "One email a week, on Sunday. Nothing else lands in your inbox."
+                  : "Email is not set up on this server yet."
               }
             />
             <div className="flex flex-col gap-3">
-              {(
-                [
-                  {
-                    id: "morning",
-                    checked: noteMorning,
-                    set: setNoteMorning,
-                    label:
-                      "Weekdays. What to watch before the open, then a recap after the US close.",
-                  },
-                  {
-                    id: "sunday",
-                    checked: noteSunday,
-                    set: setNoteSunday,
-                    label:
-                      "Sundays. The week that just finished, and what to think about next.",
-                  },
-                ] as const
-              ).map((row) => (
-                <div
-                  key={row.id}
-                  className="flex items-center gap-2 text-sm text-foreground"
-                >
-                  <Checkbox
-                    id={`note-${row.id}`}
-                    checked={row.checked}
-                    onCheckedChange={(v) => {
-                      const next = v === true;
-                      const prev = row.checked;
-                      row.set(next);
-                      void postJsonOrQueue(
-                        "/api/account/morning-note",
-                        row.id === "morning"
-                          ? { morning: next }
-                          : { sunday: next }
-                      )
-                        .then((r) => {
-                          if (r.ok) {
-                            setMorningSaved(true);
-                            later(() => setMorningSaved(false), 2000);
-                            return;
-                          }
-                          row.set(prev);
-                        })
-                        .catch(() => {
-                          row.set(prev);
-                        });
-                    }}
-                  />
-                  <label htmlFor={`note-${row.id}`}>{row.label}</label>
-                </div>
-              ))}
-              {morningSaved && (
+              <div className="flex items-center gap-2 text-sm text-foreground">
+                <Checkbox
+                  id="note-sunday"
+                  checked={noteSunday}
+                  onCheckedChange={(v) => {
+                    const next = v === true;
+                    const prev = noteSunday;
+                    setNoteSunday(next);
+                    void postJsonOrQueue("/api/account/weekly-note", {
+                      sunday: next,
+                    })
+                      .then((r) => {
+                        if (r.ok) {
+                          setWeeklySaved(true);
+                          later(() => setWeeklySaved(false), 2000);
+                          return;
+                        }
+                        setNoteSunday(prev);
+                      })
+                      .catch(() => {
+                        setNoteSunday(prev);
+                      });
+                  }}
+                />
+                <label htmlFor="note-sunday">
+                  Send me the Sunday email: how the week went, and what to
+                  think about next week.
+                </label>
+              </div>
+              {weeklySaved && (
                 <p className="text-sm text-gain">Saved.</p>
               )}
             </div>

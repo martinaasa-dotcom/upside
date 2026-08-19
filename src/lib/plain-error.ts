@@ -24,7 +24,7 @@ const KNOWN: Record<string, string> = {
     "This save has none of your portfolios.",
   "Unknown action": "That action isn't recognized.",
   "No pulse candidates supplied": "Nothing to check yet.",
-  "morning or sunday required": "Pick weekdays, Sundays, or both.",
+  "sunday required": "Pick whether you want the Sunday email.",
   "userId required": "Pick a person first.",
   "userId and decision required": "Pick approve or decline.",
   "role required": "Pick a role first.",

@@ -21,20 +21,44 @@ export function loadWatchlist(): string[] {
   }
 }
 
-export function saveWatchlist(tickers: string[]) {
+/**
+ * Save locally and mirror to the server, so the Sunday email can suggest
+ * names off this list. `sync: false` is for the mirror coming back down
+ * from the server — without it, writing what we just received would push
+ * it straight back up again.
+ */
+export function saveWatchlist(
+  tickers: string[],
+  opts?: { sync?: boolean }
+) {
   if (typeof window === "undefined") return;
+  const clean = [
+    ...new Set(tickers.map((t) => t.trim().toUpperCase()).filter(Boolean)),
+  ].slice(0, 40);
   try {
-    localStorage.setItem(
-      KEY,
-      JSON.stringify(
-        [...new Set(tickers.map((t) => t.trim().toUpperCase()).filter(Boolean))].slice(
-          0,
-          40
-        )
-      )
-    );
+    localStorage.setItem(KEY, JSON.stringify(clean));
   } catch {
     /* ignore */
+  }
+  if (opts?.sync === false) return;
+  void pushWatchlist(clean);
+}
+
+async function pushWatchlist(tickers: string[]) {
+  try {
+    const { fetchOrQueue } = await import("@/lib/offline/queued-fetch");
+    await fetchOrQueue(
+      "/api/lab",
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ watchlist: tickers }),
+      },
+      { kind: "preference" }
+    );
+  } catch {
+    // The list is already saved on this device; a failed sync only means
+    // the Sunday email won't see it yet.
   }
 }
 

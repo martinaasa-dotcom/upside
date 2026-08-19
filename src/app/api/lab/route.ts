@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { emptyLabBundle, type LabBundle } from "@/lib/lab-bundle";
+import {
+  emptyLabBundle,
+  sanitizeWatchlist,
+  type LabBundle,
+} from "@/lib/lab-bundle";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
@@ -9,12 +13,13 @@ import { parseJsonBody } from "@/lib/parse-json-body";
 
 export const dynamic = "force-dynamic";
 
-const LAB_COLS = "id, owner_id, conviction, updated_at";
+const LAB_COLS = "id, owner_id, conviction, watchlist, updated_at";
 
 function rowToBundle(row: Record<string, unknown> | null): LabBundle {
   if (!row) return emptyLabBundle();
   return {
     conviction: (row.conviction as LabBundle["conviction"]) ?? {},
+    watchlist: sanitizeWatchlist(row.watchlist),
     updatedAt: typeof row.updated_at === "string" ? row.updated_at : undefined,
   };
 }
@@ -70,16 +75,28 @@ async function handlePUT(req: NextRequest) {
     .eq("owner_id", auth.user.id)
     .maybeSingle();
 
+  // A partial save. The watchlist and the conviction notes are written by
+  // different screens, so only touch the fields this request actually sent
+  // — otherwise a watchlist-only save would blank someone's thesis notes.
+  const patch: {
+    updated_at: string;
+    conviction?: LabBundle["conviction"];
+    watchlist?: string[];
+  } = { updated_at: now };
+  if (body.conviction !== undefined) {
+    patch.conviction = body.conviction as LabBundle["conviction"];
+  }
+  if (body.watchlist !== undefined) {
+    patch.watchlist = sanitizeWatchlist(body.watchlist);
+  }
+
   let data: Record<string, unknown> | null = null;
   let error: { message: string } | null = null;
 
   if (existing) {
     const updated = await supabase
       .from(PORTFELL_TABLES.labState)
-      .update({
-        conviction: (body.conviction ?? {}) as LabBundle["conviction"],
-        updated_at: now,
-      })
+      .update(patch)
       .eq("owner_id", auth.user.id)
       .select(LAB_COLS)
       .single();
@@ -92,6 +109,7 @@ async function handlePUT(req: NextRequest) {
         id: auth.user.id,
         owner_id: auth.user.id,
         conviction: (body.conviction ?? {}) as LabBundle["conviction"],
+        watchlist: sanitizeWatchlist(body.watchlist),
         updated_at: now,
       })
       .select(LAB_COLS)
