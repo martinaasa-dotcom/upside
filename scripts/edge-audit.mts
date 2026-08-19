@@ -126,7 +126,7 @@ for (const [name, holdings] of Object.entries(CASES)) {
     { ticker: "NBIS", value: 80 },
     { ticker: "CRWV", value: 20 },
   ]);
-  check("animal(ai-diet)", panda.animal, (v) => v === "Panda", "Panda");
+  check("animal(ai-diet)", panda.animal, (v) => v === "Beaver", "Beaver");
   const octopus = buildPortfolioPersonality([
     { ticker: "NBIS", value: 25 },
     { ticker: "RKLB", value: 25 },
@@ -134,7 +134,7 @@ for (const [name, holdings] of Object.entries(CASES)) {
     { ticker: "VOO", value: 15 },
     { ticker: "BMNR", value: 15 },
   ]);
-  check("animal(many-themes)", octopus.animal, (v) => v === "Octopus", "Octopus");
+  check("animal(many-themes)", octopus.animal, (v) => v === "Squid", "Squid");
 }
 
 // --- Compound engine ------------------------------------------------------

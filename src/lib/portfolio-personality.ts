@@ -186,21 +186,111 @@ export const ANIMAL_BESTIARY: AnimalArchetype[] = [
     id: "panda",
     animal: "Panda",
     emoji: "🐼",
-    criteria: "Two thirds or more in one kind of stock, not crypto, not an index",
+    criteria: "Two thirds or more in one kind of stock that doesn't have its own animal yet",
     tagline: "Eats one thing. When that group moves, the whole portfolio moves.",
-    vibe: "Not random. A chosen diet. Space pandas, AI pandas, chip pandas. Same animal, different bamboo.",
+    vibe: "Not random. A chosen diet, just not one of the groups with its own name yet.",
     strength: "Gets the full ride when that one group is right.",
     watchFor: "A panda with no bamboo left has nothing else to eat.",
+  },
+  {
+    id: "beaver",
+    animal: "Beaver",
+    emoji: "🦫",
+    criteria: "Two thirds or more in AI computer builders",
+    tagline: "Builds the same structure over and over. Every log goes into one dam.",
+    vibe: "Convinced the dam is worth it. When the water (the demand for compute) keeps coming, the dam pays for itself many times over.",
+    strength: "Gets the full ride when that one group is right.",
+    watchFor: "A dam holds until it doesn't. All the effort sits behind one wall.",
+  },
+  {
+    id: "rhino",
+    animal: "Rhino",
+    emoji: "🦏",
+    criteria: "Two thirds or more in data-center power stocks",
+    tagline: "Heavy, armored, and built for one job: keeping the lights on for everyone else.",
+    vibe: "Not flashy. The unglamorous, physically heavy side of a bet everyone else is also making, just further downstream.",
+    strength: "Gets the full ride when that one group is right.",
+    watchFor: "Armor is heavy. It doesn't move fast if the story changes.",
+  },
+  {
+    id: "badger",
+    animal: "Badger",
+    emoji: "🦡",
+    criteria: "Two thirds or more in chip makers",
+    tagline: "Digs straight down into one thing: the chips underneath everything else.",
+    vibe: "Doesn't care what's built on top. Cares who made the part everyone else needs.",
+    strength: "Gets the full ride when that one group is right.",
+    watchFor: "A badger that's dug in one direction has a long way back up if it's wrong.",
+  },
+  {
+    id: "scorpion",
+    animal: "Scorpion",
+    emoji: "🦂",
+    criteria: "Two thirds or more in defense and drone stocks",
+    tagline: "Armored and built to strike. One group of businesses, chosen on purpose.",
+    vibe: "A bet on who gets paid regardless of who's winning. Quiet until it isn't.",
+    strength: "Gets the full ride when that one group is right.",
+    watchFor: "Budgets and contracts can shift fast, and a scorpion has nowhere else to hide.",
+  },
+  {
+    id: "otter",
+    animal: "Otter",
+    emoji: "🦦",
+    criteria: "Two thirds or more in payments and finance stocks",
+    tagline: "Plays in one river its whole life: money moving from one place to another.",
+    vibe: "Every business here makes money on money moving. Different companies, same river.",
+    strength: "Gets the full ride when that one group is right.",
+    watchFor: "One river running dry leaves an otter with nowhere else to swim.",
+  },
+  {
+    id: "chameleon",
+    animal: "Chameleon",
+    emoji: "🦎",
+    criteria: "Two thirds or more in software stocks",
+    tagline: "Blends into whatever it's sitting on. One group, many different-looking businesses.",
+    vibe: "Software touches everything, which can look like variety even when it's one group of businesses reacting to the same news.",
+    strength: "Gets the full ride when that one group is right.",
+    watchFor: "Looking varied and actually being varied are not the same thing.",
+  },
+  {
+    id: "flamingo",
+    animal: "Flamingo",
+    emoji: "🦩",
+    criteria: "Two thirds or more in healthcare stocks",
+    tagline: "Stands in one spot for a long time, on purpose, waiting for something slower than a quarter.",
+    vibe: "Healthcare moves on a different clock than the rest of the market. A flamingo is comfortable with that.",
+    strength: "Gets the full ride when that one group is right, on its own timeline.",
+    watchFor: "Patience only pays off if the underlying story was actually right.",
   },
   {
     id: "octopus",
     animal: "Octopus",
     emoji: "🐙",
-    criteria: "Three or more kinds of stocks",
+    criteria: "Three or more kinds of stocks, genuinely spread across them",
     tagline: "A tentacle in every pond. Many kinds of stocks, no single bet on the weather.",
     vibe: "Curious, or just collected. Your portfolio is not one story. It is several, running side by side.",
     strength: "A bad year in one pond does not empty the tank.",
     watchFor: "Eight tentacles can become eight half-finished reasons.",
+  },
+  {
+    id: "squid",
+    animal: "Squid",
+    emoji: "🦑",
+    criteria: "Three or more kinds of stocks, and the mix itself runs hot",
+    tagline: "Many kinds of stocks, and every one of them jumpy. Fast in every direction at once.",
+    vibe: "Not one wild bet, several. The spread doesn't calm this book down, it just gives the swings more places to come from.",
+    strength: "A bad year in one pond does not empty the tank, and there's real upside in more than one place.",
+    watchFor: "Several jumpy names can all have a bad week at the same time.",
+  },
+  {
+    id: "crab",
+    animal: "Crab",
+    emoji: "🦀",
+    criteria: "Three or more kinds of stocks, but a couple of names still carry most of the weight",
+    tagline: "Sideways on purpose. A few different groups, but the weight still sits on a couple of names.",
+    vibe: "Not a single bet, and not really spread out either. A few different stories, one or two of them doing most of the carrying.",
+    strength: "More than one place for good news to come from.",
+    watchFor: "The mix looks varied on the label, less so once you weigh it.",
   },
   {
     id: "shark",
@@ -320,6 +410,62 @@ export const ANIMAL_CARD_TONE: Record<string, AnimalCardTone> = {
     name: "text-emerald-300",
     milestone: "bg-emerald-400",
   },
+  beaver: {
+    bar: "bg-lime-400",
+    border: "border-lime-500/40",
+    wash: "bg-lime-500/10",
+    well: "bg-lime-500/20",
+    name: "text-lime-300",
+    milestone: "bg-lime-400",
+  },
+  rhino: {
+    bar: "bg-slate-400",
+    border: "border-slate-500/40",
+    wash: "bg-slate-500/10",
+    well: "bg-slate-500/20",
+    name: "text-slate-300",
+    milestone: "bg-slate-400",
+  },
+  badger: {
+    bar: "bg-neutral-400",
+    border: "border-neutral-500/40",
+    wash: "bg-neutral-500/10",
+    well: "bg-neutral-500/20",
+    name: "text-neutral-300",
+    milestone: "bg-neutral-400",
+  },
+  scorpion: {
+    bar: "bg-red-400",
+    border: "border-red-500/40",
+    wash: "bg-red-500/10",
+    well: "bg-red-500/20",
+    name: "text-red-300",
+    milestone: "bg-red-400",
+  },
+  otter: {
+    bar: "bg-green-400",
+    border: "border-green-500/40",
+    wash: "bg-green-500/10",
+    well: "bg-green-500/20",
+    name: "text-green-300",
+    milestone: "bg-green-400",
+  },
+  chameleon: {
+    bar: "bg-fuchsia-400",
+    border: "border-fuchsia-500/45",
+    wash: "bg-fuchsia-500/10",
+    well: "bg-fuchsia-500/20",
+    name: "text-fuchsia-300",
+    milestone: "bg-fuchsia-400",
+  },
+  flamingo: {
+    bar: "bg-pink-400",
+    border: "border-pink-500/40",
+    wash: "bg-pink-500/10",
+    well: "bg-pink-500/20",
+    name: "text-pink-300",
+    milestone: "bg-pink-400",
+  },
   octopus: {
     bar: "bg-violet-400",
     border: "border-violet-500/45",
@@ -327,6 +473,22 @@ export const ANIMAL_CARD_TONE: Record<string, AnimalCardTone> = {
     well: "bg-violet-500/20",
     name: "text-violet-300",
     milestone: "bg-violet-400",
+  },
+  squid: {
+    bar: "bg-purple-400",
+    border: "border-purple-500/45",
+    wash: "bg-purple-500/10",
+    well: "bg-purple-500/20",
+    name: "text-purple-300",
+    milestone: "bg-purple-400",
+  },
+  crab: {
+    bar: "bg-gray-400",
+    border: "border-gray-500/40",
+    wash: "bg-gray-500/10",
+    well: "bg-gray-500/20",
+    name: "text-gray-300",
+    milestone: "bg-gray-400",
   },
   shark: {
     bar: "bg-cyan-400",
@@ -500,6 +662,22 @@ function diversificationScoreFromHoldings(
   return Math.max(0, Math.min(100, Math.round(score)));
 }
 
+/** Which archetype id a heavily-concentrated (non-crypto, non-index) book
+ * lands on, keyed by its dominant theme — so a book that's two-thirds AI
+ * computer builders reads as a different animal than one that's two-thirds
+ * chip makers, instead of every concentrated book becoming a generic
+ * "Panda". Themes without an entry (currently just "other") fall back to
+ * "panda" in pickAnimal. */
+const CONCENTRATED_ANIMAL_BY_THEME: Partial<Record<ForecastTheme, string>> = {
+  ai_infra: "beaver",
+  ai_power: "rhino",
+  semi: "badger",
+  drones: "scorpion",
+  fintech: "otter",
+  software: "chameleon",
+  healthcare: "flamingo",
+};
+
 function archetype(id: string): AnimalArchetype {
   const found = ARCHETYPE_BY_ID.get(id);
   if (!found) throw new Error(`Unknown animal archetype id: ${id}`);
@@ -561,12 +739,25 @@ function pickAnimal(opts: {
     theme !== "crypto" &&
     theme !== "index"
   ) {
+    const id = CONCENTRATED_ANIMAL_BY_THEME[theme] ?? "panda";
     return {
-      archetype: archetype("panda"),
+      archetype: archetype(id),
       why: `${specialistScore}% of your portfolio sits in ${THEME_LABEL[theme]}. One diet, on purpose.`,
     };
   }
   if (themeCount >= 3) {
+    if (risk >= 65) {
+      return {
+        archetype: archetype("squid"),
+        why: `${themeCount} kinds of stocks across ${names}, and how jumpy ${risk}/100 is hot. Spread out and still fast-moving at the same time.`,
+      };
+    }
+    if (diversification < 40) {
+      return {
+        archetype: archetype("crab"),
+        why: `${themeCount} kinds of stocks across ${names}, but how spread out only ${diversification}/100. ${top} still carries most of it.`,
+      };
+    }
     return {
       archetype: archetype("octopus"),
       why: `${themeCount} kinds of stocks across ${names}. This is not one kind of business. It is a handful running side by side.`,
