@@ -232,6 +232,7 @@ function EmptyBook({
       {!homework && onPasteHoldings && (
         <div className="flex flex-col gap-3">
           <Textarea
+            aria-label="Paste what you own, one holding per line"
             value={paste}
             onChange={(e) => setPaste(e.target.value)}
             rows={5}

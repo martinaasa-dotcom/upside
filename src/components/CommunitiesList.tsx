@@ -511,7 +511,11 @@ export function CommunitiesList() {
       </div>
 
       {joinPick && (
-        <ViewportOverlay className="z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
+        <ViewportOverlay
+          className="z-50 flex items-end justify-center p-0 sm:items-center sm:p-4"
+          onClose={() => setJoinPick(null)}
+          ariaLabelledBy="join-share-title"
+        >
           <button
             type="button"
             className="absolute inset-0 bg-black/80 backdrop-blur-sm"
@@ -519,9 +523,6 @@ export function CommunitiesList() {
             onClick={() => setJoinPick(null)}
           />
           <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="join-share-title"
             className="relative max-h-full w-full overflow-y-auto rounded-t-xl bg-popover p-6 ring-1 ring-foreground/20 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:max-w-md sm:rounded-xl sm:pb-6"
           >
             <h3

@@ -1106,6 +1106,7 @@ export const PulsePage = memo(function PulsePage({
         <PanelHeader
           icon={<Activity className="h-4 w-4" />}
           title="Should you sell, or buy more?"
+          subtitle="Educational, not personalized investment advice. Always your call."
           actions={
             <form
               onSubmit={(e) => void submitSearch(e)}

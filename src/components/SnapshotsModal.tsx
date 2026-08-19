@@ -156,7 +156,10 @@ export function SnapshotsModal({
   if (!open) return null;
 
   return (
-    <ViewportOverlay className="z-[60] flex items-center justify-center p-4">
+    <ViewportOverlay
+      className="z-[60] flex items-center justify-center p-4"
+      onClose={onClose}
+    >
       <button
         type="button"
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"

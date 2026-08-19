@@ -139,7 +139,10 @@ export function InvitePartnerModal({
   }
 
   return (
-    <ViewportOverlay className="z-[80] flex items-end justify-center sm:items-center">
+    <ViewportOverlay
+      className="z-[80] flex items-end justify-center sm:items-center"
+      onClose={onClose}
+    >
       <button
         type="button"
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"

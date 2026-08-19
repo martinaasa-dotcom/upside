@@ -86,6 +86,47 @@ const KNOWN: Record<string, string> = {
   "Lab sync failed": "Couldn't save your Lab notes. They're still on this device.",
 };
 
+/**
+ * Postgres/PostgREST/driver error text never has a plain-English source —
+ * unlike the developer-key patterns below, these come straight from the
+ * database and were never meant for a person to read. Route anything that
+ * looks like one of these to the fallback instead of showing it raw.
+ */
+const TECHNICAL_MARKERS = [
+  "duplicate key",
+  "violates",
+  "constraint",
+  "relation \"",
+  "column \"",
+  "syntax error",
+  "permission denied",
+  "null value in column",
+  "invalid input syntax",
+  "row-level security",
+  "econnrefused",
+  "etimedout",
+  "fetch failed",
+  "jwt",
+  "pgrst",
+  "stack trace",
+  " at Object.",
+  " at async ",
+];
+
+function looksTechnical(s: string): boolean {
+  const lower = s.toLowerCase();
+  if (TECHNICAL_MARKERS.some((m) => lower.includes(m.toLowerCase()))) return true;
+  // Postgres always double-quotes the identifier in these errors
+  // (relation "x", column "y", constraint "z") — a stray quote in an
+  // otherwise-unmapped message is the single strongest signal it's a raw
+  // driver error rather than a sentence someone wrote for a human.
+  if (s.includes('"')) return true;
+  // A long, unmapped string is far more likely to be a dumped error object
+  // than a short sentence someone actually wrote for this dictionary.
+  if (s.length > 160) return true;
+  return false;
+}
+
 export function plainError(raw: unknown, fallback: string): string {
   if (typeof raw !== "string") return fallback;
   const s = raw.trim();
@@ -100,5 +141,6 @@ export function plainError(raw: unknown, fallback: string): string {
   // Bare developer keys: portfolio_id required, foo_bar, HTTP 500 text.
   if (/^[a-z][a-z0-9_]* required$/i.test(s)) return fallback;
   if (/^[a-z]+_[a-z0-9_]+$/i.test(s)) return fallback;
+  if (looksTechnical(s)) return fallback;
   return s;
 }
