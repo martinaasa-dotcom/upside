@@ -775,7 +775,7 @@ export const PortfolioTable = memo(function PortfolioTable({
                     <button
                       type="button"
                       onClick={() => onDelete(h.id)}
-                      className="absolute right-0.5 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground opacity-0 transition hover:text-loss group-hover:opacity-100"
+                      className="absolute right-0.5 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground opacity-60 transition hover:text-loss hover:opacity-100 focus-visible:opacity-100"
                       aria-label={`Delete ${h.ticker}`}
                     >
                       <Trash2 className="h-3.5 w-3.5" />

@@ -36,6 +36,7 @@ function FeedbackIconButton() {
       size="icon-sm"
       onClick={openManual}
       aria-label="Feedback"
+      className="touch-target"
     >
       <MessageSquare />
     </Button>
@@ -105,11 +106,12 @@ export function MobileTopBar({
               aria-label={
                 alertCount > 0 ? `Alerts, ${alertCount} waiting` : "Alerts"
               }
+              className="touch-target"
             >
               {bell}
             </Button>
           ) : alertsHref && !avatar ? (
-            <Button asChild variant="ghost" size="icon-sm">
+            <Button asChild variant="ghost" size="icon-sm" className="touch-target">
               <Link
                 href={alertsHref}
                 aria-label={
@@ -125,7 +127,7 @@ export function MobileTopBar({
               href="/account"
               aria-label="Account"
               title="Account"
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-card"
+              className="touch-target inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-card"
             >
               {avatar.url ? (
                 // eslint-disable-next-line @next/next/no-img-element

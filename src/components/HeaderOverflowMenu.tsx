@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/format";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,7 +51,7 @@ export function HeaderOverflowMenu({
             size={avatar ? "icon" : "default"}
             aria-label={label}
             title={label}
-            className={avatar ? "size-8" : undefined}
+            className={cn("touch-target", avatar && "size-8")}
           >
             {avatar ? (
               avatar.url ? (

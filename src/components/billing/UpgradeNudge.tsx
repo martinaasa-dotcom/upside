@@ -84,7 +84,7 @@ export function UpgradeNudge({
             size="icon-sm"
             aria-label="Upgrade to Pro"
             title="Upgrade to Pro"
-            className="text-primary hover:text-primary"
+            className="touch-target text-primary hover:text-primary"
           >
             <Sparkles />
           </Button>
