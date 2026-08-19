@@ -61,14 +61,15 @@ What it left as backlog, and where each stands:
 
 | Item | Severity | Status | Evidence | Notes |
 |---|---|---|---|---|
-| `text-[0.8rem]` in `button.tsx:27` / `toggle.tsx:20` (`sm` size) | Medium | **Deferred — needs Martin's decision** | — | A real off-scale value (12.8px, between `text-xs` and `text-sm`), and `Panel.tsx`'s own type scale bans `text-[Npx]`. But fixing it means picking `text-xs` or `text-sm` for every small button and toggle app-wide — a one-line change visible on every screen. The report declined to guess and so does this; item #4 in `00-summary.md`'s decision list. |
-| `CommunitiesList.tsx:266` hand-rolls `animate-pulse rounded-lg bg-muted` instead of `<Skeleton>` | Medium | **Deferred** | — | Code-hygiene only: the shared `Skeleton` is `animate-pulse rounded-md bg-muted`, so the visible delta is `rounded-lg` vs `rounded-md`. Swapping it is safe but changes a corner radius on a live loading state, which is a design call rather than a defect — left with the other Pass 1 taste items rather than bundled into an unrelated PR. |
+| `text-[0.8rem]` in `button.tsx:27` / `toggle.tsx:20` (`sm` size) | Medium | **Resolved** | Both now `text-sm`. `grep -rn 'text-\[[0-9]' src/app src/components` returns nothing outside the documented `UpsideLogo` exception — this was the last arbitrary text size in the app. | Rounded **up**, not down: `text-xs` is the app's stated font *floor* rather than a default, `sm` buttons carry real labels (Save, Cancel, Add holding), and the `xs` variant already exists for the genuinely tiny case. Also matches shadcn upstream, where buttons are `text-sm` and sizes differ by height/padding. Measured the cost against the compiled stylesheet: labels grow 3–11px, box stays `h-7`/28px so nothing clips. |
+| `CommunitiesList.tsx:266` hand-rolls `animate-pulse rounded-lg bg-muted` instead of `<Skeleton>` | Medium | **Resolved** | Now `<Skeleton className="h-[3.75rem]" />`. The only visible delta is `rounded-lg` → `rounded-md` on a loading placeholder. | Trivial once the type-scale decision made it clear these Pass 1 items were being worked rather than held as a set. |
 | Overlay surfaces (`Dialog`, `Sheet`, `Drawer`, `Popover`, `DropdownMenu`, `Select`, `Command`) are opaque, not glass | Medium | **Deferred — needs Martin's decision** | — | Deliberate and self-consistent today: opaque `bg-popover` + a hairline ring, with `backdrop-blur-xs` only on the dimming scrim. Making them glass now that top-level cards are is a genuine design decision — blur behind small menu text risks legibility — and the report routed it to "Needs a decision" for exactly that reason. |
-| Six Low items (`global-error.tsx` hex colors, `UpsideLogo` arbitrary sizes, `native-select` system colors, icon stroke widths, unused `next-themes`, container widths) | Low | **Deferred (no change needed)** | — | The report checked each and found five are documented deliberate exceptions or non-findings. The one loose end is the unused `next-themes` dependency: the app is single-theme by design (`html { color-scheme: dark }`) and nothing in `src/` imports it, so it misleads a reader into expecting a toggle. Worth removing from `package.json` in a dependency-cleanup pass rather than a design one. |
+| Six Low items (`global-error.tsx` hex colors, `UpsideLogo` arbitrary sizes, `native-select` system colors, icon stroke widths, unused `next-themes`, container widths) | Low | **Resolved** (the one real item) | `next-themes` removed from `package.json`; `grep -rn next-themes src/ scripts/` returns nothing, and the lockfile no longer carries it. | Five of the six were documented deliberate exceptions or non-findings, confirmed by the report. The sixth — the unused `next-themes` dependency — was real: the app is single-theme by design (`html { color-scheme: dark }`) and nothing imported it, so it misled a reader into expecting a theme toggle that doesn't exist. |
 
 ## Status
 
-No Critical or High items open. Every remaining item is Medium or Low,
-and three of the four Medium/Low rows above are explicitly design
-decisions for Martin rather than defects — the same conclusion the
-report itself reached.
+No Critical or High items open, and the three actionable Medium/Low rows
+above are now closed. The single remaining row is the overlay-glass
+question, which is a genuine design decision rather than a defect: those
+surfaces are deliberately opaque and self-consistent today, and blurring
+small menu text risks legibility.

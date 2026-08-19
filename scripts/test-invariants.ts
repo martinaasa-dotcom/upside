@@ -1615,7 +1615,16 @@ run("circle awards are a grid of cards, not a flat divided list", () => {
   );
   const awards = community.slice(awardsStart, awardsEnd);
   assert.match(awards, /grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3/);
-  assert.match(awards, /glass-well flex flex-col gap-1\.5 rounded-lg p-3/);
+  // Each award is a glass-well card, not a divided list row. Asserted by
+  // the classes that carry that meaning rather than by their exact order:
+  // the tiles became <button>s (they select a member), which legitimately
+  // inserted `w-full` into the middle of the old pinned sequence.
+  for (const cls of ["glass-well", "flex-col", "gap-1.5", "rounded-lg", "p-3"]) {
+    assert.ok(
+      awards.includes(cls),
+      `circle award tiles should still carry ${cls}`
+    );
+  }
   assert.doesNotMatch(awards, /<ItemGroup/);
   assert.doesNotMatch(awards, /<ItemSeparator/);
   assert.doesNotMatch(awards, /bg-pink-500/);
@@ -4922,8 +4931,13 @@ run("Fund page labels Margus's note Thesis", () => {
   assert.match(card, /Hold for/);
   assert.match(card, /label="Since buy"/);
   assert.match(card, /label="Sell if"/);
-  assert.match(card, /<Card/);
-  assert.match(card, /<Item /);
+  // The fund position sits on the shared glass surface and the note uses
+  // the shared Reading block. AGENTS.md names BOX/CARD in Panel.tsx as the
+  // canonical card treatment, so these are the design system's primitives,
+  // not hand-rolled divs — this used to pin <Card>/<Item>, which the
+  // component moved off deliberately.
+  assert.match(card, /cn\(BOX,/);
+  assert.match(card, /<Reading /);
   assert.match(card, /items-start/);
   assert.doesNotMatch(card, /items-stretch/);
   assert.doesNotMatch(card, /md:grid-cols-\[minmax/);

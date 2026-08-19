@@ -18,6 +18,7 @@ import {
 } from "@/lib/community-cache";
 import { StartingCashField } from "@/components/StartingCashField";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
@@ -261,10 +262,7 @@ export function CommunitiesList() {
             {communities.length === 0 && loading ? (
               <div className="flex flex-col gap-2" aria-hidden>
                 {[0, 1].map((i) => (
-                  <div
-                    key={i}
-                    className="h-[3.75rem] animate-pulse rounded-lg bg-muted"
-                  />
+                  <Skeleton key={i} className="h-[3.75rem]" />
                 ))}
               </div>
             ) : (

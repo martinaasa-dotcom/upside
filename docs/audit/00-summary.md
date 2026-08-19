@@ -103,45 +103,79 @@ Nothing is outstanding. All three were applied to production on
    watchlist simply doesn't persist, and that section of the letter is
    empty.
 
-## Open items that need Martin's decision (across all 10 passes)
+## All five open decisions are now made
 
-These are the judgment calls no pass resolved unilaterally, gathered
-here since they're the kind of thing a single top-level owner needs to
-see in one place rather than hunt through ten reports for:
+The five judgment calls the passes deliberately did not resolve
+unilaterally have all been decided and implemented:
 
-1. **R2 disaster-recovery cold-copy retention period** (Pass 9 High #1,
-   Pass 10 Medium #1). How long should an encrypted whole-book backup
-   live in Cloudflare R2 before being purged, and by what mechanism (a
-   bucket lifecycle rule, or an added prune step in the
-   `disaster-recovery` cron)? Until decided, deleted accounts' data
-   persists indefinitely in past cold copies, and the Privacy Policy can
-   only disclose that fact, not a duration.
-2. **GDPR Article 8 EU-consent-age question** (Pass 9 "needs a decision"
-   #2, cross-checked by Pass 10 and found internally consistent as-is).
-   Should the app's global "13 or older" sign-in gate be raised (e.g. to
-   16) or made country-dependent, given several EU member states set the
-   Article 8 digital-consent age above 13 and `AGENTS.md`'s 2026-08-12
-   note that the product is moving toward being a public, EU-facing
-   product beyond Martin's family?
-3. **Community migration from Pass 8 still needs manual production
-   apply.** The Critical membership/visibility fix in Pass 8 is written
-   (code + migration) but, per that report, has not yet been applied to
-   the production database — this is an operational follow-up, not a
-   code gap, and belongs at the top of Martin's list regardless of when
-   he reads this.
-4. **Text scale violation left as a deliberate decision, not guessed
-   at** (Pass 1 Medium): `text-[0.8rem]` in `button.tsx`/`toggle.tsx`'s
-   `sm` variant should probably become `text-xs` or `text-sm`, visible
-   on every small button/toggle app-wide — Pass 1 didn't want to guess
-   which one without sign-off.
-5. **Optional: a cookie table with individual cookie names/durations**
-   (Pass 10, "Needs input from Martin" #3) — the current category-level
-   description in the Privacy Policy is accurate and matches verified
-   behavior; a more granular table is a possible future addition for
-   stricter EU cookie-notice practice, not a documented defect today.
+1. **R2 cold-copy retention** — **30 days**, down from 90. These copies
+   exist to rebuild after catastrophic loss, a mass delete, or ransomware,
+   all noticed in days; 90 read as an archive and raised the GDPR bar for
+   no operational gain. The cron prune stays the primary mechanism, with a
+   45-day R2 bucket lifecycle rule as a backstop because the prune runs
+   *inside* the cron — if the cron stops, objects live forever with nothing
+   to notice, and that gap was the real risk rather than the number.
+   `DISASTER_RECOVERY.md` also now makes re-running
+   `portfell_purge_user_data()` a required restore step, which is what
+   makes "backups retain data until the cycle expires" defensible rather
+   than an excuse. Per-user purging of existing copies was deliberately
+   **not** attempted: they are whole-book encrypted blobs, so surgical
+   erasure means decrypting, filtering and re-encrypting every backup to
+   satisfy one deletion.
+2. **GDPR Article 8 consent age** — **split by how the account is
+   created**: 13 for a classroom invite (school context, pretend money, no
+   payment, a teacher in between — a flat 16 would lock out the
+   high-school product Classroom was built for), 16 for everything else
+   (self-serve signup with real portfolio data and a paid tier; 16 is the
+   strictest member-state threshold, so the per-country analysis goes
+   away). Country-dependent gating was rejected — it needs reliable
+   geolocation to enforce an age nobody can verify. **Still worth a
+   lawyer's sign-off:** minors plus financial content.
+3. **Pass 8's community migration** — **applied and verified**, along with
+   two more. See the migrations section above.
+4. **`text-[0.8rem]` type-scale violation** — **`text-sm`**. Rounded up
+   because `text-xs` is the app's stated font *floor*, not a default, and
+   `sm` buttons carry real labels; the `xs` variant already covers the
+   genuinely tiny case. This was the last arbitrary text size in the app
+   outside the documented `UpsideLogo` exception.
+5. **A per-cookie table** — **decided against**, because verifying showed
+   there is nothing to tabulate: a clean-profile load sets **zero
+   cookies**, before and after granting analytics consent, since Vercel
+   Analytics is cookieless. The check exposed a real gap the finding
+   missed, though — Privacy §6 was titled "Cookies" and never mentioned
+   on-device storage, which ePrivacy Article 5(3) covers equally. §6 now
+   states what is kept on the device and that signing out clears it, and
+   `docs/COOKIES.md` holds the verified inventory for the day a
+   non-cookieless third party makes a public table worth publishing.
 
-Everything else each pass found was either fixed inline (see each
-report's "Fixes applied this pass") or left as ordinary, non-blocking
-backlog (see each report's own Medium/Low sections) — this index only
-surfaces the items that need an actual decision from Martin, not the
-full backlog.
+## What is still open
+
+Nothing Critical or High, and nothing blocking. What remains is genuinely
+deferred rather than forgotten, and each row in the relevant fix log says
+why. The substantive ones:
+
+- **Two human actions**, neither of which code can do: create the 45-day
+  R2 bucket lifecycle rule in Cloudflare, and re-verify the Supabase
+  cookie name against a real signed-in session before publishing it
+  externally (`docs/COOKIES.md`).
+- **Product decisions** nobody should make on Martin's behalf: whether
+  classmates should see each other's cost basis in a Classroom (Pass 8
+  M1), whether pasting a ticker with no price should land at $0.01 rather
+  than be skipped (Pass 7 M2), whether invite copy should say "Circle"
+  where it currently says "community" for both circles and classrooms
+  (Pass 7 M3), whether open invite links should expire (Pass 2 M5), and
+  whether every small icon button in the app should grow to a 44px touch
+  target (Pass 5 M1).
+- **Infrastructure the project doesn't have**: distributed rate limiting
+  and a shared circuit-breaker store both need Redis/Upstash/Vercel KV
+  (Pass 2 M1, Pass 4 L2), and the CSP `unsafe-inline` widening needs
+  Next.js to ship noncing for cached Flight payloads (Pass 2 M2).
+- **Deliberately not "cleaned up"**: the `plainError` identity entries
+  (Pass 5 L3) are load-bearing — they short-circuit before
+  `looksTechnical()`, guaranteeing those sentences reach the user — and
+  the household/alias email tables (Pass 9 L2) are data `AGENTS.md`
+  explicitly rules out touching.
+- **One design question**: whether overlay chrome (Dialog, Sheet,
+  Popover, Select, Command) should become glass now that top-level cards
+  are (Pass 1). They are deliberately opaque and self-consistent today,
+  and blur behind small menu text risks legibility.
