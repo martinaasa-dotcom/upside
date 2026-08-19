@@ -133,9 +133,21 @@ export function SignInGate({ children }: Props) {
 
   return (
     <div className="relative flex min-h-dvh flex-col overflow-x-clip overflow-y-auto bg-background text-foreground">
+      {/*
+       * Sign-in's ambient light. Two warm lobes, same as the signed-in
+       * `.page-frame::before` — deliberately not gain-green.
+       *
+       * The second lobe used to be `bg-gain/10`, and it was the
+       * "unexplained green glow" the design review kept asking about:
+       * measured rgb(0,11,7) on the right against rgb(37,34,21) warm on
+       * the left. globals.css already states the rule this broke —
+       * gain-green is a financial signal, so it means "this went up," and
+       * nothing on a signed-out page has gone up. It was decoration
+       * borrowing a semantic colour, on the first screen a stranger sees.
+       */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
         <div className="absolute -left-40 -top-48 h-[34rem] w-[34rem] rounded-full bg-primary/20 blur-[130px]" />
-        <div className="absolute -right-32 top-1/4 h-[26rem] w-[26rem] rounded-full bg-gain/10 blur-[130px]" />
+        <div className="absolute -right-32 top-1/4 h-[26rem] w-[26rem] rounded-full bg-primary/10 blur-[130px]" />
       </div>
       <main
         id="main"
@@ -161,7 +173,13 @@ export function SignInGate({ children }: Props) {
                   Invite
                 </p>
               )}
-              <h1 className="text-balance bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text font-heading text-2xl font-semibold leading-tight tracking-tight text-transparent">
+              {/* Solid --foreground, not a gradient fill. This was the last
+                * `bg-clip-text` in the app; the fade to `foreground/70` was
+                * the "gray-on-gray hero text" the first design review
+                * flagged. It measured 19.26:1 -> 14.73:1 contrast, so it
+                * was never actually illegible — it just reads as a hedge on
+                * the one sentence that has to sound certain. */}
+              <h1 className="text-balance font-heading text-2xl font-semibold leading-tight tracking-tight text-foreground">
                 {invite ? inviteLandingCopy(invite).title : PRODUCT_SENTENCE}
               </h1>
               <p className="text-base leading-relaxed text-muted-foreground">
@@ -253,8 +271,25 @@ const SAMPLE_MOVERS = [
 function BookStill() {
   return (
     <div className="relative md:-rotate-1 md:transition-transform md:duration-700 md:hover:rotate-0">
+      {/*
+       * One quiet warm lift behind the sample card, not a halo.
+       *
+       * This used to be `-inset-8 … from-primary/25 via-primary/5
+       * to-gain/10 opacity-90 blur-3xl` — a 395x666px element at
+       * blur(64px), which is the "large, saturated, blurry halo" the
+       * design review kept flagging, and the only effect of its size
+       * anywhere in the app (every signed-in page's loudest shadow is
+       * `0 12px 32px -16px`).
+       *
+       * The `to-gain/10` stop was also the source of the "unexplained
+       * green glow in the bottom-right": gain-green is a financial
+       * signal, so it means "this went up." Nothing here went up — it
+       * was decoration wearing a semantic colour. Measured rgb(1,15,9)
+       * bottom-right against rgb(37,34,21) top-left, i.e. visibly green
+       * where the rest of the app's ambient light is warm.
+       */}
       <div
-        className="pointer-events-none absolute -inset-8 -z-10 rounded-[2.5rem] bg-gradient-to-br from-primary/25 via-primary/5 to-gain/10 opacity-90 blur-3xl"
+        className="pointer-events-none absolute -inset-2 -z-10 rounded-[2.5rem] bg-gradient-to-br from-primary/12 to-transparent opacity-70 blur-2xl"
         aria-hidden
       />
       <Panel
