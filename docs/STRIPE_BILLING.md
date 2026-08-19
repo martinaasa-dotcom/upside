@@ -15,6 +15,8 @@ src/app/api/billing/portal/route.ts                        opens the Billing Por
 src/app/api/billing/webhook/route.ts                       mirrors subscription state
 src/app/api/billing/status/route.ts                        subscription status for the signed-in user
 src/components/billing/UpgradeButton.tsx                   Upgrade / Manage billing button
+src/lib/billing-reconcile.ts                                daily Stripe-vs-local backstop
+src/app/api/cron/billing-reconcile/route.ts                 cron entry point (vercel.json, 05:00 UTC)
 ```
 
 ## Setup steps
@@ -86,6 +88,22 @@ const isSubscribed =
   profile?.subscription_status === "active" ||
   profile?.subscription_status === "trialing";
 ```
+
+## Reconciliation cron
+
+The webhook is the only writer of `subscription_status` in normal
+operation, but Stripe does not guarantee delivery. `GET
+/api/cron/billing-reconcile` runs daily (`vercel.json`, 05:00 UTC) and
+re-derives every profile with a `stripe_customer_id` from
+`stripe.subscriptions.list()` -- the same source of truth the webhook
+itself trusts -- and corrects any drift. Same `CRON_SECRET` bearer auth as
+every other cron in `vercel.json`.
+
+This was deferred at first (Pass 6 M1): nothing gated on
+`subscription_status`, so a drifted value had no user-visible effect, and
+adding scheduled infrastructure for a currently decorative field wasn't
+worth it speculatively. Built once Pro started actually taking payments,
+which is exactly the point past which drift stops being decorative.
 
 ## Why hosted Checkout, not a custom form
 
