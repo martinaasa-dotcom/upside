@@ -448,18 +448,24 @@ async function handlePATCH(req: NextRequest, ctx: Ctx) {
       .from(PORTFELL_TABLES.portfolios)
       .select("id, cash_balance")
       .eq("classroom_community_id", id);
-    for (const sheet of (sheets ?? []) as {
-      id: string;
-      cash_balance: number;
-    }[]) {
-      await supabase
-        .from(PORTFELL_TABLES.portfolios)
-        .update({
-          cash_balance: roundMoney(Number(sheet.cash_balance) + startingCashDelta),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", sheet.id);
-    }
+    // PostgREST can't express a column-relative delta across a batch, so
+    // this is still one write per student sheet — but they go out together
+    // instead of one round trip after another. A 30-student class was ~30
+    // sequential waits on an action a teacher expects to feel instant.
+    const now = new Date().toISOString();
+    await Promise.all(
+      ((sheets ?? []) as { id: string; cash_balance: number }[]).map((sheet) =>
+        supabase
+          .from(PORTFELL_TABLES.portfolios)
+          .update({
+            cash_balance: roundMoney(
+              Number(sheet.cash_balance) + startingCashDelta
+            ),
+            updated_at: now,
+          })
+          .eq("id", sheet.id)
+      )
+    );
   }
   const saved = community as {
     kind?: string;

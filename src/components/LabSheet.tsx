@@ -10,7 +10,6 @@ import {
   buildPortfolioPersonality,
   THEME_COLOR,
 } from "@/lib/portfolio-personality";
-import { ScenarioSimulator } from "@/components/ScenarioSimulator";
 import { EmptyState, Panel, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW, SwatchLegend } from "@/components/ui/Panel";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -23,11 +22,10 @@ import {
   correlationMatrix,
 } from "@/lib/correlation";
 import { currency, cn, cashtag } from "@/lib/format";
-import { SeasonalityPage } from "@/components/SeasonalityPage";
-import { TrendsPanel } from "@/components/TrendsPanel";
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import type { OverviewModel } from "@/lib/overview";
 import type { Holding, Portfolio, Quote } from "@/lib/types";
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState, memo } from "react";
 import { useHydratedCache } from "@/lib/use-hydrated-cache";
 
@@ -43,6 +41,26 @@ type Props = {
   /** Specific tab ids to hide, driven by the viewer's experience tier. */
   hiddenTabs?: string[];
 };
+
+/**
+ * Lab's sub-tabs, one chunk each. Only one is on screen at a time, but
+ * before this the whole Lab chunk carried all three — a visitor looking at
+ * Allocation still downloaded Seasonality, Trends, and the scenario
+ * simulator. Same split `Dashboard` already does for its meta-tabs.
+ */
+const ScenarioSimulator = dynamic(
+  () =>
+    import("@/components/ScenarioSimulator").then((m) => m.ScenarioSimulator),
+  { ssr: true }
+);
+const SeasonalityPage = dynamic(
+  () => import("@/components/SeasonalityPage").then((m) => m.SeasonalityPage),
+  { ssr: true }
+);
+const TrendsPanel = dynamic(
+  () => import("@/components/TrendsPanel").then((m) => m.TrendsPanel),
+  { ssr: true }
+);
 
 const EMPTY_HIDDEN_TABS: string[] = [];
 
