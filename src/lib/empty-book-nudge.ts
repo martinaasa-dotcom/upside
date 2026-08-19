@@ -69,7 +69,7 @@ export function emptyBookNudgeText(
     `${PRODUCT_NAME} is a morning read of the names you own. Paste what you hold. The app watches the prices, flags a name when it jumps, and lets you ask Margus if the reason you own it still holds.`,
     "Getting started is one step. Import the names you already own. A CSV, a screenshot, or type them in. That is the whole start.",
     PRODUCT_ORIGIN,
-    "This is a one-time note. Weekday and Sunday emails start once there are names in your portfolio. You can turn notes off in Account: https://upsidelab.app/account",
+    "This is a one-time note. The Sunday email starts once there are names in your portfolio. You can turn it off in Account: https://upsidelab.app/account",
   ].join("\n\n");
 }
 

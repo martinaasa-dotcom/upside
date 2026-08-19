@@ -5,11 +5,22 @@
  * server-only.
  */
 
-/** Stripe is still charging (or trying to charge) this customer. */
-const ACTIVE_STATUSES = new Set(["active", "trialing", "past_due"]);
+/**
+ * Stripe is still charging (or trying to charge) this customer. Exported
+ * so callers that ask Stripe for "subscriptions that would block a second
+ * checkout" query exactly these and can't drift out of step with what
+ * `isActiveSubscription` counts.
+ */
+export const ACTIVE_STATUSES = [
+  "active",
+  "trialing",
+  "past_due",
+] as const;
+
+const ACTIVE_STATUS_SET = new Set<string>(ACTIVE_STATUSES);
 
 export function isActiveSubscription(status: string | null | undefined): boolean {
-  return !!status && ACTIVE_STATUSES.has(status);
+  return !!status && ACTIVE_STATUS_SET.has(status);
 }
 
 /**

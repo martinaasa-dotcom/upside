@@ -10,7 +10,10 @@ import {
   stripePriceId,
   stripeSubscriptionFields,
 } from "@/lib/stripe";
-import { isActiveSubscription } from "@/lib/billing-status";
+import {
+  ACTIVE_STATUSES,
+  isActiveSubscription,
+} from "@/lib/billing-status";
 import { observeRoute } from "@/lib/observe-route";
 
 export const dynamic = "force-dynamic";
@@ -56,10 +59,16 @@ async function handlePOST(req: Request) {
 
   try {
     if (!customerId) {
-      const customer = await stripe.customers.create({
-        email: profile?.email ?? auth.user.email ?? undefined,
-        metadata: { supabase_user_id: auth.user.id },
-      });
+      const customer = await stripe.customers.create(
+        {
+          email: profile?.email ?? auth.user.email ?? undefined,
+          metadata: { supabase_user_id: auth.user.id },
+        },
+        // Keyed on the Supabase user id so a double-click, or a retry
+        // after the save below failed, reuses the customer Stripe already
+        // made instead of orphaning one per attempt.
+        { idempotencyKey: `customer:${auth.user.id}` }
+      );
       customerId = customer.id;
 
       const { error: saveError } = await supabase
@@ -74,12 +83,19 @@ async function handlePOST(req: Request) {
       // hasn't landed yet, or failed to verify). Check Stripe directly so a
       // stale "free" reading here can never start a second, duplicate
       // subscription for someone who is already paying.
-      const existingSubs = await stripe.subscriptions.list({
-        customer: customerId,
-        status: "all",
-        limit: 5,
-      });
-      const active = existingSubs.data.find((s) => isActiveSubscription(s.status));
+      //
+      // Ask for exactly the statuses that block a second checkout. The old
+      // call took the 5 most recent of *any* status and filtered here, so
+      // a customer with a handful of old canceled subscriptions could in
+      // principle push a live one off the page.
+      const blocking = await Promise.all(
+        ACTIVE_STATUSES.map((status) =>
+          stripe.subscriptions.list({ customer: customerId, status, limit: 1 })
+        )
+      );
+      const active = blocking
+        .flatMap((page) => page.data)
+        .find((s) => isActiveSubscription(s.status));
       if (active) {
         await supabase
           .from(PORTFELL_TABLES.profiles)

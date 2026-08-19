@@ -176,14 +176,51 @@ other crons):
    the holdings.
 
 5. Delete any cold snapshot + manifest object older than
-   `DR_COLD_RETENTION_DAYS` (default 90, unset elsewhere). This is a whole-book
-   export — one encrypted blob per day, covering every sheet and every
-   owner — so there is no way to cut a single deleted account out of an
-   already-written copy. Bounding the whole object's age is what the privacy
-   policy promises instead: a deleted account's data can persist in that
-   day's backup for up to the retention window, then the object is gone.
-   A purge failure is logged as a warning; it does not fail the job or block
-   the next day's upload.
+   `DR_COLD_RETENTION_DAYS` (default **30**, unset elsewhere). This is a
+   whole-book export — one encrypted blob per day, covering every sheet and
+   every owner — so there is no way to cut a single deleted account out of
+   an already-written copy. Bounding the whole object's age is what the
+   privacy policy promises instead: a deleted account's data can persist in
+   that day's backup for up to the retention window, then the object is
+   gone. A purge failure is logged as a warning; it does not fail the job or
+   block the next day's upload.
+
+   30 days is deliberate. These copies exist to rebuild after a
+   catastrophic Supabase failure, a mass accidental delete, or ransomware,
+   and all of those are noticed in days. A longer window reads as an
+   archive rather than a backup, and raises the GDPR bar for no operational
+   gain. `src/lib/dr/config.test.ts` pins the default so it can't drift
+   away from the number published in `src/app/privacy/page.tsx` §7.
+
+## Retention backstop (do this once, in Cloudflare)
+
+The purge above runs *inside the cron*. If the cron stops running —
+disabled, failing, quota — objects live forever and the privacy promise
+quietly stops being true, with nothing to notice.
+
+Set an **R2 bucket lifecycle rule to expire objects after 45 days**, on
+the same prefix (`DR_S3_PREFIX`, default `upside-lab/book-snapshots`).
+It is deliberately longer than the cron's 30 so the cron stays the thing
+that normally does the work and the rule only catches the failure case.
+This cannot be done from this repo; it is a console action on the bucket.
+
+## Restoring after someone has deleted their account
+
+A cold copy is a point in time. Anyone who ran self-service account
+deletion **after** that copy was written is still inside it, and restoring
+brings them back.
+
+So a restore is not finished when the data loads. Before the app is
+serving again, re-apply the deletions that happened since the snapshot:
+run `portfell_purge_user_data()` for every account deleted in that window.
+Reconstruct that list from whatever survived (the deletion log, support
+mail, the `portfell_profiles` rows that exist in the snapshot but not in
+the pre-incident production database).
+
+Skipping this step silently un-deletes people who asked to be forgotten,
+which is the failure mode regulators actually care about — and it is the
+condition that makes "backups may retain data until the cycle expires" a
+defensible position rather than an excuse.
 
 Local dry run (uses `.env.local`):
 

@@ -2,6 +2,7 @@
 
 import { emptyLabBundle, type LabBundle } from "@/lib/lab-bundle";
 import { loadConvictionMap } from "@/lib/conviction";
+import { loadWatchlist } from "@/lib/watchlist";
 import {
   fetchLabBundle,
   mirrorLabLocal,
@@ -21,7 +22,10 @@ export function useLabSync() {
     const ctrl = new AbortController();
     void (async () => {
       try {
-      const local: LabBundle = { conviction: loadConvictionMap() };
+      const local: LabBundle = {
+        conviction: loadConvictionMap(),
+        watchlist: loadWatchlist(),
+      };
       const remote = await fetchLabBundle(ctrl.signal);
       if (ctrl.signal.aborted) return;
       if (remote.source === "supabase") {
@@ -43,6 +47,10 @@ export function useLabSync() {
             conviction: remoteEmpty
               ? local.conviction
               : remote.bundle.conviction,
+            watchlist:
+              (remote.bundle.watchlist ?? []).length === 0
+                ? local.watchlist
+                : remote.bundle.watchlist,
             updatedAt: remote.bundle.updatedAt,
           };
           setLabBundle(merged);

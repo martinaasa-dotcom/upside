@@ -202,8 +202,15 @@ CASH,,2500,
 
 /**
  * Paste box: one holding per line.
- * `NBIS 500 85.10` or `NBIS, 500, 85.10`. Price is optional (uses 0.01
- * as a placeholder so the row can land; they can fix cost after).
+ * `NBIS 500 85.10` or `NBIS, 500, 85.10`.
+ *
+ * The buy price is **required**: a line without one is skipped with
+ * "Need a buy price after the share count". This comment used to promise
+ * a 0.01 placeholder so the row could land and cost be fixed later —
+ * nothing in `parseHoldingsPaste` has ever done that. Whether to add that
+ * fast path (paste tickers and share counts now, fix cost basis after) is
+ * a product decision, not a doc fix; until it's made, this describes what
+ * the code actually does.
  */
 export function parseHoldingsPaste(text: string): CsvImportResult {
   const result: CsvImportResult = { rows: [], cash: null, skipped: [] };

@@ -35,8 +35,15 @@ export function readDrConfig(
     accessToken: trim(env.SUPABASE_ACCESS_TOKEN),
     backupMaxAgeHours:
       Number.isFinite(rawAge) && rawAge > 0 ? rawAge : 36,
+    // 30 days. These cold copies exist to rebuild after a catastrophic
+    // Supabase failure, a mass accidental delete, or ransomware — all of
+    // which are noticed in days, not months. A longer window reads as an
+    // archive rather than a backup, and every extra day is a day a deleted
+    // account's data survives in an object that cannot be edited to remove
+    // one person. Override with DR_COLD_RETENTION_DAYS if a restore need
+    // ever genuinely reaches further back.
     coldRetentionDays:
-      Number.isFinite(rawRetention) && rawRetention > 0 ? rawRetention : 90,
+      Number.isFinite(rawRetention) && rawRetention > 0 ? rawRetention : 30,
     cold: hasCold
       ? {
           endpoint,

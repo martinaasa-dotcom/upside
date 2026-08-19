@@ -81,9 +81,9 @@ describe("export csv and encryption", () => {
     const dump: UserDataExport = {
       exported_at: "2026-08-17T12:00:00.000Z",
       account: { user_id: "u1", email: "a@b.c" },
-      profile: { id: "u1", note_morning: true, note_sunday: false },
+      profile: { id: "u1", note_sunday: true },
       settings: {
-        email_notes: { weekday: true, sunday: false },
+        email_notes: { sunday: true },
         experience_tier: "investor",
         knows_options: false,
       },
@@ -96,6 +96,9 @@ describe("export csv and encryption", () => {
       community_duels: [],
       join_requests: [],
       portfolio_invites: [],
+      community_invite_uses: [
+        { invite_id: "inv1", used_at: "2026-08-01T00:00:00.000Z" },
+      ],
     };
     const file = serializeUserExport(dump, { format: "json", encrypt: false });
     expect(file.filename).toBe("upside-export-2026-08-17.json");
@@ -104,6 +107,10 @@ describe("export csv and encryption", () => {
     const csv = toExportCsv(dump);
     expect(csv).toContain("# holdings");
     expect(csv).toContain("NBIS");
+    // Right-to-access covers which invite link they redeemed, and when.
+    expect(csv).toContain("# community_invite_uses");
+    expect(csv).toContain("inv1");
+    expect(file.body).toContain("community_invite_uses");
     expect(csvSection("empty", [])).toBe("# empty\n");
   });
 

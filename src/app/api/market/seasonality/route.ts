@@ -2,6 +2,7 @@ import { noStoreHeaders, publicCdnHeaders } from "@/lib/cdn-cache";
 import { getSeasonalityModel } from "@/lib/market/seasonality-fetch";
 import { NextRequest, NextResponse } from "next/server";
 import { observeRoute } from "@/lib/observe-route";
+import { getAuthUser } from "@/lib/supabase/server-auth";
 
 export const runtime = "nodejs";
 
@@ -15,7 +16,12 @@ async function handleGET(req: NextRequest) {
       { status: 400, headers: noStoreHeaders() }
     );
   }
-  const force = req.nextUrl.searchParams.get("force") === "1";
+  // `force` skips the cache and goes straight to the upstream provider, so
+  // only honour it for a signed-in caller. The Lab tab that sends it is
+  // behind auth anyway; an anonymous scraper shouldn't be able to bypass
+  // the cache at will and burn the free-tier quota.
+  const forceAsked = req.nextUrl.searchParams.get("force") === "1";
+  const force = forceAsked ? (await getAuthUser()) !== null : false;
 
   try {
     const model = await getSeasonalityModel(ticker, { force });

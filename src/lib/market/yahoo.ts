@@ -339,6 +339,21 @@ async function quoteOneSymbol(
 }
 
 /** Yahoo-only attempt — no synthetic fallback merged in. */
+type QuoteHit = { requested: string; symbol: string; quote: Quote };
+
+/**
+ * Concurrent requests for the same ticker inside one warm instance share a
+ * single upstream call. `/api/quotes` is CDN-cached per ticker-set, which
+ * dedupes one person polling — but two people whose portfolios merely
+ * overlap on a popular name have different ticker sets, so their requests
+ * miss that cache and each used to fetch the same symbol separately.
+ *
+ * A joiner rides the first caller's `fx` and `period1`, which is fine:
+ * the promise only lives for the length of one in-flight fetch. Same shape
+ * as `ytdCloseInFlight` below.
+ */
+const quoteInFlight = new Map<string, Promise<QuoteHit | null>>();
+
 export async function fetchQuotesYahoo(
   tickers: string[]
 ): Promise<YahooQuotesAttempt> {
@@ -358,22 +373,32 @@ export async function fetchQuotesYahoo(
     const fx = await fetchFxRates(yf);
     const period1 = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
 
-    const results = await Promise.all(
-      unique.map(async (requested) => {
-        if (isMarketCircuitOpen("yahoo")) return null;
-        for (const symbol of yahooQuoteCandidates(requested)) {
-          try {
-            const quote = await quoteOneSymbol(yf, symbol, fx, period1);
-            // A stub with price 0 is not a hit. Keep walking suffixes
-            // (LHV1T is empty; LHV1T.TL is the Tallinn listing).
-            if (quote && quote.price > 0) return { requested, symbol, quote };
-          } catch (err) {
-            if (err instanceof CircuitOpenError) return null;
-            /* try the next exchange */
-          }
+    const resolveOne = async (requested: string): Promise<QuoteHit | null> => {
+      if (isMarketCircuitOpen("yahoo")) return null;
+      for (const symbol of yahooQuoteCandidates(requested)) {
+        try {
+          const quote = await quoteOneSymbol(yf, symbol, fx, period1);
+          // A stub with price 0 is not a hit. Keep walking suffixes
+          // (LHV1T is empty; LHV1T.TL is the Tallinn listing).
+          if (quote && quote.price > 0) return { requested, symbol, quote };
+        } catch (err) {
+          if (err instanceof CircuitOpenError) return null;
+          /* try the next exchange */
         }
-        console.error(`Quote failed for ${requested}`);
-        return null;
+      }
+      console.error(`Quote failed for ${requested}`);
+      return null;
+    };
+
+    const results = await Promise.all(
+      unique.map((requested) => {
+        const pending = quoteInFlight.get(requested);
+        if (pending) return pending;
+        const started = resolveOne(requested).finally(() => {
+          quoteInFlight.delete(requested);
+        });
+        quoteInFlight.set(requested, started);
+        return started;
       })
     );
 

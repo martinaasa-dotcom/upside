@@ -23,7 +23,7 @@ export type UserDataExport = {
   };
   profile: Record<string, unknown> | null;
   settings: {
-    email_notes: { weekday: boolean; sunday: boolean };
+    email_notes: { sunday: boolean };
     experience_tier: string | null;
     knows_options: boolean | null;
   };
@@ -42,6 +42,8 @@ export type UserDataExport = {
   community_duels: unknown[];
   join_requests: unknown[];
   portfolio_invites: unknown[];
+  /** Which community invite links this person redeemed, and when. */
+  community_invite_uses: unknown[];
 };
 
 const INVITE_SAFE_COLUMNS =
@@ -85,7 +87,6 @@ export function toExportCsv(payload: UserDataExport): string {
     csvSection("profile", payload.profile ? [payload.profile] : []),
     csvSection("settings", [
       {
-        weekday_email: payload.settings.email_notes.weekday,
         sunday_email: payload.settings.email_notes.sunday,
         experience_tier: payload.settings.experience_tier,
         knows_options: payload.settings.knows_options,
@@ -103,6 +104,10 @@ export function toExportCsv(payload: UserDataExport): string {
     csvSection("community_duels", asRows(payload.community_duels)),
     csvSection("join_requests", asRows(payload.join_requests)),
     csvSection("portfolio_invites", asRows(payload.portfolio_invites)),
+    csvSection(
+      "community_invite_uses",
+      asRows(payload.community_invite_uses)
+    ),
   ].join("\n\n");
 }
 
@@ -120,6 +125,7 @@ export async function collectUserExport(
     duelRes,
     joinRes,
     inviteRes,
+    inviteUseRes,
   ] = await Promise.all([
     supabase.from(PORTFELL_TABLES.profiles).select("*").eq("id", uid).maybeSingle(),
     supabase
@@ -147,6 +153,13 @@ export async function collectUserExport(
           .select(INVITE_SAFE_COLUMNS)
           .in("portfolio_id", portfolioIds)
       : Promise.resolve({ data: [] as unknown[] }),
+    // A right-to-access record of which invite link this person redeemed
+    // and when. Low sensitivity (a join fact and a timestamp), but it is
+    // their personal data and nothing else in the export covers it.
+    supabase
+      .from(PORTFELL_TABLES.communityInviteUses)
+      .select("invite_id, used_at")
+      .eq("user_id", uid),
   ]);
 
   let portfolios: unknown[] = [];
@@ -224,8 +237,11 @@ export async function collectUserExport(
     .filter((row): row is NonNullable<typeof row> => row != null);
 
   const profile = asRecord(profileRes.data);
-  const weekday = Boolean(profile?.note_morning ?? profile?.morning_note);
+  // The Sunday letter is the only scheduled email; the weekday and
+  // after-close notes were removed, so there is one preference to export.
   const sunday = Boolean(profile?.note_sunday ?? profile?.morning_note);
+
+  const inviteUses = asRows(inviteUseRes.data);
 
   const invites = asRows(inviteRes.data).map((row) =>
     omitKeys(row, ["token_hash", "token_hint", "token"])
@@ -239,7 +255,7 @@ export async function collectUserExport(
     },
     profile,
     settings: {
-      email_notes: { weekday, sunday },
+      email_notes: { sunday },
       experience_tier:
         typeof profile?.experience_tier === "string"
           ? profile.experience_tier
@@ -261,6 +277,7 @@ export async function collectUserExport(
       const pid = row.portfolio_id;
       return typeof pid === "string" && owned.has(pid);
     }),
+    community_invite_uses: inviteUses,
   };
 }
 

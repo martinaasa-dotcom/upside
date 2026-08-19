@@ -22,7 +22,7 @@ export type SyncJob = {
 /** Same-origin writes that are safe to replay later. Holdings CRUD is not. */
 export const QUEUEABLE_PATHS = [
   "/api/account/experience-tier",
-  "/api/account/morning-note",
+  "/api/account/weekly-note",
   "/api/lab",
   "/api/feedback",
 ] as const;

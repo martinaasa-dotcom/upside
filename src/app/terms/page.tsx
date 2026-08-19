@@ -73,9 +73,11 @@ export default function TermsPage() {
         <Section title="3. Your account">
           You sign in with Google. You&apos;re responsible for keeping that
           Google account secure. Anyone with access to it can access your{" "}
-          {PRODUCT_NAME} data. Under 13 is never allowed. You confirm you are
-          13 or older when you sign in. Classroom is a teacher-invite paper
-          class (see below), not a brokerage.
+          {PRODUCT_NAME} data. Under 13 is never allowed. If you sign up on
+          your own, you confirm you are 16 or older when you sign in. If a
+          teacher invited you into a Classroom, the age is 13, because a
+          class is run by a school and uses pretend money only. Classroom is
+          a teacher-invite paper class (see below), not a brokerage.
         </Section>
 
         <Section title="4. Paid subscription">

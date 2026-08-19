@@ -162,17 +162,27 @@ export default function PrivacyPage() {
           person.
         </Section>
 
-        <Section title="6. Cookies">
+        <Section title="6. Cookies and what we keep on your device">
           We use essential cookies from Supabase Auth to keep you signed in.
-          When you sign in with Google, Google sets cookies on its own domain
-          under Google&apos;s rules. Vercel Analytics and Speed Insights
-          measure page views and load times only if you allow it. You can
-          say no on the banner, or change your mind later in{" "}
+          That is the only cookie this app sets. When you sign in with
+          Google, Google sets cookies on its own domain under Google&apos;s
+          rules; we never read those.
+          {" "}
+          Vercel Analytics and Speed Insights measure page views and load
+          times only if you allow it. They set no cookies at all, and we
+          still ask first. You can say no on the banner, or change your mind
+          later in{" "}
           <Link href="/account" className="underline hover:text-foreground">
             My account
           </Link>
-          . They are not advertising cookies, and they do not follow you
-          across other sites.
+          . Nothing here is advertising, and none of it follows you across
+          other sites.
+          {" "}
+          The app also saves things on your own device (browser storage, not
+          cookies): your settings, which sheet you had open, your thesis
+          notes and watchlist, and a cached copy of your portfolio so it
+          still works offline. That never leaves your device on its own.
+          Signing out, or switching accounts, clears all of it.
         </Section>
 
         <Section title="7. Data retention">
@@ -184,10 +194,10 @@ export default function PrivacyPage() {
           rebuild the app if our database provider had a serious failure.
           That copy is one combined file covering every account, not a file
           per person, so it can&apos;t be edited to remove a single account.
-          Instead, each day&apos;s copy is automatically deleted 90 days
+          Instead, each day&apos;s copy is automatically deleted 30 days
           after it was made. Deleting your account removes your data from
           active use immediately, but it can remain in that day&apos;s
-          backup copy until that copy&apos;s own 90-day expiry, the same as
+          backup copy until that copy&apos;s own 30-day expiry, the same as
           everyone else&apos;s in it. You can permanently delete your profile
           and solely-owned sheets yourself at any time (see below). This
           removes them from active use immediately.
@@ -204,7 +214,7 @@ export default function PrivacyPage() {
           co-owner stay with them). If for any reason the sign-in credential
           can&apos;t be removed at the same time, your {PRODUCT_NAME} data is
           still fully wiped from active use immediately (see &ldquo;Data
-          retention&rdquo; above; it can take up to 90 days to age out of
+          retention&rdquo; above; it can take up to 30 days to age out of
           the separate backup copy). You&apos;d just want to also revoke{" "}
           {PRODUCT_NAME}&apos;s access from your Google account if you want that
           connection severed too. EU/EEA residents have rights under GDPR
@@ -222,8 +232,13 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="10. Children and Classroom">
-          Under 13 is never allowed. You confirm you are 13 or older when you
-          sign in. {PRODUCT_NAME} is not a brokerage and
+          Under 13 is never allowed. If you sign up on your own, you confirm
+          you are 16 or older when you sign in. If a teacher invited you into
+          a Classroom, the age is 13: a class is run by a school, uses
+          pretend money only, and never touches a real portfolio. We use 16
+          for everyone else because some EU countries set that as the age
+          you can agree to this kind of service by yourself.{" "}
+          {PRODUCT_NAME} is not a brokerage and
           does not open a real trading account. Classroom is a private paper
           class: a teacher invites students, each student gets homework cash
           and an empty sheet, and real books cannot be shared into the class.

@@ -10,7 +10,7 @@ describe("offline sync queue", () => {
     expect(isQueueableRequest("/api/account/experience-tier", "POST")).toBe(
       true
     );
-    expect(isQueueableRequest("/api/account/morning-note", "POST")).toBe(true);
+    expect(isQueueableRequest("/api/account/weekly-note", "POST")).toBe(true);
     expect(isQueueableRequest("/api/lab", "PUT")).toBe(true);
     expect(isQueueableRequest("/api/feedback", "POST")).toBe(true);
     expect(isQueueableRequest("/api/holdings", "POST")).toBe(false);

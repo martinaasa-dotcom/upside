@@ -3,7 +3,7 @@
  * Run: npx tsx scripts/test-invariants.ts
  */
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { buildBookInsights } from "../src/lib/book-insights";
 import { forecastThemeForTicker } from "../src/lib/forecast-conviction";
@@ -66,18 +66,17 @@ import {
 } from "../src/lib/ai/llm-slots";
 import { humanizeMargusTree, humanizeMargusText, pulseSuggestion } from "../src/lib/ai/humanize-copy";
 import { communityInviteCopy, emptyBookNudgeHtml } from "../src/lib/email-letter";
-import {
-  fallbackNoteTake,
-  looksLikePromptLeak,
-} from "../src/lib/note-margus";
+import { looksLikePromptLeak } from "../src/lib/ai/prompt-leak";
+import { fallbackWeeklyTake } from "../src/lib/weekly-margus";
 import { noteTestAudience } from "../src/lib/note-cron";
 import { SUPERADMIN_NOTE_EMAIL } from "../src/lib/auth/superadmin";
 import {
-  buildNoteReport,
-  loudNoteMoves,
-  notePreview,
-  noteReportHtml,
-} from "../src/lib/note-report";
+  buildWeeklyLetter,
+  weeklyLetterHtml,
+  weeklyLetterText,
+  weeklySubject,
+} from "../src/lib/weekly-letter";
+import { ADVICE_DISCLAIMER_SHORT } from "../src/lib/disclaimer";
 import {
   inviteEmailAllowlist,
   parseInviteEmails,
@@ -1336,7 +1335,7 @@ run("humanize kills leftover market slang", () => {
   );
 });
 
-run("Sunday note never ships the writing brief", () => {
+run("the Sunday letter never ships the writing brief", () => {
   const leak =
     "We need to produce a Sunday note block, 4-6 short sentences, plain English, no greetings/sign-off, no em-dash, no banned words, tickers as cashtags. Use only names from facts: NBIS, CRWV. The instruction says Thesis is fine.";
   assert.equal(looksLikePromptLeak(leak), true);
@@ -1346,99 +1345,9 @@ run("Sunday note never ships the writing brief", () => {
     ),
     false
   );
-  const report = buildNoteReport({
-    kind: "sunday",
-    name: "Test",
-    cash: 0,
-    holdings: [{ ticker: "NBIS", shares: 100, buy_price: 80 }],
-    quotes: {
-      NBIS: {
-        ticker: "NBIS",
-        price: 110,
-        change: 5,
-        changePercent: 0.05,
-        previousClose: 105,
-        sparkline: [],
-        marketState: null,
-        preMarketPrice: null,
-        preMarketChange: null,
-        preMarketChangePercent: null,
-        postMarketPrice: null,
-        postMarketChange: null,
-        postMarketChangePercent: null,
-      },
-    },
-    weekReturns: { NBIS: { start: 90, end: 110, pct: 0.22 } },
-  });
-  const fallback = fallbackNoteTake(report);
-  assert.equal(looksLikePromptLeak(fallback), false);
-  assert.ok(fallback.length >= 20);
-  assert.doesNotMatch(fallback, /banned words|cashtags|sign-off/i);
-  assert.match(fallback, /your portfolio/i);
-  assert.match(fallback, /\$NBIS/);
-  assert.doesNotMatch(fallback, /\n- \$NBIS /);
-  assert.doesNotMatch(fallback, /not the same bet|Thesis intact|of the book/i);
-  assert.doesNotMatch(report.lead, /this week/);
-  assert.match(report.lead, /\$NBIS was the gainer/);
-  const preview = notePreview(report);
-  assert.match(preview, /\$NBIS was the gainer/);
-  assert.doesNotMatch(preview, /on the book|on your portfolio|this week|\+\$/);
-  assert.ok(preview.length <= 88);
-  const html = noteReportHtml(report);
-  assert.match(html, /\$NBIS was the gainer/);
-  assert.match(html, /border-radius:12px/);
-  assert.match(html, /&#847;&zwnj;&nbsp;/);
-  assert.doesNotMatch(report.insights.join(" "), /\btoday\b/);
-  assert.ok(
-    html.indexOf("$NBIS was the gainer") < html.indexOf(report.dateLine)
-  );
-  assert.ok(report.loudMovers.some((m) => m.ticker === "NBIS"));
-  const quiet = loudNoteMoves(
-    [
-      { ticker: "DRAM", price: 10, pct: 0.01, dollar: 40 },
-      { ticker: "NBIS", price: 110, pct: 0.34, dollar: 8000 },
-      { ticker: "RDDT", price: 80, pct: -0.06, dollar: -900 },
-    ],
-    50_000
-  );
-  assert.deepEqual(
-    quiet.map((m) => m.ticker),
-    ["NBIS", "RDDT"]
-  );
-  const email = readFileSync("src/lib/note-report.ts", "utf8");
-  const letter = readFileSync("src/lib/email-letter.ts", "utf8");
-  assert.match(email, /font-size:40px;line-height:1\.1;font-weight:700;letter-spacing:-0\.03em;color:\$\{CREAM\}/);
-  assert.match(letter, /padding:48px 28px 52px 28px/);
-  assert.match(letter, /app: "#08090c"/);
-  assert.match(letter, /gain: "#10b981"/);
-  assert.match(letter, /-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif/);
-  assert.doesNotMatch(letter, /Georgia/);
-  assert.match(letter, /function emailPreheader/);
-  assert.match(letter, /&#847;&zwnj;&nbsp;/);
-  assert.match(email, /leftoverWatches/);
-  assert.match(email, /hideOpener: true/);
-  assert.doesNotMatch(email, /Worth noticing/);
-  assert.doesNotMatch(email, /What's missing/);
-  assert.doesNotMatch(email, /Ideas for next/);
-  assert.match(email, /function loudNoteMoves/);
-  assert.match(email, /wrapEmailLetter/);
-  assert.doesNotMatch(email, /border-radius:14px/);
-  assert.doesNotMatch(email, /of the book/);
-  assert.doesNotMatch(email, /Open the book/);
-  assert.match(email, /of your portfolio/);
-  assert.match(email, /Open your portfolio/);
-  const notes = readFileSync("src/lib/note-margus.ts", "utf8");
-  assert.doesNotMatch(notes, /replace\(\/\\s\+\/g,\s*" "\)/);
-  assert.match(notes, /maxOutputTokens: 640/);
-  assert.equal(
-    looksLikePromptLeak(
-      "Part 1. A short story of the week. Loud movers (name every one of these in the bullet list)."
-    ),
-    true
-  );
 });
 
-run("note letters are one mix story, not stacked cards", () => {
+run("the Sunday letter is the only scheduled email, and it earns its sections", () => {
   const blank = {
     change: 0,
     changePercent: 0,
@@ -1452,228 +1361,142 @@ run("note letters are one mix story, not stacked cards", () => {
     postMarketChange: null,
     postMarketChangePercent: null,
   };
-  const holdings = [
-    { ticker: "CRWV", shares: 50, buy_price: 100 },
-    { ticker: "DRAM", shares: 40, buy_price: 100 },
-    { ticker: "NBIS", shares: 14, buy_price: 100 },
-    { ticker: "RDDT", shares: 36, buy_price: 100 },
-  ];
-  const morning = buildNoteReport({
-    kind: "morning",
-    name: "Test",
-    cash: 0,
-    holdings,
-    quotes: {
-      CRWV: { ...blank, ticker: "CRWV", price: 100 },
-      DRAM: {
-        ...blank,
-        ticker: "DRAM",
-        price: 100,
-        preMarketChangePercent: 0.014,
-      },
-      NBIS: { ...blank, ticker: "NBIS", price: 100 },
-      RDDT: {
-        ...blank,
-        ticker: "RDDT",
-        price: 100,
-        preMarketChangePercent: 0.08,
-      },
-    },
+  const q = (ticker: string, price: number) => ({
+    ...blank,
+    ticker,
+    price,
+    previousClose: price,
   });
-  morning.margus = fallbackNoteTake(morning);
-  assert.equal(morning.margus.split(/\n\n/).length, 2);
-  assert.match(morning.margus, /\$RDDT/);
-  assert.match(morning.margus, /8\.0%/);
-  assert.match(morning.margus, /jumped/);
-  assert.match(morning.margus, /\$DRAM was up 1\.4%/);
-  assert.match(morning.margus, /\$CRWV was steady/);
-  assert.equal((morning.margus.match(/\$RDDT\b/g) ?? []).length, 1);
-  assert.equal((morning.margus.match(/\$DRAM\b/g) ?? []).length, 1);
-  assert.match(morning.margus, /hold|sit back|nothing to buy|No need to do anything|Keep holding|let (your|the) money/i);
-  assert.match(morning.margus, /[.!?]$/);
-  assert.doesNotMatch(morning.margus, /64%/);
-  assert.doesNotMatch(morning.margus, /cost basis|falling knife|\bgap\b|catalyst|pre-bell|read on the business/i);
-  assert.doesNotMatch(morning.margus, /Add up what you have|electricity stays tight|utilities that sell power/);
-  assert.doesNotMatch(morning.margus, /do not buy|no trades|sell some/i);
-  assert.doesNotMatch(morning.margus, /\bour portfolio\b|\bwe barely\b|for us this morning/i);
-  const html = noteReportHtml(morning);
-  assert.match(html, /Morning Pre-Market/);
-  assert.doesNotMatch(html, /Worth noticing|What's missing|Look out for|Coming up/);
-  morning.news = {
-    ticker: "RDDT",
-    title: "Reddit to join the S&P 500",
-    publisher: "TradingView",
-  };
-  morning.margus = fallbackNoteTake(morning);
-  assert.match(morning.margus, /\$RDDT jumped this morning because it was added to the S&P 500/);
-  assert.match(morning.margus, /big index funds have to buy it automatically/);
-  assert.match(morning.margus, /\$DRAM was up 1\.4%/);
-  assert.equal((morning.margus.match(/\$RDDT\b/g) ?? []).length, 1);
-  assert.doesNotMatch(morning.margus, /Reddit to join the S&P 500/);
-  assert.doesNotMatch(morning.margus, /is moving this morning/);
-  assert.doesNotMatch(morning.margus, /\[\[source:/);
-  assert.doesNotMatch(morning.margus, /TradingView|XTB\.com/i);
-  assert.doesNotMatch(noteReportHtml(morning), /TradingView|XTB\.com|\[\[source:/i);
-  assert.doesNotMatch(noteReportHtml(morning), /border-radius:999px/);
-  const closeQuotes = {
-    CRWV: { ...blank, ticker: "CRWV", price: 100, changePercent: 0.01 },
-    DRAM: { ...blank, ticker: "DRAM", price: 100, changePercent: 0.014 },
-    NBIS: { ...blank, ticker: "NBIS", price: 100, changePercent: -0.01 },
-    RDDT: {
-      ...blank,
-      ticker: "RDDT",
-      price: 100,
-      changePercent: 0.08,
-      change: 8,
-    },
-  };
-  const close = buildNoteReport({
-    kind: "close",
-    name: "Test",
+
+  const letter = buildWeeklyLetter({
+    name: "Martin Aasa",
     cash: 0,
-    holdings,
-    quotes: closeQuotes,
-  });
-  const closeTake = fallbackNoteTake(close);
-  assert.equal(closeTake.split(/\n\n/).length, 2);
-  assert.match(closeTake, /up /);
-  assert.match(closeTake, /\$RDDT/);
-  assert.match(closeTake, /8\.0%/);
-  assert.match(closeTake, /\$DRAM was up 1\.4%/);
-  assert.match(closeTake, /\$CRWV was up 1\.0%/);
-  assert.equal((closeTake.match(/\$RDDT\b/g) ?? []).length, 1);
-  assert.equal((closeTake.match(/\$DRAM\b/g) ?? []).length, 1);
-  assert.match(closeTake, /tonight|evening|let it sit|Leave it as it is|compounding/i);
-  assert.match(closeTake, /[.!?]$/);
-  assert.doesNotMatch(closeTake, /64%/);
-  assert.doesNotMatch(closeTake, /cost basis|falling knife|\bgap\b|catalyst/i);
-  assert.doesNotMatch(closeTake, /had a quiet$/);
-  const sunday = buildNoteReport({
-    kind: "sunday",
-    name: "Test",
-    cash: 0,
-    holdings,
+    holdings: [
+      { ticker: "NBIS", shares: 500, buy_price: 109.96 },
+      { ticker: "CRWV", shares: 100, buy_price: 83.27 },
+      { ticker: "RKLB", shares: 200, buy_price: 68.65 },
+    ],
     quotes: {
-      CRWV: { ...blank, ticker: "CRWV", price: 100 },
-      DRAM: { ...blank, ticker: "DRAM", price: 100 },
-      NBIS: { ...blank, ticker: "NBIS", price: 100 },
-      RDDT: { ...blank, ticker: "RDDT", price: 100 },
+      NBIS: q("NBIS", 120),
+      CRWV: q("CRWV", 80),
+      RKLB: q("RKLB", 70),
     },
     weekReturns: {
-      CRWV: { start: 98, end: 100, pct: 0.02 },
-      DRAM: { start: 95, end: 100, pct: 0.05 },
-      NBIS: { start: 110, end: 100, pct: -0.09 },
-      RDDT: { start: 90, end: 108, pct: 0.2 },
+      NBIS: { start: 100, end: 120, pct: 20 },
+      CRWV: { start: 90, end: 80, pct: -11.1 },
+      RKLB: { start: 70, end: 70, pct: 0 },
     },
-    earnings: [{ ticker: "NBIS", date: "2026-08-18", days: 1 }],
-  });
-  const sundayTake = fallbackNoteTake(sunday);
-  assert.equal(sundayTake.split(/\n\n/).length, 2);
-  assert.match(sundayTake, /this week|week \(/i);
-  assert.match(sundayTake, /\$RDDT/);
-  assert.match(sundayTake, /20\.0%/);
-  assert.match(sundayTake, /\$DRAM was up 5\.0%/);
-  assert.match(sundayTake, /\$CRWV was up 2\.0%/);
-  assert.equal((sundayTake.match(/\$RDDT\b/g) ?? []).length, 1);
-  assert.equal((sundayTake.match(/\$DRAM\b/g) ?? []).length, 1);
-  assert.doesNotMatch(sundayTake, /\n- \$/);
-  assert.doesNotMatch(sundayTake, /64%/);
-  assert.doesNotMatch(sundayTake, /up 19\.2$/);
-  assert.match(sundayTake, /weekend|next week|Monday|on track/i);
-  assert.match(sundayTake, /[.!?]$/);
-  assert.doesNotMatch(sundayTake, /reports results/);
-  const sundayHtml = noteReportHtml({ ...sunday, margus: sundayTake });
-  assert.match(sundayHtml, /Coming up/);
-  assert.match(sundayHtml, /\$NBIS reports results on Tuesday/);
-  assert.doesNotMatch(sundayHtml, /Worth noticing/);
-  const nvdaWeek = buildNoteReport({
-    kind: "sunday",
-    name: "Test",
-    cash: 0,
-    holdings: [...holdings, { ticker: "NVDA", shares: 8, buy_price: 100 }],
-    quotes: {
-      CRWV: { ...blank, ticker: "CRWV", price: 100 },
-      DRAM: { ...blank, ticker: "DRAM", price: 100 },
-      NBIS: { ...blank, ticker: "NBIS", price: 100 },
-      RDDT: { ...blank, ticker: "RDDT", price: 100 },
-      NVDA: { ...blank, ticker: "NVDA", price: 100 },
-    },
-    weekReturns: {
-      CRWV: { start: 98, end: 100, pct: 0.02 },
-      DRAM: { start: 95, end: 100, pct: 0.05 },
-      NBIS: { start: 110, end: 100, pct: -0.09 },
-      RDDT: { start: 90, end: 108, pct: 0.2 },
-      NVDA: { start: 100, end: 100, pct: 0 },
-    },
-    earnings: [{ ticker: "NVDA", date: "2026-08-27", days: 10 }],
-  });
-  const nvdaPreview = notePreview(nvdaWeek);
-  const nvdaHtml = noteReportHtml({
-    ...nvdaWeek,
-    margus: fallbackNoteTake(nvdaWeek),
-  });
-  assert.match(nvdaPreview, /\$NVDA reports results/);
-  assert.match(nvdaHtml, /Coming up/);
-  assert.match(nvdaHtml, /\$NVDA reports results/);
-  assert.ok(nvdaHtml.indexOf("Coming up") > nvdaHtml.indexOf("display:none"));
-  const closeEarn = buildNoteReport({
-    kind: "close",
-    name: "Test",
-    cash: 0,
-    holdings,
-    quotes: closeQuotes,
-    earnings: [{ ticker: "DRAM", date: "2026-08-19", days: 2 }],
-  });
-  const closeEarnHtml = noteReportHtml({
-    ...closeEarn,
-    margus: fallbackNoteTake(closeEarn),
-  });
-  assert.match(closeEarnHtml, /Coming up/);
-  assert.match(closeEarnHtml, /\$DRAM reports results/);
-  assert.match(notePreview(closeEarn), /\$DRAM reports results/);
-  const morningEarn = buildNoteReport({
-    kind: "morning",
-    name: "Test",
-    cash: 0,
-    holdings,
-    quotes: {
-      CRWV: { ...blank, ticker: "CRWV", price: 100 },
-      DRAM: {
-        ...blank,
-        ticker: "DRAM",
-        price: 100,
-        preMarketChangePercent: 0.014,
-      },
-      NBIS: { ...blank, ticker: "NBIS", price: 100 },
-      RDDT: {
-        ...blank,
-        ticker: "RDDT",
-        price: 100,
-        preMarketChangePercent: 0.08,
+    conviction: {
+      CRWV: {
+        level: 3,
+        thesis: "Rented GPUs at scale.",
+        updatedAt: "2026-08-01T00:00:00.000Z",
+        stamps: [
+          {
+            at: "2026-08-15T00:00:00.000Z",
+            verdict: "v",
+            line: "l",
+            action: "sell",
+            thesisStatus: "broken",
+          },
+        ],
       },
     },
-    earnings: [{ ticker: "DRAM", date: "2026-08-18", days: 1 }],
+    watchlist: ["ASTS", "NBIS"],
+    watchQuotes: { ASTS: q("ASTS", 40), NBIS: q("NBIS", 120) },
+    watchWeekReturns: {
+      ASTS: { start: 50, end: 40, pct: -20 },
+      NBIS: { start: 100, end: 120, pct: 20 },
+    },
+    earnings: [
+      { ticker: "NBIS", date: "2026-08-25", days: 6 },
+      { ticker: "ZZZZ", date: "2026-08-25", days: 6 },
+    ],
+    now: new Date("2026-08-23T06:00:00.000Z"),
   });
-  const morningEarnHtml = noteReportHtml({
-    ...morningEarn,
-    margus: fallbackNoteTake(morningEarn),
-  });
-  assert.match(morningEarnHtml, /Coming up/);
-  assert.match(morningEarnHtml, /\$DRAM reports results/);
-  assert.match(notePreview(morningEarn), /\$DRAM reports results/);
-  const holds = new Set<string>();
-  for (const day of [10, 11, 12, 13, 14, 15, 16, 17]) {
-    const stamped = buildNoteReport({
-      kind: "close",
-      name: "Test",
-      cash: 0,
-      holdings,
-      now: new Date(`2026-08-${String(day).padStart(2, "0")}T12:00:00+03:00`),
-      quotes: closeQuotes,
-    });
-    holds.add(fallbackNoteTake(stamped).split(/\n\n/)[1] ?? "");
-  }
-  assert.ok(holds.size >= 2);
+
+  // The week's arithmetic, not today's session.
+  assert.equal(letter.nameCount, 3);
+  assert.ok(letter.weekPct != null && letter.weekPct > 0);
+
+  // A Pulse verdict the reader already saw drives the suggestion, and a
+  // broken thesis outranks everything else on that ticker.
+  const sell = letter.suggestions.find((s) => s.ticker === "CRWV");
+  assert.ok(sell, "expected a suggestion for CRWV");
+  assert.equal(sell.kind, "sell");
+  assert.equal(sell.source, "pulse");
+
+  // Concentration is named from plain arithmetic. NBIS is 60000 of 81000.
+  const trim = letter.suggestions.find(
+    (s) => s.ticker === "NBIS" && s.kind === "trim"
+  );
+  assert.ok(trim, "expected NBIS flagged as an outsized position");
+  assert.equal(trim.source, "size");
+
+  // Watchlist: only names that are NOT held and that actually fell.
+  assert.deepEqual(
+    letter.watchBuys.map((w) => w.ticker),
+    ["ASTS"]
+  );
+
+  // The calendar only mentions names the reader owns or watches.
+  assert.equal(letter.weekAhead.length, 1);
+  assert.match(letter.weekAhead[0], /\$NBIS/);
+
+  // The fallback voice ships a real letter when the model is unreachable.
+  const take = fallbackWeeklyTake(letter);
+  assert.equal(take.split(/\n{2,}/).length, 2);
+  assert.match(take, /[.!?]$/);
+  assert.doesNotMatch(take, /\bwe\b|\bour\b|\bus\b/i);
+  // Banned market slang never reaches a reader (AGENTS.md).
+  assert.doesNotMatch(
+    take,
+    /\bsleeve\b|\btape\b|\bdry powder\b|\bdrawdown\b|\brotation\b|\brisk-on\b/i
+  );
+
+  letter.margus = take;
+  const html = weeklyLetterHtml(letter);
+  // Every section the letter promises is actually rendered.
+  assert.match(html, /Your week/);
+  assert.match(html, /What moved/);
+  assert.match(html, /Worth a look/);
+  assert.match(html, /On your watchlist/);
+  assert.match(html, /Next week/);
+  // It is painted in the app's own palette, not the old brass letterhead.
+  assert.match(html, /#000000/);
+  assert.match(html, /#d4bc79/);
+  assert.doesNotMatch(html, /#d6ad69|#f4f1ea|#08090c/);
+  // Not financial advice stays on the surface that gives opinions.
+  assert.ok(html.includes(ADVICE_DISCLAIMER_SHORT));
+
+  const text = weeklyLetterText(letter);
+  assert.match(text, /What moved/);
+  assert.match(text, /Worth a look/);
+
+  assert.match(weeklySubject(letter), /Your week/);
+});
+
+run("the weekday and after-close emails are gone, not just unscheduled", () => {
+  const vercel = JSON.parse(readFileSync("vercel.json", "utf8")) as {
+    crons: { path: string }[];
+  };
+  const paths = vercel.crons.map((c) => c.path);
+  assert.ok(paths.includes("/api/cron/sunday-note"));
+  assert.ok(!paths.some((p) => /morning-note|close-note/.test(p)));
+  assert.ok(!existsSync("src/app/api/cron/morning-note"));
+  assert.ok(!existsSync("src/app/api/cron/close-note"));
+  assert.ok(!existsSync("src/lib/note-report.ts"));
+  assert.ok(!existsSync("src/lib/morning-email.ts"));
+  // The account screen and onboarding both ask about one email, not three.
+  const account = readFileSync("src/components/AccountPage.tsx", "utf8");
+  assert.match(account, /weekly-note/);
+  assert.doesNotMatch(account, /note-morning|noteMorning/);
+  const onboarding = readFileSync(
+    "src/components/ExperienceOnboardingModal.tsx",
+    "utf8"
+  );
+  assert.match(onboarding, /weekly-note/);
+  assert.doesNotMatch(onboarding, /noteMorning/);
 });
 
 run("manual note cron stays on Martin", () => {
@@ -1693,11 +1516,7 @@ run("manual note cron stays on Martin", () => {
   );
   assert.deepEqual(me.onlyEmails, [AASA_PRIMARY_EMAIL]);
   const sunday = readFileSync("src/app/api/cron/sunday-note/route.ts", "utf8");
-  const morning = readFileSync("src/app/api/cron/morning-note/route.ts", "utf8");
-  const close = readFileSync("src/app/api/cron/close-note/route.ts", "utf8");
   assert.match(sunday, /noteTestAudience\(req\)/);
-  assert.match(morning, /noteTestAudience\(req\)/);
-  assert.match(close, /noteTestAudience\(req\)/);
 });
 
 run("connected emails send notes to the first address only", () => {
@@ -1796,7 +1615,16 @@ run("circle awards are a grid of cards, not a flat divided list", () => {
   );
   const awards = community.slice(awardsStart, awardsEnd);
   assert.match(awards, /grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3/);
-  assert.match(awards, /glass-well flex flex-col gap-1\.5 rounded-lg p-3/);
+  // Each award is a glass-well card, not a divided list row. Asserted by
+  // the classes that carry that meaning rather than by their exact order:
+  // the tiles became <button>s (they select a member), which legitimately
+  // inserted `w-full` into the middle of the old pinned sequence.
+  for (const cls of ["glass-well", "flex-col", "gap-1.5", "rounded-lg", "p-3"]) {
+    assert.ok(
+      awards.includes(cls),
+      `circle award tiles should still carry ${cls}`
+    );
+  }
   assert.doesNotMatch(awards, /<ItemGroup/);
   assert.doesNotMatch(awards, /<ItemSeparator/);
   assert.doesNotMatch(awards, /bg-pink-500/);
@@ -1868,7 +1696,10 @@ run("product is Upside Lab on upsidelab.app", () => {
   const parseBody = readFileSync("src/lib/parse-json-body.ts", "utf8");
   assert.match(parseBody, /schema\.safeParse/);
   const demoLock = readFileSync("src/app/api/demo/lock/route.ts", "utf8");
-  assert.match(demoLock, /isProduction/);
+  // The dev-only demo lock refuses on any deployed environment, not just
+  // NODE_ENV=production, so a misconfigured preview can't expose it either.
+  assert.match(demoLock, /isDeployed/);
+  assert.match(demoLock, /VERCEL_ENV/);
 });
 
 run("public pages ship OG cards and private rooms are noindex", () => {
@@ -3017,7 +2848,7 @@ run("inbox letters share one letterhead", () => {
   assert.equal(invite.subject, "Join Upside Circle");
   assert.match(invite.html, /-apple-system/);
   assert.doesNotMatch(invite.html, /Georgia/);
-  assert.match(invite.html, /#08090c/);
+  assert.match(invite.html, /#000000/);
   assert.match(invite.html, /Open the invite/);
   assert.doesNotMatch(invite.html, /\u2014/);
   assert.doesNotMatch(invite.text, /the book|the sheet/);
@@ -3052,7 +2883,7 @@ run("the recent Pulse and briefing bugs stay gone", () => {
     "utf8"
   );
   const notes = readFileSync(
-    join(process.cwd(), "src/lib/note-report.ts"),
+    join(process.cwd(), "src/lib/weekly-letter.ts"),
     "utf8"
   );
   const briefing = readFileSync(
@@ -3090,9 +2921,10 @@ run("the recent Pulse and briefing bugs stay gone", () => {
   assert.doesNotMatch(drawer, /tone="raised"/);
   assert.doesNotMatch(drawer, /bg-gain\/10/);
   assert.match(notes, /if \(action === "trim"\)/);
-  const trimAt = notes.indexOf('if (action === "trim")');
-  const watchAt = notes.indexOf("if (watch || action === \"watch\")");
-  assert.ok(trimAt > 0 && watchAt > trimAt, "trim must beat watch in email copy");
+  // The letter suggests adding, trimming, or selling. A Pulse "watch"
+  // verdict deliberately produces no suggestion at all, so trim can no
+  // longer lose to watch the way it once did.
+  assert.doesNotMatch(notes, /action === "watch"/);
 });
 
 run("gap thoughts name the weight and a next step", () => {
@@ -3942,15 +3774,17 @@ run("options onboarding is regularly-only", () => {
   assert.doesNotMatch(onboarding, /q2 !== "never"/);
 });
 
-run("onboarding asks for weekday and Sunday notes", () => {
+run("onboarding asks about the one Sunday email, nothing else", () => {
   const onboarding = readFileSync(
     join(process.cwd(), "src/components/ExperienceOnboardingModal.tsx"),
     "utf8"
   );
-  assert.match(onboarding, /Want a report in your inbox/);
-  assert.match(onboarding, /noteMorning/);
+  assert.match(onboarding, /Want the Sunday email/);
+  // There is exactly one email now: no weekday checkbox, no second state.
+  assert.doesNotMatch(onboarding, /noteMorning/);
+  assert.doesNotMatch(onboarding, /Weekdays/);
   assert.match(onboarding, /noteSunday, setNoteSunday\] = useState\(true\)/);
-  assert.match(onboarding, /Sunday is on/);
+  assert.match(onboarding, /One email a week/);
   assert.match(onboarding, /once there are names in your portfolio/);
   assert.match(onboarding, /This is Upside Lab/);
   assert.match(onboarding, /Add what you own/);
@@ -4839,7 +4673,7 @@ run("paper class still gets Pulse, Forecast, Fund, and Circle", () => {
 
 run("inbox notes say Thesis intact to a person", () => {
   const src = readFileSync(
-    join(process.cwd(), "src/lib/note-report.ts"),
+    join(process.cwd(), "src/lib/weekly-letter.ts"),
     "utf8"
   );
   assert.match(src, /Thesis intact/);
@@ -5097,8 +4931,13 @@ run("Fund page labels Margus's note Thesis", () => {
   assert.match(card, /Hold for/);
   assert.match(card, /label="Since buy"/);
   assert.match(card, /label="Sell if"/);
-  assert.match(card, /<Card/);
-  assert.match(card, /<Item /);
+  // The fund position sits on the shared glass surface and the note uses
+  // the shared Reading block. AGENTS.md names BOX/CARD in Panel.tsx as the
+  // canonical card treatment, so these are the design system's primitives,
+  // not hand-rolled divs — this used to pin <Card>/<Item>, which the
+  // component moved off deliberately.
+  assert.match(card, /cn\(BOX,/);
+  assert.match(card, /<Reading /);
   assert.match(card, /items-start/);
   assert.doesNotMatch(card, /items-stretch/);
   assert.doesNotMatch(card, /md:grid-cols-\[minmax/);
@@ -5127,7 +4966,7 @@ run("Fund page shows one latest report then View more in sevens", () => {
 });
 
 run("Margus never writes trade orders to a person", () => {
-  const notes = readFileSync(join(process.cwd(), "src/lib/note-report.ts"), "utf8");
+  const notes = readFileSync(join(process.cwd(), "src/lib/weekly-letter.ts"), "utf8");
   const pulseUi = readFileSync(
     join(process.cwd(), "src/components/PulsePage.tsx"),
     "utf8"
@@ -5195,7 +5034,7 @@ run("prompts do not teach the model trader words as working vocab", () => {
     "utf8"
   );
   const notes = readFileSync(
-    join(process.cwd(), "src/lib/note-margus.ts"),
+    join(process.cwd(), "src/lib/weekly-margus.ts"),
     "utf8"
   );
   const fund = readFileSync(
@@ -5210,7 +5049,7 @@ run("prompts do not teach the model trader words as working vocab", () => {
   assert.doesNotMatch(pulse, /Tape read/);
   assert.doesNotMatch(notes, /Owner thesis:/);
   assert.match(notes, /looksLikePromptLeak/);
-  assert.match(notes, /fallbackNoteTake/);
+  assert.match(notes, /fallbackWeeklyTake/);
   assert.doesNotMatch(fund, /Original thesis:/);
   assert.doesNotMatch(fund, /fundamentals-based thesis/);
   const chat = readFileSync(
@@ -6410,7 +6249,12 @@ run("legal pages name the operator and match the product", () => {
     assert.match(src, /LEGAL_VAT_ID/);
     assert.match(src, /PRODUCT_CONTACT_EMAIL/);
     assert.match(src, /Under 13 is never allowed/);
-    assert.match(src, /13 or older/);
+    // Two ages now, and both documents must state both: 16 for someone
+    // signing up on their own (the strictest EU Article 8 threshold, so no
+    // per-country analysis is needed), 13 inside a teacher-run Classroom
+    // (school context, pretend money, no payment).
+    assert.match(src, /16 or older/);
+    assert.match(src, /the age is 13/);
     assert.match(src, /PRODUCT_SUPPORT_EMAIL/);
     assert.match(src, /Classroom/);
     assert.match(src, /paper/);
@@ -6421,6 +6265,13 @@ run("legal pages name the operator and match the product", () => {
     assert.doesNotMatch(src, /That person is responsible/);
     assert.doesNotMatch(src, /below the age required to hold a brokerage/);
     assert.doesNotMatch(src, /\u2014/);
+  }
+
+  {
+    // The UI must enforce exactly the ages the documents state.
+    const gate = readFileSync("src/components/SignInGate.tsx", "utf8");
+    assert.match(gate, /invite\?\.kind === "classroom" \? 13 : 16/);
+    assert.match(gate, /I am \{minAge\} or older/);
   }
 
   assert.match(terms, /governed by the laws of \{LEGAL_COUNTRY\}/);

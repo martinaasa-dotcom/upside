@@ -1,17 +1,36 @@
 /**
  * One letterhead for every Upside Lab inbox note.
- * Dark field, brass rule, system sans throughout (email clients strip web fonts).
+ *
+ * The palette is the app's own, converted from the oklch tokens in
+ * globals.css to sRGB hex because mail clients don't understand oklch:
+ *   --background oklch(0 0 0)          -> #000000
+ *   --card       oklch(0.205 0 0)      -> #171717
+ *   --muted      oklch(0.269 0 0)      -> #262626
+ *   --foreground oklch(0.985 0 0)      -> #fafafa
+ *   --muted-foreground oklch(0.708 0 0)-> #a1a1a1
+ *   --primary    oklch(0.8 0.09 90)    -> #d4bc79
+ *   --gain       oklch(0.696 0.17 162) -> #00bc7d
+ *   --loss       oklch(0.645 0.246 16) -> #ff2056
+ * Keep them in step with globals.css; if a token moves, re-convert rather
+ * than eyeballing a near-enough hex.
+ *
+ * System fonts only — mail clients strip web fonts. Money uses the mono
+ * stack so columns of numbers line up the way they do in the app.
  */
 
 export const EMAIL = {
-  app: "#08090c",
-  cream: "#f4f1ea",
-  muted: "#9aa3ad",
-  gold: "#d6ad69",
-  gain: "#10b981",
-  loss: "#f43f5e",
-  line: "#1e2430",
+  app: "#000000",
+  card: "#171717",
+  well: "#262626",
+  cream: "#fafafa",
+  muted: "#a1a1a1",
+  gold: "#d4bc79",
+  gain: "#00bc7d",
+  loss: "#ff2056",
+  line: "#262626",
+  cardLine: "#333333",
   sans: "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif",
+  mono: "ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,monospace",
   lockup: "https://upsidelab.app/icons/email-lockup.png?v=3",
   origin: "https://upsidelab.app",
 } as const;
@@ -25,7 +44,7 @@ export function escapeEmail(s: string): string {
 }
 
 export function emailKicker(text: string): string {
-  return `<p style="margin:0;font-family:${EMAIL.sans};font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:${EMAIL.gold}">${escapeEmail(text)}</p>`;
+  return `<p style="margin:0;font-family:${EMAIL.sans};font-size:11px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:${EMAIL.gold}">${escapeEmail(text)}</p>`;
 }
 
 export function emailHairline(): string {
@@ -44,23 +63,23 @@ export function emailSection(title: string, inner: string): string {
 
 /** A raised box so the week hero, Margus, and each notice sit apart. */
 export function emailCard(inner: string): string {
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;margin:20px 0 0 0;background:${EMAIL.line};border:1px solid rgba(214,173,105,0.22);border-radius:12px">
-  <tr><td style="padding:20px 18px">${inner}</td></tr>
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;margin:20px 0 0 0;background:${EMAIL.card};border:1px solid ${EMAIL.cardLine};border-radius:14px">
+  <tr><td style="padding:22px 20px">${inner}</td></tr>
 </table>`;
 }
 
 export function emailButton(href: string, label: string): string {
   return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:36px 0 0 0">
   <tr>
-    <td bgcolor="${EMAIL.cream}" style="border-radius:2px">
-      <a href="${escapeEmail(href)}" style="display:inline-block;padding:11px 18px;font-family:${EMAIL.sans};font-size:13px;letter-spacing:0.04em;font-weight:600;color:${EMAIL.app};text-decoration:none">${escapeEmail(label)}</a>
+    <td bgcolor="${EMAIL.gold}" style="border-radius:8px">
+      <a href="${escapeEmail(href)}" style="display:inline-block;padding:13px 22px;font-family:${EMAIL.sans};font-size:14px;letter-spacing:0.01em;font-weight:600;color:#0a0a0a;text-decoration:none">${escapeEmail(label)}</a>
     </td>
   </tr>
 </table>`;
 }
 
 export function emailAccountFooter(): string {
-  return `<p style="margin:36px 0 0 0;font-family:${EMAIL.sans};font-size:12px;line-height:1.5;color:${EMAIL.muted}">Turn these notes off in <a href="${EMAIL.origin}/account" style="color:${EMAIL.gold};text-decoration:underline">Account</a>.</p>`;
+  return `<p style="margin:36px 0 0 0;font-family:${EMAIL.sans};font-size:12px;line-height:1.6;color:${EMAIL.muted}">One email a week, on Sunday. Turn it off any time in <a href="${EMAIL.origin}/account" style="color:${EMAIL.gold};text-decoration:underline">Account</a>.</p>`;
 }
 
 export function emailPreheader(preview: string): string {
@@ -102,12 +121,12 @@ ${emailPreheader(input.preview)}
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="${EMAIL.app}" style="width:100%;background:${EMAIL.app}">
   <tr>
     <td align="center" style="padding:0;background:${EMAIL.app}" bgcolor="${EMAIL.app}">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;max-width:540px;background:${EMAIL.app}">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="width:100%;max-width:560px;background:${EMAIL.app}">
         <tr>
-          <td style="height:2px;background:${EMAIL.gold};font-size:0;line-height:0">&nbsp;</td>
+          <td style="height:3px;background:${EMAIL.gold};font-size:0;line-height:0">&nbsp;</td>
         </tr>
         <tr>
-          <td style="padding:48px 28px 52px 28px;background:${EMAIL.app}">
+          <td style="padding:44px 28px 56px 28px;background:${EMAIL.app}">
             <img src="${EMAIL.lockup}" width="156" height="29" alt="Upside Lab" style="display:block;border:0" />
             ${opener}
             ${date}
@@ -201,6 +220,6 @@ export function emptyBookNudgeHtml(text: string): string {
 <p style="margin:0;font-family:${EMAIL.sans};font-size:26px;line-height:1.25;font-weight:400;letter-spacing:-0.02em;color:${EMAIL.cream}">${escapeEmail(preview)}</p>
 ${prose}
 ${emailButton(EMAIL.origin, "Open Upside Lab")}
-<p style="margin:28px 0 0 0;font-family:${EMAIL.sans};font-size:12px;line-height:1.5;color:${EMAIL.muted}">This is a one-time note. Weekday and Sunday emails start once there are names in your portfolio. Turn notes off in <a href="${EMAIL.origin}/account" style="color:${EMAIL.gold};text-decoration:underline">Account</a>.</p>`,
+<p style="margin:28px 0 0 0;font-family:${EMAIL.sans};font-size:12px;line-height:1.5;color:${EMAIL.muted}">This is a one-time note. The Sunday email starts once there are names in your portfolio. Turn it off in <a href="${EMAIL.origin}/account" style="color:${EMAIL.gold};text-decoration:underline">Account</a>.</p>`,
   });
 }

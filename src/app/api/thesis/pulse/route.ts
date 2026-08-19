@@ -116,13 +116,26 @@ function buildPrompt(
     const move = formatMovePct(c.effectivePct);
     const bookPct = (c.bookPct * 100).toFixed(1);
     const roiPct = (c.roiPct * 100).toFixed(0);
+    // With no thesis written, this ticker's answer is cached under the
+    // shared "nothesis" key (getPulseCacheKey) and can be served to any
+    // other holder of the same name in the same move bucket. So keep this
+    // holder's own position size and lifetime return out of the prompt —
+    // otherwise a generated line could echo one person's numbers to
+    // another. A written thesis makes the key private again.
+    const sharedAnswer = !conv?.thesis;
+    const position =
+      !c.inBook
+        ? " · (lookup, not in book)"
+        : sharedAnswer
+          ? " · (in their portfolio)"
+          : ` · ${bookPct}% of book · lifetime ROI ${roiPct}%`;
     const flag = isBigPulseMove(c.effectivePct)
       ? c.needsAttention
         ? " **NEEDS ATTENTION: down ≥5%**"
         : " **NEEDS ATTENTION: up ≥5%**"
       : "";
     const parts = [
-      `- **${c.ticker}** · spot $${c.price.toFixed(2)} · ${c.moveLabel} ${move}${flag}${c.inBook ? ` · ${bookPct}% of book · lifetime ROI ${roiPct}%` : " · (lookup, not in book)"}`,
+      `- **${c.ticker}** · spot $${c.price.toFixed(2)} · ${c.moveLabel} ${move}${flag}${position}`,
       conv?.thesis ? `  Thesis: ${conv.thesis}` : "",
       conv?.level ? `  How sure they are: ${conv.level}/5` : "",
       ctx?.sector ? `  Sector: ${ctx.sector}` : "",
@@ -358,7 +371,11 @@ async function handlePOST(req: Request) {
       },
       {
         headers: {
-          "Cache-Control": "private, s-maxage=300, stale-while-revalidate=1800",
+          // `private, no-store`: this response is per-user and the real
+          // cache is the in-memory server one, not HTTP. The old header paired
+          // `private` (shared caches must not store) with `s-maxage` (a
+          // shared-cache-only directive), which contradicted itself.
+          "Cache-Control": "private, no-store",
           "x-pulse-cache":
             cachedMap.size > uncachedCandidates.length ? "PARTIAL_HIT" : "MISS",
         },
