@@ -6,10 +6,26 @@ export function equalCols(count: number): string {
   return `repeat(${count}, minmax(0, 1fr))`;
 }
 
-/** Ticker column sizes to the cashtag (and chip, when mixed). The rest share leftover equally. */
-export function tableCols(count: number, tickerFit: boolean): string {
-  if (!tickerFit) return equalCols(count);
-  return `max-content repeat(${Math.max(0, count - 1)}, minmax(0, 1fr))`;
+/**
+ * Width of the trailing row-action track (the per-row delete). Fixed, not
+ * `1fr`, so the action never competes with the data columns for space and
+ * a wide value can never overflow into it.
+ */
+export const ACTION_COL = "1.75rem";
+
+/**
+ * Ticker column sizes to the cashtag (and chip, when mixed). The rest share
+ * leftover equally. `action` appends a fixed narrow track for a row action.
+ */
+export function tableCols(
+  count: number,
+  tickerFit: boolean,
+  action = false
+): string {
+  const base = tickerFit
+    ? `max-content repeat(${Math.max(0, count - 1)}, minmax(0, 1fr))`
+    : equalCols(count);
+  return action ? `${base} ${ACTION_COL}` : base;
 }
 
 /**

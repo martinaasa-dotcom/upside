@@ -31,14 +31,6 @@ import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Sparkline } from "./Sparkline";
 import { FluidRow, FluidTable, cellBase, cellTicker, tableCols } from "@/components/FluidTable";
 
-/**
- * Space held open at the right edge of the "Today $" column for the row's
- * delete button, which is revealed on hover. Reserved on the header, every
- * row, and the footer alike so the column of numbers stays aligned and
- * nothing shifts when the button fades in.
- */
-const sellGutter = "pr-6";
-
 export type HoldingPatch = {
   id: string;
   shares?: number;
@@ -295,7 +287,6 @@ export const PortfolioTable = memo(function PortfolioTable({
     holdings.map((h) => ({ ticker: h.ticker, currency: h.quote?.currency }))
   );
   const tickerCell = mixedListings ? cellTicker : cellBase;
-  const template = tableCols(12, mixedListings);
   const money = (usd: number, digits = 2) =>
     currency(usdToDisplay(usd, displayCurrency, eurUsd), digits, displayCurrency);
 
@@ -382,6 +373,9 @@ export const PortfolioTable = memo(function PortfolioTable({
 
   const canAdd = !tradeLock || tradeLock.canBuy;
   const canSell = !tradeLock || tradeLock.canSell;
+  // The action track only exists when a delete button can actually render,
+  // so a read-only table keeps its 12 even columns.
+  const template = tableCols(12, mixedListings, canSell);
   const canCash = !tradeLock || tradeLock.canCash;
 
   const emptyCta = canAdd ? (
@@ -651,10 +645,7 @@ export const PortfolioTable = memo(function PortfolioTable({
               {COLUMNS.map((col, i) => (
                 <div
                   key={col.label}
-                  className={cn(
-                    i === 0 ? tickerCell : cellBase,
-                    canSell && i === COLUMNS.length - 1 && sellGutter
-                  )}
+                  className={i === 0 ? tickerCell : cellBase}
                 >
                   {col.key ? (
                     <button
@@ -776,8 +767,7 @@ export const PortfolioTable = memo(function PortfolioTable({
                 <div
                   className={cn(
                     cellBase,
-                    "relative tabular-nums font-medium",
-                    canSell && sellGutter,
+                    "tabular-nums font-medium",
                     rowToday(h).pct != null
                       ? signedTone(rowToday(h).dollar)
                       : "text-muted-foreground"
@@ -786,17 +776,19 @@ export const PortfolioTable = memo(function PortfolioTable({
                   {rowToday(h).pct != null
                     ? money(rowToday(h).dollar, 0)
                     : "—"}
-                  {canSell ? (
+                </div>
+                {canSell ? (
+                  <div className="flex h-full items-center justify-center">
                     <button
                       type="button"
                       onClick={() => onDelete(h.id)}
-                      className="row-action absolute right-0 top-1/2 grid size-6 -translate-y-1/2 place-items-center rounded-md text-muted-foreground hover:bg-loss/10 hover:text-loss focus-visible:text-loss focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-loss/40"
+                      className="row-action grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-loss/10 hover:text-loss focus-visible:text-loss focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-loss/40"
                       aria-label={`Delete ${h.ticker}`}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
-                  ) : null}
-                </div>
+                  </div>
+                ) : null}
               </FluidRow>
               );
             })}
@@ -847,12 +839,12 @@ export const PortfolioTable = memo(function PortfolioTable({
                 className={cn(
                   cellBase,
                   "tabular-nums font-medium",
-                  canSell && sellGutter,
                   today.pct != null ? signedTone(today.dollar) : "text-muted-foreground"
                 )}
               >
                 {today.pct != null ? money(today.dollar, 0) : "—"}
               </div>
+              {canSell ? <div /> : null}
             </FluidRow>
           </FluidTable>
         )}
