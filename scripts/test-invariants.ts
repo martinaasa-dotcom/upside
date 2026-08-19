@@ -1868,7 +1868,10 @@ run("product is Upside Lab on upsidelab.app", () => {
   const parseBody = readFileSync("src/lib/parse-json-body.ts", "utf8");
   assert.match(parseBody, /schema\.safeParse/);
   const demoLock = readFileSync("src/app/api/demo/lock/route.ts", "utf8");
-  assert.match(demoLock, /isProduction/);
+  // The dev-only demo lock refuses on any deployed environment, not just
+  // NODE_ENV=production, so a misconfigured preview can't expose it either.
+  assert.match(demoLock, /isDeployed/);
+  assert.match(demoLock, /VERCEL_ENV/);
 });
 
 run("public pages ship OG cards and private rooms are noindex", () => {

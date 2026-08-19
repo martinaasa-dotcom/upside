@@ -9,16 +9,23 @@ export const dynamic = "force-dynamic";
 
 const SNAPSHOT_PATH = path.join(process.cwd(), "data", "locked-demo.json");
 
-function isProduction() {
+/**
+ * This is the local dev tool that freezes the demo book to disk. It has no
+ * auth check by design, so it must never answer on a deployed environment:
+ * any Vercel deployment counts, not just production, so a preview whose env
+ * vars are misconfigured can't expose it either.
+ */
+function isDeployed() {
   return (
     process.env.NODE_ENV === "production" ||
-    process.env.VERCEL_ENV === "production"
+    Boolean(process.env.VERCEL_ENV) ||
+    Boolean(process.env.VERCEL)
   );
 }
 
 /** Persist a locked demo snapshot to disk (dev) so seed bumps don't invent Aasad again. */
 async function handlePOST(req: NextRequest) {
-  if (isProduction()) {
+  if (isDeployed()) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
   const parsed = await parseJsonBody(req, demoLockPostSchema);
@@ -49,7 +56,7 @@ async function handlePOST(req: NextRequest) {
 }
 
 async function handleGET() {
-  if (isProduction()) {
+  if (isDeployed()) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
   try {
