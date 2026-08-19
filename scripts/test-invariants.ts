@@ -6677,6 +6677,60 @@ run("signed-in users only see sheets they co-own", () => {
   assert.match(demo, /They are not a starter pack/);
 });
 
+run("classroom membership actions stay per person, not household-mirrored", () => {
+  // Audit pass 8: resolveTargetUserIds used to expand every admin remove/
+  // re-role action to the target's household partner (Rasmus <-> Karoliine,
+  // Martin <-> Amanda) regardless of community kind. The DB-side mirror
+  // trigger (053) already excludes classrooms; the app-side admin action
+  // route did not, so a teacher removing one sibling from a class could
+  // silently also evict the other sibling and unpin their homework sheet,
+  // even though classrooms are explicitly per-person (AGENTS.md).
+  const route = readFileSync(
+    join(
+      process.cwd(),
+      "src/app/api/communities/[id]/members/[userId]/route.ts"
+    ),
+    "utf8"
+  );
+  assert.match(route, /isClassroomKind/);
+  const resolveFn = route.slice(
+    route.indexOf("async function resolveTargetUserIds"),
+    route.indexOf("/** Admin: remove member or change role")
+  );
+  assert.match(resolveFn, /isClassroomKind\(/);
+  assert.match(resolveFn, /return aliasIds;/);
+  // The household expansion (expandHouseholdUserIds) must come after the
+  // classroom early-return, not before it.
+  const classroomGateIdx = resolveFn.indexOf("isClassroomKind(");
+  const householdExpandIdx = resolveFn.indexOf("expandHouseholdUserIds(");
+  assert.ok(classroomGateIdx > -1 && householdExpandIdx > -1);
+  assert.ok(classroomGateIdx < householdExpandIdx);
+});
+
+run("a private community's existence does not leak through join-request", () => {
+  // Audit pass 8: a nonexistent community id used to 404 ("Not found")
+  // while a real private community 403'd ("This community is invite-only")
+  // -- distinguishing the two let anyone holding a private community's id
+  // (a pasted link, a screenshot) confirm it exists even though they were
+  // never shown its name. Both cases now respond identically.
+  const route = readFileSync(
+    join(
+      process.cwd(),
+      "src/app/api/communities/[id]/join-request/route.ts"
+    ),
+    "utf8"
+  );
+  const postFn = route.slice(
+    route.indexOf("async function handlePOST"),
+    route.indexOf("/** Cancel your own pending request. */")
+  );
+  assert.doesNotMatch(postFn, /"Not found"/);
+  assert.match(
+    postFn,
+    /!community \|\| \(community as \{ visibility\?: string \}\)\.visibility !== "public"/
+  );
+});
+
 if (failed > 0) {
   console.error(`\n${failed} invariant(s) failed`);
   process.exit(1);

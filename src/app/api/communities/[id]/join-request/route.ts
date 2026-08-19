@@ -37,10 +37,11 @@ async function handlePOST(req: NextRequest, ctx: Ctx) {
     .select("id, visibility")
     .eq("id", id)
     .maybeSingle();
-  if (!community) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
-  if ((community as { visibility?: string }).visibility !== "public") {
+  // A nonexistent id and a real private community both fail the same way —
+  // a 404-vs-403 split here would let anyone who merely holds a private
+  // community's id (a pasted link, a screenshot) confirm it exists at all,
+  // even though they were never told its name or shown it anywhere.
+  if (!community || (community as { visibility?: string }).visibility !== "public") {
     return NextResponse.json(
       { error: "This community is invite-only" },
       { status: 403 }

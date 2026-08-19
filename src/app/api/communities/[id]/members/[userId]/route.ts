@@ -8,6 +8,7 @@ import {
   type RawMember,
 } from "@/lib/auth/identity";
 import { userIsCommunityAdmin } from "@/lib/auth/ownership";
+import { isClassroomKind } from "@/lib/classroom";
 import { requireAuthUser } from "@/lib/supabase/server-auth";
 import { getSupabaseDataClient } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
@@ -20,16 +21,34 @@ export const dynamic = "force-dynamic";
 
 type Ctx = { params: Promise<{ id: string; userId: string }> };
 
+/**
+ * Resolve a person_id (or a raw user_id) to every user_id an admin action
+ * should apply to. Google-alias logins (Martin's two logins, say) always
+ * collapse together — that's the same person. Household partners (Martin +
+ * Amanda, Rasmus + Karoliine) only collapse together for circles: classroom
+ * membership stays strictly per person (AGENTS.md, migration 053's own
+ * `c.kind = 'classroom'` guard on the DB-side mirror trigger). Without this
+ * check here, removing or re-roling one student in a class could silently
+ * sweep up their household partner too, even when the partner is enrolled
+ * in the same class as an independent student.
+ */
 async function resolveTargetUserIds(
   communityId: string,
   personOrUserId: string,
   supabase: NonNullable<Awaited<ReturnType<typeof getSupabaseDataClient>>>
 ): Promise<string[]> {
   const aliasMap = await loadAliasMap(supabase);
-  const { data: members } = await supabase
-    .from(PORTFELL_TABLES.communityMembers)
-    .select("user_id, role, joined_at")
-    .eq("community_id", communityId);
+  const [{ data: members }, { data: community }] = await Promise.all([
+    supabase
+      .from(PORTFELL_TABLES.communityMembers)
+      .select("user_id, role, joined_at")
+      .eq("community_id", communityId),
+    supabase
+      .from(PORTFELL_TABLES.communities)
+      .select("kind")
+      .eq("id", communityId)
+      .maybeSingle(),
+  ]);
   const userIds = ((members ?? []) as { user_id: string }[]).map(
     (m) => m.user_id
   );
@@ -50,6 +69,11 @@ async function resolveTargetUserIds(
   }));
   const people = collapseMembersByAlias(raw, null, aliasMap);
   const aliasIds = expandPersonUserIds(personOrUserId, people);
+
+  if (isClassroomKind((community as { kind?: string } | null)?.kind)) {
+    return aliasIds;
+  }
+
   const memberProfiles = (profiles ?? []) as {
     id: string;
     email: string | null;
@@ -73,7 +97,7 @@ async function resolveTargetUserIds(
   return expandHouseholdUserIds(aliasIds, [...memberProfiles, ...extra]);
 }
 
-/** Admin: remove member or change role (applies to alias logins and household partners). */
+/** Admin: remove member or change role (applies to alias logins and, for circles only, household partners — classrooms stay per person). */
 async function handlePATCH(req: NextRequest, ctx: Ctx) {
   const auth = await requireAuthUser();
   if ("error" in auth) return auth.error;
