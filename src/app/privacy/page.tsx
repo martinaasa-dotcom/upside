@@ -184,10 +184,10 @@ export default function PrivacyPage() {
           rebuild the app if our database provider had a serious failure.
           That copy is one combined file covering every account, not a file
           per person, so it can&apos;t be edited to remove a single account.
-          Instead, each day&apos;s copy is automatically deleted 90 days
+          Instead, each day&apos;s copy is automatically deleted 30 days
           after it was made. Deleting your account removes your data from
           active use immediately, but it can remain in that day&apos;s
-          backup copy until that copy&apos;s own 90-day expiry, the same as
+          backup copy until that copy&apos;s own 30-day expiry, the same as
           everyone else&apos;s in it. You can permanently delete your profile
           and solely-owned sheets yourself at any time (see below). This
           removes them from active use immediately.
@@ -204,7 +204,7 @@ export default function PrivacyPage() {
           co-owner stay with them). If for any reason the sign-in credential
           can&apos;t be removed at the same time, your {PRODUCT_NAME} data is
           still fully wiped from active use immediately (see &ldquo;Data
-          retention&rdquo; above; it can take up to 90 days to age out of
+          retention&rdquo; above; it can take up to 30 days to age out of
           the separate backup copy). You&apos;d just want to also revoke{" "}
           {PRODUCT_NAME}&apos;s access from your Google account if you want that
           connection severed too. EU/EEA residents have rights under GDPR
