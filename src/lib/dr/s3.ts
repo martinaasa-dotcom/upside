@@ -46,7 +46,7 @@ function signingKey(
 
 export function signS3Request(opts: {
   config: ColdStorageConfig;
-  method: "GET" | "PUT";
+  method: "GET" | "PUT" | "DELETE";
   key: string;
   query?: Record<string, string>;
   body?: Buffer;
@@ -154,6 +154,19 @@ export async function getObject(
     );
   }
   return res.bytes;
+}
+
+export async function deleteObject(
+  config: ColdStorageConfig,
+  key: string
+): Promise<void> {
+  const signed = signS3Request({ config, method: "DELETE", key });
+  const res = await s3Fetch(signed);
+  if (res.status !== 200 && res.status !== 204 && res.status !== 404) {
+    throw new Error(
+      `Cold storage DELETE failed (${res.status}): ${res.text.slice(0, 400)}`
+    );
+  }
 }
 
 export type ListedObject = { key: string; lastModified?: string };

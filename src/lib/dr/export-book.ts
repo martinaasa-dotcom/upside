@@ -4,6 +4,7 @@ import { bookChecksum, type BookChecksum } from "@/lib/dr/checksum";
 import { readDrConfig, type DrConfig } from "@/lib/dr/config";
 import { encryptUtf8, parseEncryptionKey } from "@/lib/dr/encrypt";
 import { putObject } from "@/lib/dr/s3";
+import { purgeExpiredColdSnapshots, type ColdRetentionResult } from "@/lib/dr/retention";
 import type { WalBackupCheck } from "@/lib/dr/wal-backups";
 import { verifyWalBackups } from "@/lib/dr/wal-backups";
 import { supabaseProjectRef } from "@/lib/supabase/env";
@@ -42,6 +43,7 @@ export type DrJobResult = {
   checksum: BookChecksum | null;
   wal: WalBackupCheck;
   cold: ColdExportResult;
+  retention: ColdRetentionResult | null;
   warnings: string[];
 };
 
@@ -151,6 +153,26 @@ export async function runDisasterRecoveryJob(opts: {
   });
   if (cold.skipped) warnings.push(cold.reason);
 
+  let retention: ColdRetentionResult | null = null;
+  if (config.cold) {
+    try {
+      retention = await purgeExpiredColdSnapshots({
+        config: config.cold,
+        retentionDays: config.coldRetentionDays,
+        now: capturedAt,
+      });
+      if (retention.errors.length) {
+        warnings.push(
+          `Cold retention purge had ${retention.errors.length} error(s): ${retention.errors.join(" | ")}`
+        );
+      }
+    } catch (err) {
+      warnings.push(
+        `Cold retention purge failed: ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
+  }
+
   const ok =
     checksum.portfolioCount >= 0 &&
     (wal.skipped || wal.ok) &&
@@ -162,6 +184,7 @@ export async function runDisasterRecoveryJob(opts: {
     checksum,
     wal,
     cold,
+    retention,
     warnings,
   };
 }

@@ -182,12 +182,15 @@ export default function PrivacyPage() {
           accounts, not every signed-in user. We also keep a separate,
           encrypted backup copy outside our main database, used only to
           rebuild the app if our database provider had a serious failure.
-          We do not yet have a fixed deletion schedule for that backup copy,
-          so it can persist longer than the nightly snapshots above, and
-          deleting your account does not remove it from that copy. You can
-          permanently delete your profile and solely-owned sheets yourself
-          at any time (see below). This removes them from active use
-          immediately.
+          That copy is one combined file covering every account, not a file
+          per person, so it can&apos;t be edited to remove a single account.
+          Instead, each day&apos;s copy is automatically deleted 90 days
+          after it was made. Deleting your account removes your data from
+          active use immediately, but it can remain in that day&apos;s
+          backup copy until that copy&apos;s own 90-day expiry, the same as
+          everyone else&apos;s in it. You can permanently delete your profile
+          and solely-owned sheets yourself at any time (see below). This
+          removes them from active use immediately.
         </Section>
 
         <Section title="8. Your rights (export &amp; deletion)">
@@ -201,8 +204,8 @@ export default function PrivacyPage() {
           co-owner stay with them). If for any reason the sign-in credential
           can&apos;t be removed at the same time, your {PRODUCT_NAME} data is
           still fully wiped from active use immediately (see &ldquo;Data
-          retention&rdquo; above for the separate backup copy). You&apos;d
-          just want to also revoke{" "}
+          retention&rdquo; above; it can take up to 90 days to age out of
+          the separate backup copy). You&apos;d just want to also revoke{" "}
           {PRODUCT_NAME}&apos;s access from your Google account if you want that
           connection severed too. EU/EEA residents have rights under GDPR
           (access, rectification, erasure, portability, objection). The
