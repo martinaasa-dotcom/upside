@@ -80,8 +80,11 @@ applied:
    "a real book never goes into a classroom" rule.
 2. **`20260819140000_lab_watchlist.sql`** — adds the `watchlist` column to
    `portfell_lab_state` so the Sunday letter can suggest names the reader
-   is watching. Until applied, that section of the letter is simply empty;
-   nothing else breaks.
+   is watching. `/api/lab` tolerates its absence (it drops the column and
+   retries once, per warm instance), so deploy order does not matter and
+   conviction notes keep syncing either way. Until it is applied the
+   watchlist simply doesn't persist, and that section of the letter is
+   empty.
 
 ## Open items that need Martin's decision (across all 10 passes)
 
