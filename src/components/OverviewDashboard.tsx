@@ -368,12 +368,10 @@ function DriverTile({
 
 function MorningStack({
   morning,
-  previousAt,
   onOpenPulse,
   className,
 }: {
   morning: ReturnType<typeof buildMorningRead>;
-  previousAt: string | null;
   onOpenPulse?: (ticker?: string) => void;
   className?: string;
 }) {
@@ -447,39 +445,6 @@ function MorningStack({
               ))}
             </div>
           )}
-        </Reading>
-      )}
-      {morning.awayLines.length > 0 && (
-        <Reading
-          label={
-            previousAt
-              ? `Since you last looked - ${new Date(previousAt).toLocaleString(
-                  "en-GB",
-                  {
-                    timeZone: "Europe/Tallinn",
-                    dateStyle: "medium",
-                    timeStyle: "short",
-                  }
-                )}`
-              : "Since you last looked"
-          }
-        >
-          <ul className="flex flex-col gap-2">
-            {morning.awayLines.map((line) => (
-              <li
-                key={line.id}
-                className={
-                  line.tone === "up"
-                    ? "text-gain"
-                    : line.tone === "down"
-                      ? "text-loss"
-                      : undefined
-                }
-              >
-                {line.text}
-              </li>
-            ))}
-          </ul>
         </Reading>
       )}
       {morning.notices.length > 0 && (
@@ -957,7 +922,6 @@ export const OverviewDashboard = memo(function OverviewDashboard({
       <MorningStack
         className="overview-fade hidden md:flex"
         morning={morning}
-        previousAt={visitDiff?.previousAt ?? null}
         onOpenPulse={onOpenPulse}
       />
 
@@ -1016,7 +980,6 @@ export const OverviewDashboard = memo(function OverviewDashboard({
       <MorningStack
         className="overview-fade md:hidden"
         morning={morning}
-        previousAt={visitDiff?.previousAt ?? null}
         onOpenPulse={onOpenPulse}
       />
 
