@@ -75,10 +75,16 @@ would add to the unapplied-migration queue.
 Operational, not code. Both are written and merged; neither is live until
 applied:
 
-1. **`20260819120000_classroom_real_book_share_rls.sql`** (Pass 8's
-   Critical) — closes the direct-PostgREST path around the app's own
-   "a real book never goes into a classroom" rule.
-2. **`20260819140000_lab_watchlist.sql`** — adds the `watchlist` column to
+1. ~~**`20260819120000_classroom_real_book_share_rls.sql`** (Pass 8's
+   Critical)~~ — **applied and verified 2026-08-19.** Policy read back from
+   `pg_policy` matches the migration, and a rolled-back fixture test as a
+   student returned `real book blocked = yes | paper sheet allowed = yes`.
+   Verifying it surfaced a new Medium (N1 in the Pass 8 fix log): the
+   separate `_admin` policy still allows for a class admin what this now
+   denies for a student.
+2. ~~**`20260819140000_lab_watchlist.sql`**~~ — **applied and verified
+   2026-08-19** (`information_schema` shows `watchlist jsonb` defaulting to
+   `'[]'::jsonb`). Adds the `watchlist` column to
    `portfell_lab_state` so the Sunday letter can suggest names the reader
    is watching. `/api/lab` tolerates its absence (it drops the column and
    retries once, per warm instance), so deploy order does not matter and
