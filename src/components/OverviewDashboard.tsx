@@ -41,7 +41,6 @@ import {
 import { parseHoldingsPaste, type CsvHoldingRow } from "@/lib/csv-import";
 import { buildMorningRead } from "@/lib/morning-read";
 import type { UpsideAlert } from "@/lib/alerts";
-import { statusLabel } from "@/lib/thesis-pulse";
 import { sessionLabel, sessionKind } from "@/lib/market-session";
 import { sheetCashBalance } from "@/lib/cash-balance";
 import type { OverviewModel, SheetScore, TickerScore } from "@/lib/overview";
@@ -471,30 +470,6 @@ function MorningStack({
             </Reading>
           ))}
         </div>
-      )}
-      {morning.pulseFlags.length > 0 && (
-        <Reading label="Worth noticing">
-          <div className="flex flex-col gap-2">
-            {morning.pulseFlags.map((flag) => (
-              <button
-                key={flag.ticker}
-                type="button"
-                onClick={() => onOpenPulse?.(flag.ticker)}
-                className="group/flag glass-well flex w-full items-center gap-4 rounded-lg p-4 text-left ring-1 ring-foreground/12 transition hover:scale-[1.01] hover:bg-accent/70 active:scale-[0.995]"
-              >
-                <span className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold tracking-tight text-foreground">
-                    {cashtag(flag.ticker)} · {statusLabel(flag.status)}
-                  </p>
-                  <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                    {flag.line}
-                  </p>
-                </span>
-                <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover/flag:translate-x-0.5" />
-              </button>
-            ))}
-          </div>
-        </Reading>
       )}
     </div>
   );

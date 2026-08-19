@@ -98,8 +98,9 @@ export function usWeekMondayKey(sessionDate: string): string {
 /**
  * US cash-session date the fund should write. After 16:00 ET on a weekday
  * that is today. Before the close, weekends, or Monday morning, that is
- * the previous weekday. 21:30 UTC is 17:30 ET in summer, so the evening
- * cron lands on the session that just ended, not Tallinn's next morning.
+ * the previous weekday. 23:30 UTC is 19:30 ET in summer / 18:30 ET in
+ * winter, so the evening cron lands well after the session that just
+ * ended, not right on top of the close.
  */
 export function lastCompletedUsSessionKey(now: Date = new Date()): string {
   const { minutes, weekday } = nyClock(now);
@@ -113,6 +114,28 @@ export function lastCompletedUsSessionKey(now: Date = new Date()): string {
     key = addDayKey(key, -1);
   }
   return key;
+}
+
+/**
+ * Weekday session keys strictly after `fromExclusiveKey` up to and
+ * including `toInclusiveKey`, ascending. Not holiday-aware -- same
+ * documented tradeoff as `marketSession` above, a holiday just costs one
+ * wasted backfill run, which is cheap. Used to find which trading days a
+ * cron run needs to catch up on, not just retry a single date. Capped so
+ * a long-stale row can't spin the loop.
+ */
+export function tradingDaysBetween(
+  fromExclusiveKey: string,
+  toInclusiveKey: string,
+  maxDays = 400
+): string[] {
+  const out: string[] = [];
+  let key = addDayKey(fromExclusiveKey, 1);
+  while (key <= toInclusiveKey && out.length < maxDays) {
+    if (!isWeekendKey(key)) out.push(key);
+    key = addDayKey(key, 1);
+  }
+  return out;
 }
 
 /**

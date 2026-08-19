@@ -11,6 +11,7 @@ import { fetchQuotesWithFallback } from "@/lib/market/quotes";
 import {
   lastCompletedUsSessionKey,
   pinQuotesToSessionClose,
+  tradingDaysBetween,
   usWeekMondayKey,
 } from "@/lib/market/session";
 import { fetchFearGreedIndex } from "@/lib/market/fear-greed-fetch";
@@ -283,8 +284,30 @@ async function handleGET(req: Request) {
     return NextResponse.json({ error: "Supabase not configured" }, { status: 400 });
   }
 
-  const today = lastCompletedUsSessionKey();
-  logEvent("fund_cron_start", { session: today });
+  const latestSession = lastCompletedUsSessionKey();
+
+  // Catch up one missed trading day per run, oldest first, instead of only
+  // ever retrying the latest session. A single bad run (a provider outage,
+  // a transient quote failure) used to permanently skip that day once the
+  // clock moved past it — this cron fires several times a day, so the
+  // backlog drains itself within hours instead of needing a manual nudge.
+  const { data: lastReportRow } = await supabase
+    .from(PORTFELL_TABLES.margusFundReports)
+    .select("report_date")
+    .order("report_date", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const lastReportDate =
+    (lastReportRow as { report_date?: string } | null)?.report_date ?? null;
+  const missing = lastReportDate
+    ? tradingDaysBetween(lastReportDate, latestSession)
+    : [latestSession];
+  const today = missing[0] ?? latestSession;
+
+  logEvent("fund_cron_start", {
+    session: today,
+    backlog: missing.length,
+  });
 
   try {
     // Idempotent — a manual re-trigger on a day the cron already ran just
@@ -762,12 +785,14 @@ async function handleGET(req: Request) {
 
     return NextResponse.json({
       ok: true,
+      reportDate: today,
       reportId: report.id,
       totalValue: totalValueAfter,
       cash,
       actions: actions.length,
       headline: decision.headline,
       tweeted,
+      stillBehind: missing.length - 1,
     });
   } catch (err) {
     await logError({
