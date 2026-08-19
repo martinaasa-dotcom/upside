@@ -270,6 +270,7 @@ export function AdminPage() {
                         size="icon-sm"
                         onClick={() => setConfirmClearErrors(true)}
                         title="Clear log"
+                        aria-label="Clear error log"
                       >
                         <Trash2 />
                       </Button>
@@ -281,6 +282,7 @@ export function AdminPage() {
                       onClick={() => void loadErrorLog()}
                       disabled={errorLogLoading}
                       title="Refresh"
+                      aria-label="Refresh error log"
                     >
                       <RefreshCw
                         className={errorLogLoading ? "animate-spin" : undefined}
@@ -365,6 +367,7 @@ export function AdminPage() {
                       onClick={() => void load(true)}
                       disabled={refreshing}
                       title="Refresh"
+                      aria-label="Refresh user list"
                     >
                       <RefreshCw
                         className={refreshing ? "animate-spin" : undefined}

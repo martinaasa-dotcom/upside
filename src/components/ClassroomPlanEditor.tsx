@@ -160,6 +160,7 @@ export function ClassroomPlanEditor({
                   disabled={busy}
                   onClick={() => remove(p.id)}
                   title="Remove"
+                  aria-label={`Remove ${classPeriodLabel(p.kind)}`}
                 >
                   <Trash2 />
                 </Button>
