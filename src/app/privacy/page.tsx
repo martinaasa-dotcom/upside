@@ -162,17 +162,27 @@ export default function PrivacyPage() {
           person.
         </Section>
 
-        <Section title="6. Cookies">
+        <Section title="6. Cookies and what we keep on your device">
           We use essential cookies from Supabase Auth to keep you signed in.
-          When you sign in with Google, Google sets cookies on its own domain
-          under Google&apos;s rules. Vercel Analytics and Speed Insights
-          measure page views and load times only if you allow it. You can
-          say no on the banner, or change your mind later in{" "}
+          That is the only cookie this app sets. When you sign in with
+          Google, Google sets cookies on its own domain under Google&apos;s
+          rules; we never read those.
+          {" "}
+          Vercel Analytics and Speed Insights measure page views and load
+          times only if you allow it. They set no cookies at all, and we
+          still ask first. You can say no on the banner, or change your mind
+          later in{" "}
           <Link href="/account" className="underline hover:text-foreground">
             My account
           </Link>
-          . They are not advertising cookies, and they do not follow you
-          across other sites.
+          . Nothing here is advertising, and none of it follows you across
+          other sites.
+          {" "}
+          The app also saves things on your own device (browser storage, not
+          cookies): your settings, which sheet you had open, your thesis
+          notes and watchlist, and a cached copy of your portfolio so it
+          still works offline. That never leaves your device on its own.
+          Signing out, or switching accounts, clears all of it.
         </Section>
 
         <Section title="7. Data retention">
