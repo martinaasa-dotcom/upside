@@ -38,3 +38,37 @@ already in `/audit-current/` — re-running the same empty-state screenshots
 would not surface a new regression. The one genuinely unverified item
 (Movers panel with live data) is carried forward above as an open
 follow-up, not silently dropped.
+
+---
+
+# Part 2 — the final Pass 1 report's backlog
+
+Everything above tracks the **first** run of this pass, against the
+punch list in what is now
+[`01-visual-cohesion-report-original.md`](01-visual-cohesion-report-original.md).
+That run was superseded: PRs #26–#29 landed the design-unification and
+two rounds of live feedback while it was in flight, and the final report
+([`01-visual-cohesion.md`](01-visual-cohesion.md)) was re-derived against
+`main` in its actual state.
+
+The final report found **0 Critical and 0 High open** — the three
+Critical items the first run identified (`.glass`/`.glass-well` missing,
+`--primary` not the brand color, `--warning` sharing a hue family with
+the accent) were all independently resolved by #26–#29, confirmed
+directly against `src/app/globals.css` rather than from commit messages.
+
+What it left as backlog, and where each stands:
+
+| Item | Severity | Status | Evidence | Notes |
+|---|---|---|---|---|
+| `text-[0.8rem]` in `button.tsx:27` / `toggle.tsx:20` (`sm` size) | Medium | **Deferred — needs Martin's decision** | — | A real off-scale value (12.8px, between `text-xs` and `text-sm`), and `Panel.tsx`'s own type scale bans `text-[Npx]`. But fixing it means picking `text-xs` or `text-sm` for every small button and toggle app-wide — a one-line change visible on every screen. The report declined to guess and so does this; item #4 in `00-summary.md`'s decision list. |
+| `CommunitiesList.tsx:266` hand-rolls `animate-pulse rounded-lg bg-muted` instead of `<Skeleton>` | Medium | **Deferred** | — | Code-hygiene only: the shared `Skeleton` is `animate-pulse rounded-md bg-muted`, so the visible delta is `rounded-lg` vs `rounded-md`. Swapping it is safe but changes a corner radius on a live loading state, which is a design call rather than a defect — left with the other Pass 1 taste items rather than bundled into an unrelated PR. |
+| Overlay surfaces (`Dialog`, `Sheet`, `Drawer`, `Popover`, `DropdownMenu`, `Select`, `Command`) are opaque, not glass | Medium | **Deferred — needs Martin's decision** | — | Deliberate and self-consistent today: opaque `bg-popover` + a hairline ring, with `backdrop-blur-xs` only on the dimming scrim. Making them glass now that top-level cards are is a genuine design decision — blur behind small menu text risks legibility — and the report routed it to "Needs a decision" for exactly that reason. |
+| Six Low items (`global-error.tsx` hex colors, `UpsideLogo` arbitrary sizes, `native-select` system colors, icon stroke widths, unused `next-themes`, container widths) | Low | **Deferred (no change needed)** | — | The report checked each and found five are documented deliberate exceptions or non-findings. The one loose end is the unused `next-themes` dependency: the app is single-theme by design (`html { color-scheme: dark }`) and nothing in `src/` imports it, so it misleads a reader into expecting a toggle. Worth removing from `package.json` in a dependency-cleanup pass rather than a design one. |
+
+## Status
+
+No Critical or High items open. Every remaining item is Medium or Low,
+and three of the four Medium/Low rows above are explicitly design
+decisions for Martin rather than defects — the same conclusion the
+report itself reached.
