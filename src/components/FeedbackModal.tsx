@@ -96,7 +96,11 @@ export function FeedbackModal({ mode, onClose, onSent }: Props) {
     mode === "weekly" ? weeklyHasAnswer(weekly) : topic.trim() && body.trim().length >= 8;
 
   return (
-    <ViewportOverlay className="z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
+    <ViewportOverlay
+      className="z-50 flex items-end justify-center p-0 sm:items-center sm:p-4"
+      onClose={onClose}
+      ariaLabelledBy="feedback-title"
+    >
       <button
         type="button"
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"
@@ -105,9 +109,6 @@ export function FeedbackModal({ mode, onClose, onSent }: Props) {
         disabled={busy}
       />
       <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="feedback-title"
         className="relative max-h-full w-full overflow-y-auto rounded-t-xl bg-popover ring-1 ring-foreground/20 p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:max-w-lg sm:rounded-xl sm:pb-6"
       >
         <div className="mb-3 flex items-start justify-between gap-3">

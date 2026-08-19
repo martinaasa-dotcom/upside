@@ -38,7 +38,10 @@ export function CostBasisModal({
   );
 
   return (
-    <ViewportOverlay className="z-[85] flex items-center justify-center p-4">
+    <ViewportOverlay
+      className="z-[85] flex items-center justify-center p-4"
+      onClose={onClose}
+    >
       <button
         type="button"
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"

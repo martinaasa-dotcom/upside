@@ -83,7 +83,10 @@ export function YtdAnchorModal({
   }
 
   return (
-    <ViewportOverlay className="z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
+    <ViewportOverlay
+      className="z-50 flex items-end justify-center p-0 sm:items-center sm:p-4"
+      onClose={onClose}
+    >
       <button
         type="button"
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"

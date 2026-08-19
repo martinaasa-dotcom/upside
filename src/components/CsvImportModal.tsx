@@ -158,7 +158,10 @@ export function CsvImportModal({
   const tickerTd = mixedListings ? htmlCellTicker : htmlCell;
 
   return (
-    <ViewportOverlay className="z-[70] flex items-center justify-center p-4">
+    <ViewportOverlay
+      className="z-[70] flex items-center justify-center p-4"
+      onClose={handleClose}
+    >
       <button
         type="button"
         className="absolute inset-0 bg-black/80 backdrop-blur-sm"
@@ -193,6 +196,7 @@ export function CsvImportModal({
           </p>
 
           <Textarea
+            aria-label="Paste holdings, one per line"
             value={paste}
             onChange={(e) => {
               setPaste(e.target.value);
