@@ -3,9 +3,12 @@ import {
   getSupabaseServer,
   supabaseUsesServiceRole,
 } from "@/lib/supabase/server";
+import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { revokeAllUserSessions } from "@/lib/auth/revoke-sessions";
+import { getStripe } from "@/lib/stripe";
 import { NextResponse } from "next/server";
 import { observeRoute } from "@/lib/observe-route";
+import { logEvent } from "@/lib/telemetry";
 
 export const dynamic = "force-dynamic";
 
@@ -13,16 +16,23 @@ export const dynamic = "force-dynamic";
  * Self-service account deletion.
  *
  * 1. Revoke every refresh token so other devices cannot mint a new JWT.
- * 2. Calls the security-definer RPC (self-scoped to auth.uid() at the DB
+ * 2. If this profile has a Stripe subscription on file, cancel it in Stripe
+ *    before the row is gone. Without this, someone who deletes their account
+ *    while subscribed keeps getting charged every month forever -- the app
+ *    row that pointed at the subscription is deleted, but Stripe was never
+ *    told to stop, and there is no more /account page to reach "Manage
+ *    billing" from afterward. Best-effort: a Stripe failure here is logged
+ *    but never blocks the data deletion the person asked for.
+ * 3. Calls the security-definer RPC (self-scoped to auth.uid() at the DB
  *    layer) which deletes sheets this user solely owns, steps them off
  *    shared sheets, and removes their profile/lab state/community rows via
- *    cascade. Must run before step 3 — it needs the profile row to still
+ *    cascade. Must run before step 4 — it needs the profile row to still
  *    exist to decide sole-owned vs. shared sheets; auth.users cascading
  *    straight to portfell_profiles would skip that logic and orphan
  *    sole-owned sheets instead of actually deleting them. A BEFORE DELETE
  *    trigger on profiles now also runs the same purge, so a dashboard
  *    deleteUser still scrubs snapshots, cash events, and error-log PII.
- * 3. If SUPABASE_SERVICE_ROLE_KEY is configured, also deletes the
+ * 4. If SUPABASE_SERVICE_ROLE_KEY is configured, also deletes the
  *    auth.users row itself via the admin API — the sign-in credential is
  *    gone, not just the app data. Without a service-role key this step is
  *    skipped (graceful, not fatal): app data is already fully wiped, the
@@ -50,6 +60,35 @@ async function handlePOST() {
     }
   }
   await revokeAllUserSessions(auth.user.id);
+
+  const stripe = getStripe();
+  if (stripe) {
+    const { data: billingProfile } = await supabase
+      .from(PORTFELL_TABLES.profiles)
+      .select("stripe_subscription_id")
+      .eq("id", auth.user.id)
+      .maybeSingle();
+    const subscriptionId = billingProfile?.stripe_subscription_id;
+    if (subscriptionId) {
+      try {
+        await stripe.subscriptions.cancel(subscriptionId);
+      } catch (err) {
+        // Already canceled, already past_due-and-auto-canceled, etc. are
+        // fine -- the goal (no further charges) is already met. Log
+        // anything else so a genuine failure (bad API key, network) doesn't
+        // vanish silently while the account still gets deleted.
+        logEvent(
+          "account_delete_stripe_cancel_failed",
+          {
+            userId: auth.user.id,
+            subscriptionId,
+            message: err instanceof Error ? err.message : String(err),
+          },
+          "error"
+        );
+      }
+    }
+  }
 
   const { data, error } = await supabase.rpc("portfell_delete_my_account");
   if (error) {

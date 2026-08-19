@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { isActiveSubscription } from "@/lib/billing-status";
+import { plainError } from "@/lib/plain-error";
 
 /**
  * Drop into /account. Shows "Upgrade" for a free user, "Manage billing" for
@@ -28,7 +29,7 @@ export function UpgradeButton({
       });
       const data = (await res.json()) as { url?: string; error?: string };
       if (!res.ok || !data.url) {
-        toast.error(data.error ?? "Couldn't open billing right now.");
+        toast.error(plainError(data.error, "Couldn't open billing right now."));
         return;
       }
       window.location.href = data.url;
