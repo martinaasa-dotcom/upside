@@ -242,8 +242,19 @@ body {
    */
   .glass {
     background-color: color-mix(in oklch, var(--card), transparent 48%);
-    backdrop-filter: blur(28px) saturate(1.6);
+    /*
+     * Standard property LAST, prefixed first. Written the other way round,
+     * the CSS transform collapsed the pair and emitted only
+     * `-webkit-backdrop-filter` — and Chromium (141, and Blink generally)
+     * does not honour that alias, so `backdrop-filter` computed to `none`
+     * and every glass surface in the app rendered as a flat translucent
+     * tint with no blur on desktop Chrome, Edge, and Android Chrome. Only
+     * Safari, which does read the prefixed form, ever showed the material.
+     * Keep this order, and verify against the *compiled* bundle rather
+     * than this file — the bug was invisible in source.
+     */
     -webkit-backdrop-filter: blur(28px) saturate(1.6);
+    backdrop-filter: blur(28px) saturate(1.6);
     box-shadow:
       inset 0 0 0 1px var(--border),
       0 12px 32px -16px color-mix(in oklch, black, transparent 15%);
@@ -256,8 +267,9 @@ body {
   }
   .glass-well {
     background-color: color-mix(in oklch, var(--muted), transparent 50%);
-    backdrop-filter: blur(16px) saturate(1.4);
+    /* Prefixed first, standard last — see the note on `.glass` above. */
     -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    backdrop-filter: blur(16px) saturate(1.4);
     box-shadow: inset 0 0 0 1px
       color-mix(in oklch, var(--border), transparent 35%);
   }
