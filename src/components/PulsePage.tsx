@@ -45,6 +45,7 @@ import type { ConvictionMap } from "@/lib/conviction";
 import type { FearGreedSnapshot } from "@/lib/market/fear-greed";
 import { humanizeMargusText, pulseSuggestion } from "@/lib/ai/humanize-copy";
 import { isAbortError } from "@/lib/abort";
+import { ADVICE_DISCLAIMER_SHORT } from "@/lib/disclaimer";
 import { readJsonOrThrow } from "@/lib/http";
 import type { OverviewModel } from "@/lib/overview";
 import { formatRelativeTime } from "@/lib/timezone";
@@ -1106,7 +1107,7 @@ export const PulsePage = memo(function PulsePage({
         <PanelHeader
           icon={<Activity className="h-4 w-4" />}
           title="Should you sell, or buy more?"
-          subtitle="Educational, not personalized investment advice. Always your call."
+          subtitle={ADVICE_DISCLAIMER_SHORT}
           actions={
             <form
               onSubmit={(e) => void submitSearch(e)}
