@@ -5,7 +5,9 @@ import { SignInGate } from "@/components/SignInGate";
 import { rememberJoinedCommunity } from "@/lib/community-cache";
 import { plainError } from "@/lib/plain-error";
 import { UpsideLogo } from "@/components/UpsideLogo";
+import { Button } from "@/components/ui/button";
 import { saveLastCircleId } from "@/lib/workspace-rooms";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 
@@ -89,7 +91,12 @@ function JoinInner() {
             haven&apos;t yet. Then we put you in the circle or the class.
           </p>
           {error ? (
-            <p className="text-sm text-loss">{error}</p>
+            <>
+              <p className="text-sm text-loss">{error}</p>
+              <Button asChild className="mt-2 w-full">
+                <Link href="/">Go to Upside Lab</Link>
+              </Button>
+            </>
           ) : status ? (
             <p className="text-sm text-muted-foreground">{status}</p>
           ) : null}
