@@ -59,10 +59,10 @@ export function AppStatusStrip({
       <div
         className={cn(
           PAGE_COLUMN_CLASS,
-          "flex min-h-10 flex-col gap-2 py-2 sm:h-10 sm:flex-row sm:items-center sm:gap-4 sm:py-0"
+          "flex h-10 min-h-10 items-center gap-3 sm:gap-4"
         )}
       >
-        <span className="flex items-center gap-2 text-xs font-medium tabular-nums text-muted-foreground sm:shrink-0 sm:whitespace-nowrap">
+        <span className="flex shrink-0 items-center gap-2 whitespace-nowrap text-xs font-medium tabular-nums text-muted-foreground">
           {sec == null
             ? "Prices —"
             : quotesDelayed && sec >= 60

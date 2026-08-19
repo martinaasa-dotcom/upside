@@ -2618,8 +2618,12 @@ run("signed-in pages share one column so rooms do not jump", () => {
     join(process.cwd(), "src/components/AppStatusStrip.tsx"),
     "utf8"
   );
-  assert.match(strip, /min-h-10/);
-  assert.match(strip, /sm:h-10/);
+  // One fixed row height at every breakpoint — the strip used to stack
+  // (label row + wrapped macro grid) below `sm`, costing ~2x the height on
+  // a phone. Now it is always a single h-10 row; the macro numbers scroll
+  // horizontally inside it if they do not fit, instead of wrapping.
+  assert.match(strip, /\bh-10\b/);
+  assert.doesNotMatch(strip, /flex-col/);
   const macroStrip = readFileSync(
     join(process.cwd(), "src/components/MacroStrip.tsx"),
     "utf8"

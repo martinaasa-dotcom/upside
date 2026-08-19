@@ -158,13 +158,12 @@ export function MacroStrip() {
   ));
 
   return (
-    <div className="flex min-w-0 flex-1 flex-col items-stretch gap-2 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-end sm:gap-3">
-      <div className="relative hidden min-w-0 flex-1 overflow-hidden sm:block">
-        <div className="ml-auto flex w-fit items-center gap-3 rounded-md border border-border bg-muted/50 px-3 py-1 font-mono text-xs tabular-nums">
-          {itemNodes}
-        </div>
-      </div>
-      <div className="grid grid-cols-3 gap-x-2 gap-y-1 rounded-md border border-border bg-muted/50 px-3 py-1 pb-1.5 font-mono tabular-nums sm:hidden">
+    <div
+      className="scrollbar-none min-w-0 flex-1 overflow-x-auto sm:ml-auto sm:w-fit sm:flex-none"
+      role="group"
+      aria-label="Market snapshot"
+    >
+      <div className="flex w-fit items-center gap-3 whitespace-nowrap rounded-md border border-border bg-muted/50 px-3 py-1 font-mono text-xs tabular-nums">
         {itemNodes}
       </div>
     </div>

@@ -3537,6 +3537,7 @@ export function Dashboard() {
                 size="icon"
                 onClick={() => setModalOpen(true)}
                 aria-label="Add holding"
+                className="touch-target"
               >
                 <Plus />
               </Button>
