@@ -59,18 +59,18 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/icons/icon-32.png?v=7", sizes: "32x32", type: "image/png" },
-      { url: "/icons/icon-192.png?v=7", sizes: "192x192", type: "image/png" },
-      { url: "/favicon.ico?v=7", sizes: "16x16 32x32" },
+      { url: "/favicon.svg?v=8", type: "image/svg+xml" },
+      { url: "/icons/icon-192.png?v=8", sizes: "192x192", type: "image/png" },
+      { url: "/favicon.ico?v=8", sizes: "16x16 32x32" },
     ],
-    shortcut: "/icons/icon-32.png?v=7",
+    shortcut: "/favicon.svg?v=8",
     apple: [
       {
-        url: "/apple-touch-icon.png?v=7",
+        url: "/apple-touch-icon.png?v=8",
         sizes: "180x180",
         type: "image/png",
       },
-      { url: "/icons/icon-192.png?v=7", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-192.png?v=8", sizes: "192x192", type: "image/png" },
     ],
   },
   openGraph: {
