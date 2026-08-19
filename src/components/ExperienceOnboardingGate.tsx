@@ -127,12 +127,23 @@ export function ExperienceOnboardingGate() {
         if (skipOnboarding && !inheritedRef.current) {
           inheritedRef.current = true;
           askingRef.current = false;
-          saveStoredTier("investor");
-          void postJsonOrQueue("/api/account/experience-tier", {
-            tier: "investor",
-          }).catch(() => {
-            /* localStorage already has the tier */
-          });
+          // Only infer a tier for someone who has never answered. Reaching
+          // here means the GET above returned no tier — which can happen
+          // for reasons unrelated to whether they answered (a network
+          // blip, a brief auth hiccup, a row whose write never flushed).
+          // If this browser already holds a tier, overwriting it with
+          // "investor" would silently downgrade an "advanced" reader on an
+          // unrelated fetch failure. Harmless while the wizard is disabled
+          // and the hidden-tab maps are empty; a real bug the moment
+          // either is switched back on.
+          if (!stored) {
+            saveStoredTier("investor");
+            void postJsonOrQueue("/api/account/experience-tier", {
+              tier: "investor",
+            }).catch(() => {
+              /* localStorage already has the tier */
+            });
+          }
           setSkip(true);
           return;
         }
