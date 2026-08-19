@@ -14,6 +14,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
 import { track } from "@vercel/analytics";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -388,6 +389,7 @@ export function CommunityView({ communityId }: Props) {
   const [inviteEmailed, setInviteEmailed] = useState(0);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteDays, setInviteDays] = useState("");
+  const [inviteNeverExpires, setInviteNeverExpires] = useState(false);
   const [busy, setBusy] = useState(false);
   const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
   const later = useTimeout();
@@ -1192,6 +1194,7 @@ export function CommunityView({ communityId }: Props) {
         body: JSON.stringify({
           email: inviteEmail.trim() || undefined,
           ...(Number.isFinite(days) && days >= 1 ? { daysValid: days } : {}),
+          ...(inviteNeverExpires ? { neverExpires: true } : {}),
         }),
       });
       const data = await res.json();
@@ -2444,8 +2447,8 @@ export function CommunityView({ communityId }: Props) {
                       </h2>
                       <p className="text-sm text-muted-foreground">
                         {isClassroom
-                          ? "This link stays live. Students join with it. Each one gets the same paper cash and an empty portfolio. Put emails if you want us to send the link, and to lock it to those people. Separate them with a comma. Put a number of days only if you want it to die on its own."
-                          : "This link stays live. Anyone with it can join. Their portfolios show up here. They can turn one off later. Today's prices only. Put emails if you want us to send the link, and to lock it to those people. Separate them with a comma. Put a number of days only if you want it to die on its own."}
+                          ? "This link works for 30 days. Students join with it. Each one gets the same paper cash and an empty portfolio. Put emails if you want us to send the link, and to lock it to those people. Separate them with a comma. Change the number of days if 30 is wrong for you."
+                          : "This link works for 30 days. Anyone with it can join. Their portfolios show up here. They can turn one off later. Today's prices only. Put emails if you want us to send the link, and to lock it to those people. Separate them with a comma. Change the number of days if 30 is wrong for you."}
                       </p>
                       <div className="flex flex-wrap gap-2">
                         <Input
@@ -2464,7 +2467,8 @@ export function CommunityView({ communityId }: Props) {
                           inputMode="numeric"
                           value={inviteDays}
                           onChange={(e) => setInviteDays(e.target.value)}
-                          placeholder="Days live (optional)"
+                          disabled={inviteNeverExpires}
+                          placeholder="Days live (30 by default)"
                           className="no-spinner w-[14rem] min-w-[14rem] shrink-0"
                         />
                         <Button
@@ -2476,6 +2480,17 @@ export function CommunityView({ communityId }: Props) {
                           Create invite link
                         </Button>
                       </div>
+                      <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Checkbox
+                          checked={inviteNeverExpires}
+                          onCheckedChange={(v) =>
+                            setInviteNeverExpires(v === true)
+                          }
+                          aria-label="Link never expires"
+                        />
+                        Never expires. Anyone who ever sees this link can
+                        join, so only use it somewhere private.
+                      </label>
                       {inviteUrl && (
                         <Item className="items-start px-0">
                           <ItemContent>

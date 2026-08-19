@@ -1,6 +1,7 @@
 import { logEvent, sanitizeContext } from "@/lib/telemetry";
 import { observeRoute } from "@/lib/observe-route";
-import { checkRateLimit, clientIp } from "@/lib/rate-limit";
+import { clientIp } from "@/lib/rate-limit";
+import { takeDurableRateLimit } from "@/lib/rate-limit-durable";
 import { telemetryPostSchema } from "@/lib/api-schemas";
 import { parseJsonBody } from "@/lib/parse-json-body";
 import { NextRequest, NextResponse } from "next/server";
@@ -14,7 +15,7 @@ export const dynamic = "force-dynamic";
  */
 async function handlePOST(req: NextRequest) {
   const ip = clientIp(req);
-  const limit = checkRateLimit(`telemetry:${ip}`, 60, 60_000);
+  const limit = await takeDurableRateLimit(`telemetry:${ip}`, 60, 60_000);
   if (!limit.ok) {
     return NextResponse.json({ ok: false }, { status: 429 });
   }

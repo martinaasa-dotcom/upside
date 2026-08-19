@@ -2823,7 +2823,7 @@ run("community invite landing names the circle", () => {
   assert.equal(inviteFromLocation("/", "?token=abc"), null);
   assert.equal(
     inviteLandingCopy({ kind: "community", name: null }).title,
-    "You've been invited to join a community."
+    "You've been invited to join a group."
   );
   assert.equal(
     inviteLandingCopy({ kind: "community", name: "Upside Circle" }).title,
@@ -5805,7 +5805,12 @@ run("email and admin RPCs are not callable with a user JWT", () => {
     "utf8"
   );
   assert.doesNotMatch(mint, /daysValid \?\? 14/);
-  assert.match(mint, /expiresAt: string \| null = null/);
+  // An open invite link is a bearer credential, so "no days given" must
+  // mean a bounded default, not "forever". Never-expiring has to be asked
+  // for explicitly.
+  assert.match(mint, /const DEFAULT_INVITE_DAYS = 30/);
+  assert.match(mint, /body\.neverExpires === true/);
+  assert.doesNotMatch(mint, /expiresAt: string \| null = null/);
   assert.match(mint, /inviteEmailAllowlist/);
   assert.match(mint, /sendNoteEmail/);
   assert.match(mint, /token_hint/);
@@ -5834,7 +5839,9 @@ run("email and admin RPCs are not callable with a user JWT", () => {
     "utf8"
   );
   assert.doesNotMatch(communityView, /daysValid: community\?\.kind === "classroom" \? 90 : 14/);
-  assert.match(communityView, /This link stays live/);
+  assert.match(communityView, /This link works for 30 days/);
+  assert.doesNotMatch(communityView, /This link stays live/);
+  assert.match(communityView, /inviteNeverExpires/);
   assert.match(communityView, /Emails \(optional, comma between\)/);
   assert.match(communityView, /Retire this link/);
   assert.match(communityView, /copyInviteLink/);
@@ -6325,7 +6332,10 @@ run("production telemetry covers crashes, slow routes, and vitals", () => {
 
 run("offline-first engine caches the book and queues safe writes", () => {
   const sw = readFileSync(join(process.cwd(), "public/sw.js"), "utf8");
-  assert.match(sw, /upside-shell-v7/);
+  // Pin that the shell cache *is* versioned, not which version it is on.
+  // Pinning the literal made every legitimate bump a red invariant, which
+  // is how this sat failing after the favicon work moved it to v8.
+  assert.match(sw, /const CACHE = "upside-shell-v\d+"/);
   assert.match(sw, /skipWaiting/);
   assert.match(sw, /clients\.claim/);
   assert.match(sw, /path\.startsWith\("\/api\/"\)/);
@@ -6546,6 +6556,45 @@ run("a private community's existence does not leak through join-request", () => 
     postFn,
     /!community \|\| \(community as \{ visibility\?: string \}\)\.visibility !== "public"/
   );
+});
+
+run("a classmate's cost basis is not the whole class's business", () => {
+  // Audit pass 8 M1: the gate was `classroom` alone, so every student saw
+  // every classmate's buy price on the class book. The teacher needs it
+  // (that is what the original comment says it was for) and you always see
+  // your own; nobody else does. Circles still hide it from everyone.
+  const route = readFileSync(
+    join(process.cwd(), "src/app/api/communities/[id]/book/route.ts"),
+    "utf8"
+  );
+  assert.match(route, /const viewerIsAdmin =/);
+  assert.match(route, /const showAllCost = classroom && viewerIsAdmin/);
+  assert.match(
+    route,
+    /buy_price: showAllCost \|\| \(classroom && own\) \? row\.buy_price : 0/
+  );
+  assert.doesNotMatch(route, /buy_price: classroom \? row\.buy_price : 0/);
+});
+
+run("the four open write endpoints survive a serverless restart", () => {
+  // Audit pass 2: an in-memory counter resets with the lambda, so a caller
+  // who reconnects gets a fresh budget every time. These four take
+  // unauthenticated or cheap-to-repeat writes, so they use the Postgres
+  // counter instead.
+  for (const rel of [
+    "src/app/api/feedback/route.ts",
+    "src/app/api/internal/telemetry/route.ts",
+    "src/app/api/internal/log-error/route.ts",
+    "src/app/api/communities/join/route.ts",
+  ]) {
+    const src = readFileSync(join(process.cwd(), rel), "utf8");
+    assert.match(src, /takeDurableRateLimit/, `${rel} must use the durable limiter`);
+    assert.doesNotMatch(
+      src,
+      /\bcheckRateLimit\(/,
+      `${rel} still calls the in-memory limiter`
+    );
+  }
 });
 
 if (failed > 0) {
