@@ -6558,6 +6558,73 @@ run("a private community's existence does not leak through join-request", () => 
   );
 });
 
+run("a deleted account's email doesn't survive in the hardcoded seed tables", () => {
+  // Pass 9 L2. portfell_household_groups, portfell_account_aliases, and
+  // portfell_seed_claims are migration-seeded, no FK to portfell_profiles.
+  // AGENTS.md guards their *content* (don't invent/edit Martin's family
+  // data), not whether account deletion sweeps a matching email out of
+  // them -- this closes that erasure gap without touching a single row.
+  const mig = readFileSync(
+    join(
+      process.cwd(),
+      "supabase/migrations/20260819170000_purge_email_seed_tables_on_deletion.sql"
+    ),
+    "utf8"
+  );
+  assert.match(mig, /create or replace function public\.portfell_purge_user_data/);
+  assert.match(
+    mig,
+    /delete from public\.portfell_household_groups\s+where lower\(email\) = lower\(em\)/
+  );
+  assert.match(
+    mig,
+    /delete from public\.portfell_account_aliases\s+where lower\(alias_email\) = lower\(em\)\s+or lower\(primary_email\) = lower\(em\)/
+  );
+  assert.match(
+    mig,
+    /delete from public\.portfell_seed_claims\s+where lower\(email\) = lower\(em\)/
+  );
+  // Must stay inside the `em is not null` guard so it never fires with a
+  // null/empty email (which would otherwise match nothing, harmlessly --
+  // but the guard is what makes that explicit rather than accidental).
+  assert.match(
+    mig,
+    /if em is not null and length\(trim\(em\)\) > 0 then[\s\S]{0,900}portfell_seed_claims/
+  );
+});
+
+run("a community keeps at least one admin, and a student can't self-unpin a classroom sheet, even over direct REST", () => {
+  // Pass 8 M2 + L1, folded into one migration since both were the same
+  // shape of "app already enforces this, the database doesn't yet."
+  const mig = readFileSync(
+    join(
+      process.cwd(),
+      "supabase/migrations/20260819160000_community_last_admin_and_classroom_unpin.sql"
+    ),
+    "utf8"
+  );
+  assert.match(
+    mig,
+    /create or replace function public\.portfell_community_members_guard_last_admin/
+  );
+  assert.match(mig, /raise exception 'Keep at least one admin'/);
+  assert.match(
+    mig,
+    /before update or delete on public\.portfell_community_members/
+  );
+  // Must not block a community's own cascade delete of its last admin row.
+  assert.match(
+    mig,
+    /community_still_exists/,
+    "must check the parent community row before raising, so deleting the community itself still works"
+  );
+  assert.match(
+    mig,
+    /create policy portfell_community_portfolios_owner_delete/
+  );
+  assert.match(mig, /not exists[\s\S]{0,220}kind = 'classroom'/);
+});
+
 run("a classmate's cost basis is not the whole class's business", () => {
   // Audit pass 8 M1: the gate was `classroom` alone, so every student saw
   // every classmate's buy price on the class book. The teacher needs it

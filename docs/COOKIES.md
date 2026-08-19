@@ -34,12 +34,15 @@ are functional app state rather than tracking.
 | `sb-uzrnybyggznpvgxgrvgl-auth-token` (may be split into `…-auth-token.0`, `…-auth-token.1` when the JWT is large) | `@supabase/ssr`, first-party, on our domain | The signed-in session. Without it you are signed out on every request. | Tracks the Supabase session/refresh-token lifetime; cleared on sign-out and by account deletion (`purgeClientSession()`). | **Strictly necessary** — exempt. No banner required. |
 | Google sign-in cookies | Google, on `google.com` / `accounts.google.com` | Google's own sign-in. | Google's, not ours. | Set by Google under Google's policies during the OAuth redirect. We never read them and they are not on our domain. |
 
-Not verifiable in the sandbox used for this pass: the Supabase cookie
-only appears once a real session exists, and there is no Supabase project
-reachable from it. The name above is the `@supabase/ssr` convention
-(`sb-<project-ref>-auth-token`) applied to this app's project ref from
-`.env.example`. **Re-verify against a real signed-in session** before
-publishing it anywhere externally.
+The name above is the `@supabase/ssr` convention
+(`sb-<project-ref>-auth-token`) applied to this app's project ref, derived
+from the naming convention rather than independently observed in a
+sandbox with no reachable Supabase project. Not a to-do: this file is an
+internal reference, not the published Privacy Policy, and Martin has
+confirmed a per-cookie table isn't being published — the policy stays at
+category level (§6), which is what regulators expect for an app this
+size. If that ever changes, re-derive this from a real signed-in session
+rather than trust the name as-is.
 
 ## Vercel Analytics and Speed Insights
 

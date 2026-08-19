@@ -187,15 +187,20 @@ export default function PrivacyPage() {
 
         <Section title="7. Data retention">
           We keep your data while your account is active. Nightly snapshots
-          of book data are kept in our database for backup and recovery.
-          Only the people who run the app can read a restore. That is a
-          short list of operator accounts, not every signed-in user. We do
-          not currently keep a separate copy outside our main database
-          provider &mdash; if we add one in the future, we will describe it
-          here, including how long it is kept, before it starts. You can
-          permanently delete your profile and solely-owned sheets yourself
-          at any time (see below). This removes them from active use
-          immediately.
+          of book data are kept for backup and recovery. Only the people who
+          run the app can read a restore. That is a short list of operator
+          accounts, not every signed-in user. We also keep a separate,
+          encrypted backup copy outside our main database, used only to
+          rebuild the app if our database provider had a serious failure.
+          That copy is one combined file covering every account, not a file
+          per person, so it can&apos;t be edited to remove a single account.
+          Instead, each day&apos;s copy is automatically deleted 30 days
+          after it was made. Deleting your account removes your data from
+          active use immediately, but it can remain in that day&apos;s
+          backup copy until that copy&apos;s own 30-day expiry, the same as
+          everyone else&apos;s in it. You can permanently delete your profile
+          and solely-owned sheets yourself at any time (see below). This
+          removes them from active use immediately.
         </Section>
 
         <Section title="8. Your rights (export &amp; deletion)">
@@ -209,7 +214,8 @@ export default function PrivacyPage() {
           co-owner stay with them). If for any reason the sign-in credential
           can&apos;t be removed at the same time, your {PRODUCT_NAME} data is
           still fully wiped from active use immediately (see &ldquo;Data
-          retention&rdquo; above). You&apos;d just want to also revoke{" "}
+          retention&rdquo; above; it can take up to 30 days to age out of
+          the separate backup copy). You&apos;d just want to also revoke{" "}
           {PRODUCT_NAME}&apos;s access from your Google account if you want that
           connection severed too. EU/EEA residents have rights under GDPR
           (access, rectification, erasure, portability, objection). The

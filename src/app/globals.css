@@ -350,6 +350,24 @@ html[data-keyboard="open"] .keyboard-chrome:focus-within {
   }
 }
 
+/* Pass 5 M1: icon-sm (size-7, 28px) and icon-xs (size-6, 24px) are below
+ * the ~44pt HIG / 48dp Material minimums, and that is every icon button
+ * in the app by default (src/components/ui/button.tsx), not just the
+ * high-traffic surfaces that got `.touch-target` by hand. Rather than
+ * bump the visual size for a mouse -- which would cost desktop
+ * information density for a problem mice don't have -- this grows the
+ * hit area the same way `.touch-target` does, gated on the same pointer
+ * query, automatically for every Button using these sizes via the
+ * data-size attribute Button already emits. No call site needs to opt
+ * in, and no desktop pixel moves. */
+@media (max-width: 1023px), (pointer: coarse) {
+  [data-slot="button"][data-size="icon-sm"],
+  [data-slot="button"][data-size="icon-xs"] {
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+  }
+}
+
 /*
  * Destructive row action (the per-holding delete). On a real pointer it
  * stays out of the way until you hover the row or tab to it, so a table of
