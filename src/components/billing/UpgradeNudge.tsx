@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/format";
 import { isActiveSubscription } from "@/lib/billing-status";
+import { plainError } from "@/lib/plain-error";
 import { Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
@@ -62,7 +63,7 @@ export function UpgradeNudge({
       const res = await fetch("/api/billing/checkout", { method: "POST" });
       const data = (await res.json()) as { url?: string; error?: string };
       if (!res.ok || !data.url) {
-        toast.error(data.error ?? "Couldn't open billing right now.");
+        toast.error(plainError(data.error, "Couldn't open billing right now."));
         return;
       }
       window.location.href = data.url;

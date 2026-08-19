@@ -67,9 +67,22 @@ async function handlePOST(req: Request) {
 
     case "customer.subscription.updated":
     case "customer.subscription.deleted": {
-      const subscription = event.data.object as Stripe.Subscription;
+      // Stripe does not guarantee webhook delivery order (retries and
+      // network delays can land an older event after a newer one). Trusting
+      // the subscription snapshot embedded in *this* event risks writing
+      // stale state over a fresher update that already landed -- e.g. an
+      // in-flight "updated: active" arriving after "deleted: canceled" would
+      // silently resurrect a canceled subscription. Re-fetch by id instead,
+      // same as the checkout.session.completed handler above: Stripe's API
+      // always returns the current object, so every event for a given
+      // subscription converges on the same (correct) write regardless of
+      // delivery order.
+      const eventSubscription = event.data.object as Stripe.Subscription;
       const customerId =
-        typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
+        typeof eventSubscription.customer === "string"
+          ? eventSubscription.customer
+          : eventSubscription.customer.id;
+      const subscription = await stripe.subscriptions.retrieve(eventSubscription.id);
       await syncSubscription(customerId, subscription);
       break;
     }
