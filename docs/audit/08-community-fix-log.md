@@ -33,11 +33,12 @@ without fresh re-verification evidence attached.
 
 ## Deferred summary
 
-Two items left unfixed, none silently. **M1** was the one that needed
-Martin's call and has since been made and implemented (teacher plus
-yourself). **M2** and **L1** are database-side hardening for
-self-inflicted cases (an admin demoting themselves; a student hiding
-their own class sheet), neither of which exposes another person's data.
+Nothing left deferred. **M1** was the one that needed Martin's call and
+has since been made and implemented (teacher plus yourself). **M2** and
+**L1** — database-side hardening for self-inflicted cases (an admin
+demoting themselves; a student hiding their own class sheet) — are
+resolved in `supabase/migrations/20260819160000_community_last_admin_and_classroom_unpin.sql`,
+which still needs its one manual apply step before it's live.
 
 **N1** was fixed rather than deferred once Martin opted into it — with
 that migration written, "never share a real book into a class" now holds

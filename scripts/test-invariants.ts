@@ -6558,6 +6558,38 @@ run("a private community's existence does not leak through join-request", () => 
   );
 });
 
+run("a community keeps at least one admin, and a student can't self-unpin a classroom sheet, even over direct REST", () => {
+  // Pass 8 M2 + L1, folded into one migration since both were the same
+  // shape of "app already enforces this, the database doesn't yet."
+  const mig = readFileSync(
+    join(
+      process.cwd(),
+      "supabase/migrations/20260819160000_community_last_admin_and_classroom_unpin.sql"
+    ),
+    "utf8"
+  );
+  assert.match(
+    mig,
+    /create or replace function public\.portfell_community_members_guard_last_admin/
+  );
+  assert.match(mig, /raise exception 'Keep at least one admin'/);
+  assert.match(
+    mig,
+    /before update or delete on public\.portfell_community_members/
+  );
+  // Must not block a community's own cascade delete of its last admin row.
+  assert.match(
+    mig,
+    /community_still_exists/,
+    "must check the parent community row before raising, so deleting the community itself still works"
+  );
+  assert.match(
+    mig,
+    /create policy portfell_community_portfolios_owner_delete/
+  );
+  assert.match(mig, /not exists[\s\S]{0,220}kind = 'classroom'/);
+});
+
 run("a classmate's cost basis is not the whole class's business", () => {
   // Audit pass 8 M1: the gate was `classroom` alone, so every student saw
   // every classmate's buy price on the class book. The teacher needs it

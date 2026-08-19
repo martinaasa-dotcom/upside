@@ -119,3 +119,10 @@ Use Stripe test mode (`sk_test_...` key, test card `4242 4242 4242 4242`)
 end to end: checkout -> webhook fires -> `subscription_status` becomes
 `active` on the profile -> portal session opens -> cancel -> status becomes
 `canceled`. Then flip to live keys.
+
+**Status (2026-08-19):** live keys are set, the Estonia Domestic + Union
+OSS registrations are added in Stripe Tax (Checkout shows "Tax enabled"),
+and Martin has confirmed a real end-to-end payment has gone through on
+live keys. Not independently re-verified in this session -- no way to
+reach the production domain from this sandbox -- but nothing downstream
+(reconciliation cron, RLS, webhook) is waiting on anything further.
