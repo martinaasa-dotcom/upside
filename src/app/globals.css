@@ -344,6 +344,29 @@ html[data-keyboard="open"] .keyboard-chrome:focus-within {
   }
 }
 
+/*
+ * Destructive row action (the per-holding delete). On a real pointer it
+ * stays out of the way until you hover the row or tab to it, so a table of
+ * numbers reads as numbers. On touch there is no hover to reveal it with,
+ * so it stays visible — an iPad at the `lg:` breakpoint has no mouse.
+ * Space for it is reserved by the cell, so nothing shifts on reveal.
+ */
+.row-action {
+  opacity: 1;
+  transition: opacity 150ms ease, color 150ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .row-action {
+    opacity: 0;
+  }
+  .group:hover .row-action,
+  .row-action:hover,
+  .row-action:focus-visible {
+    opacity: 1;
+  }
+}
+
 /* Wide tables scroll with finger momentum, not the whole page. */
 .overflow-x-auto {
   -webkit-overflow-scrolling: touch;

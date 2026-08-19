@@ -31,6 +31,14 @@ import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Sparkline } from "./Sparkline";
 import { FluidRow, FluidTable, cellBase, cellTicker, tableCols } from "@/components/FluidTable";
 
+/**
+ * Space held open at the right edge of the "Today $" column for the row's
+ * delete button, which is revealed on hover. Reserved on the header, every
+ * row, and the footer alike so the column of numbers stays aligned and
+ * nothing shifts when the button fades in.
+ */
+const sellGutter = "pr-6";
+
 export type HoldingPatch = {
   id: string;
   shares?: number;
@@ -641,7 +649,13 @@ export const PortfolioTable = memo(function PortfolioTable({
           <FluidTable template={template}>
             <FluidRow className="border-border text-sm font-medium text-muted-foreground">
               {COLUMNS.map((col, i) => (
-                <div key={col.label} className={i === 0 ? tickerCell : cellBase}>
+                <div
+                  key={col.label}
+                  className={cn(
+                    i === 0 ? tickerCell : cellBase,
+                    canSell && i === COLUMNS.length - 1 && sellGutter
+                  )}
+                >
                   {col.key ? (
                     <button
                       type="button"
@@ -763,6 +777,7 @@ export const PortfolioTable = memo(function PortfolioTable({
                   className={cn(
                     cellBase,
                     "relative tabular-nums font-medium",
+                    canSell && sellGutter,
                     rowToday(h).pct != null
                       ? signedTone(rowToday(h).dollar)
                       : "text-muted-foreground"
@@ -775,7 +790,7 @@ export const PortfolioTable = memo(function PortfolioTable({
                     <button
                       type="button"
                       onClick={() => onDelete(h.id)}
-                      className="absolute right-0.5 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground opacity-60 transition hover:text-loss hover:opacity-100 focus-visible:opacity-100"
+                      className="row-action absolute right-0 top-1/2 grid size-6 -translate-y-1/2 place-items-center rounded-md text-muted-foreground hover:bg-loss/10 hover:text-loss focus-visible:text-loss focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-loss/40"
                       aria-label={`Delete ${h.ticker}`}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -832,6 +847,7 @@ export const PortfolioTable = memo(function PortfolioTable({
                 className={cn(
                   cellBase,
                   "tabular-nums font-medium",
+                  canSell && sellGutter,
                   today.pct != null ? signedTone(today.dollar) : "text-muted-foreground"
                 )}
               >
