@@ -6235,7 +6235,12 @@ run("legal pages name the operator and match the product", () => {
     assert.match(src, /LEGAL_VAT_ID/);
     assert.match(src, /PRODUCT_CONTACT_EMAIL/);
     assert.match(src, /Under 13 is never allowed/);
-    assert.match(src, /13 or older/);
+    // Two ages now, and both documents must state both: 16 for someone
+    // signing up on their own (the strictest EU Article 8 threshold, so no
+    // per-country analysis is needed), 13 inside a teacher-run Classroom
+    // (school context, pretend money, no payment).
+    assert.match(src, /16 or older/);
+    assert.match(src, /the age is 13/);
     assert.match(src, /PRODUCT_SUPPORT_EMAIL/);
     assert.match(src, /Classroom/);
     assert.match(src, /paper/);
@@ -6246,6 +6251,13 @@ run("legal pages name the operator and match the product", () => {
     assert.doesNotMatch(src, /That person is responsible/);
     assert.doesNotMatch(src, /below the age required to hold a brokerage/);
     assert.doesNotMatch(src, /\u2014/);
+  }
+
+  {
+    // The UI must enforce exactly the ages the documents state.
+    const gate = readFileSync("src/components/SignInGate.tsx", "utf8");
+    assert.match(gate, /invite\?\.kind === "classroom" \? 13 : 16/);
+    assert.match(gate, /I am \{minAge\} or older/);
   }
 
   assert.match(terms, /governed by the laws of \{LEGAL_COUNTRY\}/);

@@ -49,6 +49,23 @@ export function SignInGate({ children }: Props) {
   const loadingMessage = useLoadingMessage();
   const [invite, setInvite] = useState<InviteLanding | null>(null);
   const [ageOk, setAgeOk] = useState(false);
+  /**
+   * GDPR Article 8 lets each member state set the digital-consent age
+   * anywhere from 13 to 16, and this app is EU-facing. Rather than pick one
+   * number for everyone or try to geolocate an age nobody can verify, the
+   * gate follows how the account is being created:
+   *
+   * - A classroom invite is a school context: paper money, no payment, and
+   *   a teacher between us and the child. 13 keeps the high-school product
+   *   this was built for working.
+   * - Anything else is self-serve signup with real portfolio data and a
+   *   paid tier. 16 is the strictest member-state threshold, so it retires
+   *   the per-country question entirely and costs almost no real users.
+   *
+   * It starts at 16 and only relaxes once a classroom invite has actually
+   * resolved, so the strict default is what an unknown visitor sees.
+   */
+  const minAge = invite?.kind === "classroom" ? 13 : 16;
   const needsAuth = supabaseIsConfigured();
 
   useEffect(() => {
@@ -174,9 +191,9 @@ export function SignInGate({ children }: Props) {
                 <Checkbox
                   checked={ageOk}
                   onCheckedChange={(v) => setAgeOk(v === true)}
-                  aria-label="I am 13 or older"
+                  aria-label={`I am ${minAge} or older`}
                 />
-                I am 13 or older.
+                I am {minAge} or older.
               </label>
 
               <Button

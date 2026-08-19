@@ -222,8 +222,13 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="10. Children and Classroom">
-          Under 13 is never allowed. You confirm you are 13 or older when you
-          sign in. {PRODUCT_NAME} is not a brokerage and
+          Under 13 is never allowed. If you sign up on your own, you confirm
+          you are 16 or older when you sign in. If a teacher invited you into
+          a Classroom, the age is 13: a class is run by a school, uses
+          pretend money only, and never touches a real portfolio. We use 16
+          for everyone else because some EU countries set that as the age
+          you can agree to this kind of service by yourself.{" "}
+          {PRODUCT_NAME} is not a brokerage and
           does not open a real trading account. Classroom is a private paper
           class: a teacher invites students, each student gets homework cash
           and an empty sheet, and real books cannot be shared into the class.
