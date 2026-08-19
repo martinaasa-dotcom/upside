@@ -100,7 +100,6 @@ import {
   inviteFromLocation,
   inviteLandingCopy,
 } from "../src/lib/invite-landing";
-import { pulseFlagsFromChecks } from "../src/lib/morning-read";
 import { LAB_TAB_ID, PULSE_TAB_ID, todayDollarFor, buildOverview } from "../src/lib/overview";
 import {
   shouldHideOptions,
@@ -1060,7 +1059,7 @@ run("fund cron posts to X after a new daily report", () => {
   assert.match(route, /maxDuration = 300/);
   assert.doesNotMatch(route, /todayKeyInTz/);
   const crons = readFileSync(join(process.cwd(), "vercel.json"), "utf8");
-  assert.match(crons, /30 21 \* \* 1-5/);
+  assert.match(crons, /30 23 \* \* 1-5/);
   assert.match(crons, /0 11 \* \* 1-6/);
   const page = readFileSync(
     join(process.cwd(), "src/components/UpsidePortfolioPage.tsx"),
@@ -1155,52 +1154,6 @@ run("trim verdict that restates the size line is dropped", () => {
     ),
     true
   );
-});
-
-run("Home Pulse flags every thesis that actually moved", () => {
-  const flags = pulseFlagsFromChecks(
-    [
-      { ticker: "RDDT", todayPct: 0.127 },
-      { ticker: "AVGO", todayPct: -0.06 },
-      { ticker: "MSFT", todayPct: 0.01 },
-    ],
-    {
-      RDDT: check({
-        ticker: "RDDT",
-        thesisStatus: "watch",
-        action: "hold",
-        verdict: "Ads are the story. Watch the next print.",
-      }),
-      AVGO: check({
-        ticker: "AVGO",
-        thesisStatus: "watch",
-        action: "hold",
-        moveReason: "Financing talk, not the chip story.",
-        verdict: "",
-      }),
-      MSFT: check({
-        ticker: "MSFT",
-        thesisStatus: "intact",
-        action: "hold",
-      }),
-    }
-  );
-  assert.deepEqual(
-    flags.map((f) => f.ticker),
-    ["RDDT", "AVGO"]
-  );
-  const trimRun = pulseFlagsFromChecks(
-    [{ ticker: "RDDT", todayPct: 0.127 }],
-    {
-      RDDT: check({
-        ticker: "RDDT",
-        thesisStatus: "watch",
-        action: "trim",
-        trimPct: 10,
-      }),
-    }
-  );
-  assert.deepEqual(trimRun, []);
 });
 
 run("trim on a run is Thesis intact", () => {

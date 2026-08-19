@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/cron/margus-fund",
-      "schedule": "30 21 * * 1-5"
+      "schedule": "30 23 * * 1-5"
     },
     {
       "path": "/api/cron/margus-fund",
