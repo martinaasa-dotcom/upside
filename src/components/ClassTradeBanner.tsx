@@ -1,18 +1,19 @@
 "use client";
 
 import type { ClassroomTrade } from "@/lib/classroom";
+import { formatDateTime } from "@/lib/timezone";
 
 function untilLabel(iso: string | null): string | null {
   if (!iso) return null;
-  const d = new Date(iso);
-  if (!Number.isFinite(d.getTime())) return null;
-  return d.toLocaleString(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  return (
+    formatDateTime(iso, {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }) || null
+  );
 }
 
 export function ClassTradeBanner({

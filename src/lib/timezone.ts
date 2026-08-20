@@ -65,3 +65,34 @@ export function formatRelativeTime(
   if (days < 7) return `${days}d ago`;
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
+
+/**
+ * Clock readings are 24-hour everywhere in the app: 08:30 and 20:30, never
+ * 8:30 AM / 8:30 PM. Reading a time should not depend on which country the
+ * browser thinks it is in, and a shared sheet should read the same for
+ * everyone looking at it.
+ *
+ * Only the hour is pinned — the reader's locale still picks date order and
+ * month names. `hourCycle: "h23"` rather than `hour12: false`, because the
+ * latter renders midnight as "24:00" in en-US.
+ */
+export type ClockFormatOptions = Omit<
+  Intl.DateTimeFormatOptions,
+  "hour12" | "hourCycle"
+>;
+
+const DEFAULT_CLOCK_OPTIONS: ClockFormatOptions = {
+  dateStyle: "medium",
+  timeStyle: "short",
+};
+
+/** Date + 24-hour time. Returns "" for anything that isn't a real instant. */
+export function formatDateTime(
+  input: Date | string | number,
+  options: ClockFormatOptions = DEFAULT_CLOCK_OPTIONS,
+  locale?: Intl.LocalesArgument
+): string {
+  const d = input instanceof Date ? input : new Date(input);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleString(locale, { ...options, hourCycle: "h23" });
+}

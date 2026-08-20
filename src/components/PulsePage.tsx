@@ -42,6 +42,7 @@ import {
   SUGGEST_MENU,
 } from "@/components/ui/Panel";
 import type { ConvictionMap } from "@/lib/conviction";
+import { formatDateTime } from "@/lib/timezone";
 import type { FearGreedSnapshot } from "@/lib/market/fear-greed";
 import { humanizeMargusText, pulseSuggestion } from "@/lib/ai/humanize-copy";
 import { isAbortError } from "@/lib/abort";
@@ -1313,10 +1314,7 @@ export const PulsePage = memo(function PulsePage({
       {lastGeneratedAt && (
         <p className="text-center text-sm text-muted-foreground">
           Last checked{" "}
-          {new Date(lastGeneratedAt).toLocaleString(undefined, {
-            dateStyle: "medium",
-            timeStyle: "short",
-          })}
+          {formatDateTime(lastGeneratedAt)}
         </p>
       )}
     </div>
