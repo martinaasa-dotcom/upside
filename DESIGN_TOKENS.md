@@ -91,27 +91,74 @@ added here first, then used.
 
 | Token | Value | Token | Value |
 |---|---|---|---|
-| `--cat-1` | `oklch(0.72 0.1 90)` | `--cat-6` | `oklch(0.72 0.1 15)` |
-| `--cat-2` | `oklch(0.72 0.1 200)` | `--cat-7` | `oklch(0.72 0.1 120)` |
-| `--cat-3` | `oklch(0.72 0.1 40)` | `--cat-8` | `oklch(0.72 0.1 225)` |
-| `--cat-4` | `oklch(0.72 0.1 150)` | `--cat-9` | `oklch(0.72 0.1 65)` |
-| `--cat-5` | `oklch(0.72 0.1 250)` | `--cat-10` | `oklch(0.72 0.1 175)` |
+| `--cat-1` | `oklch(0.78 0.1 195)` | `--cat-6` | `oklch(0.62 0.11 195)` |
+| `--cat-2` | `oklch(0.62 0.11 230)` | `--cat-7` | `oklch(0.78 0.1 340)` |
+| `--cat-3` | `oklch(0.78 0.1 125)` | `--cat-8` | `oklch(0.62 0.1 125)` |
+| `--cat-4` | `oklch(0.62 0.11 340)` | `--cat-9` | `oklch(0.78 0.09 230)` |
+| `--cat-5` | `oklch(0.78 0.09 260)` | `--cat-10` | `oklch(0.62 0.11 260)` |
 | `--cat-neutral` | `oklch(0.62 0 0)` | | |
 
 Rules for this ramp:
 
-1. **Same lightness, same chroma, hue only.** Every step is `0.72 / 0.10`,
-   close to `--primary`'s own restraint (`0.8 / 0.09`). That is what makes
-   it read as one tonal family seen from different angles instead of a
-   rainbow — and it is why you must not "just add" a step at a different
-   lightness or chroma.
-2. **Hues stay out of 270-330.** Violet/fuchsia/magenta are banned
-   app-wide. The table this replaced (`#a78bfa`, `#e879f9`, `#818cf8`,
-   `#f59e0b`, hardcoded hex, no tokens) is exactly what had put them back
-   on screen, as the widest strip of colour in the product.
-3. **Chart categories only.** Never chrome, never status, never anything a
-   person reads as good/bad — `--gain`/`--loss`/`--warning` own that, and
-   a category borrowing one of them makes both meaningless.
+1. **Five hues at two lightness steps, not ten hues at one.** Low chroma
+   throughout (0.09-0.11, near `--primary`'s own 0.09) so it reads as one
+   restrained family. Ten distinguishable *hues* is not actually available
+   here: the banned violet arc (270-330) plus the four hues spoken for by
+   semantic colours (loss 16, warning 45, primary 90, gain 162) leave well
+   under 180 degrees of usable wheel, which would space ten hues about 14
+   degrees apart — indistinguishable at this chroma. Splitting the
+   lightness gets ten separable steps honestly.
+2. **Every hue clears all four semantic hues by at least 18 degrees, and
+   none falls in 270-330.** Keep both properties if you change a value.
+   This was learned the hard way: an earlier all-one-lightness version put
+   crypto on hue 90 and data-center power on hue 40, so on the Circle
+   bestiary the Dragon card came out the same colour as the Fox card
+   (`--primary`) and the Rhino card the same colour as the Shark card
+   (`--warning`). The table before *that* (`#a78bfa`, `#e879f9`,
+   `#818cf8`, `#f59e0b`, hardcoded hex, no tokens) is what had put the
+   banned hues on screen in the first place, as the widest strip of colour
+   in the product.
+3. **Chart categories and archetype chrome only.** Never status, never
+   anything a person reads as good/bad — `--gain`/`--loss`/`--warning` own
+   that, and a category borrowing one of them makes both meaningless.
+
+### Who consumes this ramp
+
+Two tables, both in `src/lib/portfolio-personality.ts`, and they agree by
+construction:
+
+- **`THEME_COLOR`** — the Lab allocation bar and its legend, one step per
+  `ForecastTheme`.
+- **`ANIMAL_CARD_TONE`** — the Circle bestiary cards, the pill next to a
+  member's name, the tile behind the emoji, and the milestone bar.
+
+`ANIMAL_CARD_TONE` used to be 21 hand-picked Tailwind hues — one bespoke
+palette per archetype, including all four banned ones plus a
+`bg-{hue}-500/10` tinted card wash apiece. Twenty-one distinguishable hues
+cannot be picked tastefully; the attempt is what produced the rainbow. It
+is now 13 shared tones, because the archetypes are not 21 unrelated
+things:
+
+- **Ten of them are the theme animals.** Beaver *is* AI computer builders,
+  Rhino *is* data-center power, Dragon *is* crypto. They point at the same
+  `--cat-*` step their theme uses in `THEME_COLOR`, so a Beaver card and
+  the matching slice of the allocation bar are the same colour without
+  anyone having to keep them in sync by hand.
+- **The other eleven describe temperament**, which is a real three-step
+  axis rather than eleven arbitrary points: steady (`--cat-neutral`),
+  balanced (`--primary`), and runs hot (`--warning` — a jumpy,
+  concentrated book is a caution, which is exactly what that token means).
+
+Colour there now carries information. Identity was never the job: every
+archetype already ships an emoji and a name, which are far stronger cues
+than hue.
+
+**One constraint if you touch those class strings:** they are literal
+Tailwind arbitrary values (`bg-[var(--cat-2)]`,
+`bg-[color-mix(in_oklch,var(--cat-2),transparent_80%)]`). The JIT scans
+source for literal strings, so building them from a template literal makes
+the classes silently stop existing. Verify against the compiled bundle,
+not the source.
 
 ## Pass 2: violet → subtle warm yellow, plus glass surfaces
 
