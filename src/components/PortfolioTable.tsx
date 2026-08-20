@@ -457,7 +457,7 @@ export const PortfolioTable = memo(function PortfolioTable({
               type="button"
               onClick={canCash ? onEditCash : undefined}
               disabled={!canCash}
-              className="inline-flex items-center gap-2 rounded-md px-2 py-1 text-left transition hover:bg-accent disabled:cursor-not-allowed disabled:hover:bg-transparent"
+              className="touch-target inline-flex items-center gap-2 rounded-md px-2 py-1 text-left transition hover:bg-accent disabled:cursor-not-allowed disabled:hover:bg-transparent"
               title={canCash ? "Edit cash (stored in USD)" : tradeLock?.message}
             >
               <span className="text-sm font-medium text-muted-foreground">

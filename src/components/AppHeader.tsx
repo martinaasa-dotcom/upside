@@ -119,7 +119,15 @@ export function AppHeader({
           </div>
         </div>
       </header>
-      <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-30 bg-background md:fixed md:top-14 md:right-0 md:left-0 md:z-40">
+      {/*
+       * Same translucent glass as the header above it, not `bg-background`.
+       * An opaque strip here ended the page's ambient glow at a razor edge
+       * — measured as a 0 -> 45 luminance step across ~2 CSS px right under
+       * the chrome — which read as the glow being "clipped by the header."
+       * The glow itself is `position: fixed` and always did sit behind the
+       * chrome; it was this slab painting over it.
+       */}
+      <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-30 bg-background/75 backdrop-blur-xl md:fixed md:top-14 md:right-0 md:left-0 md:z-40">
         <AppStatusStrip {...status} />
       </div>
       <div className={PAGE_CHROME_SPACER_CLASS} aria-hidden />

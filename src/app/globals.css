@@ -35,7 +35,7 @@
   --ring: oklch(0.8 0.09 90);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.63 0.22 45);
-  --chart-5: oklch(0.645 0.246 16.439);
+  --chart-5: oklch(0.645 0.21 16.439);
   --radius: 0.625rem;
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
@@ -48,7 +48,48 @@
   /* True orange, not gold/amber — see DESIGN_TOKENS.md "Warning/caution". */
   --warning: oklch(0.63 0.22 45);
   --gain: oklch(0.696 0.17 162.48);
-  --loss: oklch(0.645 0.246 16.439);
+  /*
+   * Chroma 0.21, not 0.246. At 0.246 this hue/lightness is outside sRGB,
+   * so browsers clipped it to rgb(255,32,86) — a channel-maxed red, far
+   * louder than `--gain`'s in-gamut rgb(0,188,125). Two colours meant to
+   * carry equal weight were not reading as equals, and the loss side was
+   * the loudest thing on screen (most visibly on the Movers accent bars).
+   * 0.21 resolves to rgb(242,67,95): still unmistakably a loss, no longer
+   * shouting. Verified in-gamut by rasterising to a canvas and checking no
+   * channel pinned to 0 or 255.
+   */
+  --loss: oklch(0.645 0.21 16.439);
+  /*
+   * Categorical data ramp — for encoding *categories in a chart* and
+   * nothing else. See DESIGN_TOKENS.md "Categorical data ramp".
+   *
+   * The Accent Palette is a ceiling for decorative colour, but a bar
+   * showing eleven themes side by side genuinely cannot be encoded in
+   * four colours — so this is the documented exception, and it is
+   * deliberately built to stay quiet rather than to be a second palette.
+   * Every step is the same lightness (0.72) and the same low chroma
+   * (0.10) as each other and close to `--primary`'s own restraint
+   * (0.8 / 0.09); only the hue moves. That reads as one tonal family
+   * seen from different angles, not a rainbow.
+   *
+   * Hues stop short of 270-330 on purpose: violet/fuchsia/magenta are
+   * banned app-wide, and the old hardcoded table (#a78bfa, #e879f9,
+   * #818cf8) is exactly what put them back on screen.
+   *
+   * Never use these for chrome, status, or anything a person reads as
+   * good/bad — gain/loss/warning own that job.
+   */
+  --cat-1: oklch(0.72 0.1 90);
+  --cat-2: oklch(0.72 0.1 200);
+  --cat-3: oklch(0.72 0.1 40);
+  --cat-4: oklch(0.72 0.1 150);
+  --cat-5: oklch(0.72 0.1 250);
+  --cat-6: oklch(0.72 0.1 15);
+  --cat-7: oklch(0.72 0.1 120);
+  --cat-8: oklch(0.72 0.1 225);
+  --cat-9: oklch(0.72 0.1 65);
+  --cat-10: oklch(0.72 0.1 175);
+  --cat-neutral: oklch(0.62 0 0);
   --paper: var(--foreground);
   --ink: var(--background);
   --app: var(--background);
@@ -242,8 +283,19 @@ body {
    */
   .glass {
     background-color: color-mix(in oklch, var(--card), transparent 48%);
-    backdrop-filter: blur(28px) saturate(1.6);
+    /*
+     * Standard property LAST, prefixed first. Written the other way round,
+     * the CSS transform collapsed the pair and emitted only
+     * `-webkit-backdrop-filter` — and Chromium (141, and Blink generally)
+     * does not honour that alias, so `backdrop-filter` computed to `none`
+     * and every glass surface in the app rendered as a flat translucent
+     * tint with no blur on desktop Chrome, Edge, and Android Chrome. Only
+     * Safari, which does read the prefixed form, ever showed the material.
+     * Keep this order, and verify against the *compiled* bundle rather
+     * than this file — the bug was invisible in source.
+     */
     -webkit-backdrop-filter: blur(28px) saturate(1.6);
+    backdrop-filter: blur(28px) saturate(1.6);
     box-shadow:
       inset 0 0 0 1px var(--border),
       0 12px 32px -16px color-mix(in oklch, black, transparent 15%);
@@ -256,8 +308,9 @@ body {
   }
   .glass-well {
     background-color: color-mix(in oklch, var(--muted), transparent 50%);
-    backdrop-filter: blur(16px) saturate(1.4);
+    /* Prefixed first, standard last — see the note on `.glass` above. */
     -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    backdrop-filter: blur(16px) saturate(1.4);
     box-shadow: inset 0 0 0 1px
       color-mix(in oklch, var(--border), transparent 35%);
   }
@@ -364,6 +417,29 @@ html[data-keyboard="open"] .keyboard-chrome:focus-within {
   [data-slot="button"][data-size="icon-sm"],
   [data-slot="button"][data-size="icon-xs"] {
     min-height: 2.75rem;
+    min-width: 2.75rem;
+  }
+}
+
+/* Round 2, Pass 1 F-High-2: the rule above only ever covered the two
+ * icon sizes, so it closed roughly half the problem and the fix was
+ * logged as done. Every *text* button was still short of both platform
+ * minimums on a phone — `default` and `icon` are h-8/size-8 (32px), `sm`
+ * is h-7 (28px), `xs` is h-6 (24px), `lg`/`icon-lg` are h-9 (36px), all
+ * under iOS HIG's 44pt and Material's 48dp. Re-measured on a Pixel 7 and
+ * an iPhone 14 Pro: "Import CSV" 117x32, "Ask Margus" 120x32, "Add
+ * holding manually" 183x32, "Cash $0.00" 96x28.
+ *
+ * Same mechanism, same pointer gate, so no desktop pixel moves: a mouse
+ * keeps the dense 32px control, and only a finger gets the 44px one.
+ * Height rather than a pseudo-element on purpose — an overlaid hit area
+ * this much taller than its button would reach into whatever sits above
+ * and below it and start stealing taps from its neighbours. */
+@media (max-width: 1023px), (pointer: coarse) {
+  [data-slot="button"] {
+    min-height: 2.75rem;
+  }
+  [data-slot="button"][data-size^="icon"] {
     min-width: 2.75rem;
   }
 }

@@ -15,7 +15,17 @@ const Toaster = ({ ...props }: ToasterProps) => {
       theme="dark"
       position="bottom-right"
       className="toaster group keyboard-chrome"
+      /*
+       * Both offsets, not just `offset`. Sonner swaps to `mobileOffset`
+       * below its 600px breakpoint and ignores `offset` entirely there, so
+       * on a phone the toaster fell back to sonner's own 16px and every
+       * toast landed on top of the bottom tab bar — measured on a Pixel 7:
+       * toast at y=770 over a nav starting at y=774. `--dock-pad` carries
+       * the dock's real measured height (useDockPad), so this clears
+       * whatever the dock currently is rather than guessing in rem.
+       */
       offset="max(1.25rem, calc(var(--dock-pad, 1.25rem) + 0.75rem))"
+      mobileOffset="max(1.25rem, calc(var(--dock-pad, 1.25rem) + 0.75rem))"
       icons={{
         success: <CircleCheckIcon />,
         info: <InfoIcon />,

@@ -1,0 +1,8 @@
+[
+  {
+    "t": "Skip to content",
+    "w": 1,
+    "h": 1,
+    "cls": "sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:rounded"
+  }
+]

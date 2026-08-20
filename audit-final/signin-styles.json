@@ -1,0 +1,60 @@
+{
+  "gradientText": [],
+  "glows": [
+    {
+      "cls": "pointer-events-none absolute -inset-2 -z-10 rounded-[2.5rem] bg-gradient-to-br from-primary/12 to-transparent opacity-70 blur-2xl",
+      "bg": "linear-gradient(to right bottom, oklab(0.800001 -0.00000652671 0.0900127 / 0.12) 0%, rgba(0, 0, 0, 0) 100%)",
+      "filter": "blur(40px)",
+      "box": {
+        "w": 347,
+        "h": 617
+      }
+    },
+    {
+      "cls": "pointer-events-none absolute inset-x-0 top-0 -z-10 h-24 bg-gradient-to-b from-white/[0.06] to-transparent",
+      "bg": "linear-gradient(oklab(0.999994 0.0000455678 0.0000200868 / 0.06) 0%, rgba(0, 0, 0, 0) 100%)",
+      "filter": "none",
+      "box": {
+        "w": 322,
+        "h": 102
+      }
+    }
+  ],
+  "buttons": [
+    {
+      "text": "Skip to content",
+      "bg": "rgba(0, 0, 0, 0)",
+      "bgImage": "none",
+      "shadow": "none",
+      "filter": "none"
+    },
+    {
+      "text": "Allow",
+      "bg": "lab(77.1133 2.40737 37.0395)",
+      "bgImage": "none",
+      "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px ",
+      "filter": "none"
+    },
+    {
+      "text": "No thanks",
+      "bg": "oklab(0.999998 -0.00000980496 0.0000234246 / 0.054)",
+      "bgImage": "none",
+      "shadow": "none",
+      "filter": "none"
+    },
+    {
+      "text": "",
+      "bg": "oklab(0.999998 -0.00000980496 0.0000234246 / 0.054)",
+      "bgImage": "none",
+      "shadow": "none",
+      "filter": "none"
+    },
+    {
+      "text": "Continue with Google",
+      "bg": "lab(77.1133 2.40737 37.0395)",
+      "bgImage": "none",
+      "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px ",
+      "filter": "none"
+    }
+  ]
+}
