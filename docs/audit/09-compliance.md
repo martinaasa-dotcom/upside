@@ -188,11 +188,13 @@ product-direction note says the app is heading.
    policy's retention section (Medium #1).
 
 2. **GDPR Article 8 "digital consent age" for EU users vs. the app's
-   global "13 or older" self-attestation.** The sign-in gate
-   (`src/components/SignInGate.tsx`) already requires an explicit "I am
-   13 or older" checkbox before "Continue with Google" is even
-   clickable, applied uniformly including classroom/community invite
-   landings — that part is solid, not a gap. But GDPR Article 8 lets EU
+   age self-attestation.** *(Updated 2026-08-20 — the mechanism this
+   paragraph originally described has since changed twice; see the note
+   at the end of this item.)* The sign-in gate
+   (`src/components/SignInGate.tsx`) states the age requirement in the
+   same sentence as Terms and Privacy, so continuing is the
+   attestation, applied uniformly including classroom/community invite
+   landings. But GDPR Article 8 lets EU
    member states set the age at which a minor can consent to an
    "information society service" anywhere from 13 to 16 (several set it
    at 16), which the current single global 13+ gate doesn't account for.
@@ -297,15 +299,33 @@ product-direction note says the app is heading.
   page-view/performance measurement — exactly the EU-facing posture the
   task brief asked to check for. `src/app/privacy/page.tsx` §6 describes
   this accurately. No gap found.
-- **Age gate exists and is a real UI control, not just policy text.**
-  `src/components/SignInGate.tsx` renders an actual "I am 13 or older"
-  checkbox and disables "Continue with Google" until it's checked
-  (`disabled={busy || !ageOk}`), applied on every entry point that goes
-  through `SignInGate` — including the classroom/community invite landing
-  pages (`src/app/account/join/page.tsx`,
-  `src/app/communities/join/page.tsx`, both wrapped in `<SignInGate>`).
-  The EU Article 8 nuance on top of this is a separate, genuinely open
-  question — see "Needs a decision" #2.
+- **Age is stated at signup, in the consent sentence.** *(Updated
+  2026-08-20.)* This item originally recorded a blocking "I am 13 or
+  older" checkbox that disabled "Continue with Google" until ticked. Two
+  deliberate changes have happened since:
+
+  1. The single global 13 became `minAge` — 13 for a classroom invite
+     (school context, paper money, a teacher in between), 16 otherwise
+     (self-serve signup with real portfolio data and a paid tier). 16 is
+     the strictest member-state threshold, which retires most of the
+     Article 8 per-country question below.
+  2. The separate checkbox was removed by product decision. The age is
+     now asserted in the same sentence as Terms and Privacy — "By
+     continuing you confirm you are {minAge} or older and agree to the
+     Terms and Privacy policy" — which is the ordinary pattern on
+     consumer signup flows. A tick box nobody reads was putting a dead
+     "Continue" button in front of every new person.
+
+  **What this costs, stated plainly:** an affirmative tick is stronger
+  evidence than a passive statement if an attestation is ever
+  challenged, because it is a recorded act rather than an inference from
+  the user having continued. The mitigation is that the attestation is
+  in the same sentence as the Terms link and directly above the only
+  button on the page, so it is at least as prominent as it was. This is
+  a judgment call the product owner has made knowingly; it is not a gap
+  found by audit. If it ever needs hardening, the cheapest route is
+  timestamping acceptance server-side at first sign-in (see Medium #3
+  on terms-acceptance capture) rather than reinstating the checkbox.
 - **Data minimization in logs/telemetry.** `sanitizeContext()`
   (`src/lib/telemetry.ts`) bounds any logged context to scalar values,
   64-character keys, capped array (12) and nested-object (12) sizes —

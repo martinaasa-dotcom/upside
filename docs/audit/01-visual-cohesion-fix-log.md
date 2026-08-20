@@ -17,7 +17,7 @@ Final captures: `audit-final/`. Phase 1 captures: `audit-current/`.
 | 3 | Ambient glow clipped at the header | R2-13 / C2 | Desktop, Android | **Resolved** | 1 | Vertical pixel scan at x=30, re-run on all three targets: chrome band was `rgb(0,0,0)` at cssY 94 stepping to `rgb(45,40,25)` at 98; now reads `rgb(11,10,6)` through the band — the glow carries through instead of terminating | `AppHeader.tsx:122` and `MobileTopBar.tsx:74` were opaque `bg-background`; both now `bg-background/75 backdrop-blur-xl`, matching the desktop header. Mobile gains translucent chrome for the first time. |
 | 3i | same | R2-13 | **iOS** | **Unable to Verify (WebKit Unavailable)** | — | Chromium-emulated scan matches Android, but `backdrop-blur` fidelity is the WebKit question | |
 | 4 | Unexplained green glow | R2-14 | Desktop, iOS, Android | **Resolved** | 2 | Sampled the same four points: `(1330,560)` was `rgb(1,15,9)` (G-dominant), now `rgb(13,11,7)`; `(1380,620)` was `rgb(0,9,5)`, now `rgb(9,8,5)`. Every point is R>G>B, matching the warm top-left reference `rgb(37,34,21)` | Attempt 1 removed the `to-gain/10` stop from the card halo — measured *still green*. Attempt 2 found the real source: a second hand-rolled ambient lobe, `bg-gain/10 blur-[130px]` at `SignInGate.tsx:138`. Not a WebKit-sensitive property, so iOS is verified here. |
-| 5 | Purple/violet/fuchsia/indigo still shipped | R1-3 / C3 | Desktop, iOS, Android | **Partially Resolved** | 1 | `THEME_COLOR` now references `var(--cat-*)`; the only remaining hex in the file is inside the comment naming what was removed. Rendered legend re-measured: teal `rgb(72,183,189)`, slate-blue `rgb(115,169,225)`, sky `rgb(86,178,212)`, gold `rgb(189,162,87)`, coral `rgb(208,151,95)`, neutral `rgb(125,125,125)` — no violet/fuchsia/indigo/cyan. `audit-final/lab-desktop.png` | **`ANIMAL_CARD_TONE` is deliberately left open — see the Deferred section below.** |
+| 5 | Purple/violet/fuchsia/indigo still shipped | R1-3 / C3 | Desktop, iOS, Android | **Resolved** (2026-08-20) | 2 | `THEME_COLOR` now references `var(--cat-*)`; the only remaining hex in the file is inside the comment naming what was removed. Rendered legend re-measured: teal `rgb(72,183,189)`, slate-blue `rgb(115,169,225)`, sky `rgb(86,178,212)`, gold `rgb(189,162,87)`, coral `rgb(208,151,95)`, neutral `rgb(125,125,125)` — no violet/fuchsia/indigo/cyan. `audit-final/lab-desktop.png` | Attempt 2 closed `ANIMAL_CARD_TONE` too — see below. |
 | 6 | Hero headline gradient text | R1-1 / F-High-1 | Desktop, iOS, Android | **Resolved** | 1 | `gradientText` count on the sign-in page was `1`, now `0`; `[]` app-wide | Solid `--foreground`. Measured contrast before the change was 19.26:1 → 14.73:1, i.e. never a legibility failure — recorded honestly in the report rather than overstated. |
 | 7 | Sign-in halo overdone | R2-17 / F-High-3 | Desktop, iOS, Android | **Resolved** | 1 | Same computed-style dump: `blur(64px)` at 395×666px / `opacity-90` → `blur(40px)` at 347×617px / `opacity-70`, and the gradient no longer terminates in `--gain` | Now in line with the signed-in baseline, whose loudest effect is `0 12px 32px -16px`. |
 | 8 | Mobile touch targets under 44pt/48dp | F-High-2 | iOS, Android | **Resolved** | 3 | Re-ran the same measurement on Pixel 7 and iPhone 14 Pro: **8 → 0** real offenders. Only `Skip to content` (1×1, `sr-only`, keyboard-only, expands on focus) remains and is correctly excluded. `audit-final/touch-android.json` | Attempt 1: extended the `[data-slot="button"]` rule from icon-only to every size (8→3). Attempt 2: `touch-target` on the hand-rolled cash control, `PortfolioTable.tsx:460` (3→2). Attempt 3: `touch-target` on the brand link, `HeaderBrand.tsx:29` (2→1). Layout re-checked on both targets — nothing shifted, and no desktop pixel moves (the rule is pointer-gated). |
@@ -40,17 +40,32 @@ Final captures: `audit-final/`. Phase 1 captures: `audit-current/`.
 
 ## Deferred, with reasons
 
-* **`ANIMAL_CARD_TONE` (`portfolio-personality.ts:380-556`)** — the 21-hue
-  rainbow with `bg-<hue>-500/10` tinted washes. Left open **deliberately**, not
-  dropped. It renders on `CommunityView`, which needs a signed-in session and a
-  seeded community; this sandbox has neither, so 126 class strings would be
-  changed with no way to re-verify the result visually. That fails this pass's
-  own standard, and the standard matters more than the row. Two things also need
-  Martin's call first: whether 21 archetypes each need their own colour at all,
-  and whether the accent should move to a border/`Badge` (per `AGENTS.md`'s
-  no-tinted-wash rule) rather than being recoloured in place. Its sibling
-  `THEME_COLOR` — which *is* renderable and *was* verified — is fixed, and the
-  `--cat-*` ramp it now uses is ready for `ANIMAL_CARD_TONE` to adopt.
+* ~~**`ANIMAL_CARD_TONE`**~~ — **closed 2026-08-20**, after the product owner
+  confirmed the open question this was waiting on ("do 21 archetypes each need
+  a colour?"). The answer is no. It is now 13 token-backed tones instead of 21
+  bespoke palettes: the ten theme animals point at the same `--cat-*` step
+  their theme already uses in `THEME_COLOR`, and the remaining eleven are
+  graded on the temperament axis they actually describe — steady
+  (`--cat-neutral`), balanced (`--primary`), runs hot (`--warning`). Every
+  `bg-<hue>-500/10` wash is gone.
+
+  Verification, given `CommunityView` still cannot be rendered in this
+  sandbox: the 21 tones were rendered standalone against the app's **real
+  compiled CSS bundle**, laid out the way the bestiary grid lays them out
+  (accent bar, emoji tile, name, pill, milestone bar), and inspected. That
+  caught a real defect the source review would not have — the first pass put
+  crypto on hue 90 and data-center power on hue 40, so Dragon rendered
+  identical to Fox (`--primary`) and Rhino identical to Shark (`--warning`).
+  The ramp was re-spaced to five hues at two lightness steps, each clearing
+  all four semantic hues by ≥18°. Also confirmed every arbitrary-value class
+  actually compiles (`bg-[var(--cat-2)]`,
+  `bg-[color-mix(in_oklch,var(--cat-2),transparent_80%)]`) by grepping the
+  served bundle, since Tailwind's JIT silently drops any class built from a
+  template literal.
+
+  **Still not verified:** `CommunityView`'s own layout with these tones in
+  place. The palette is confirmed; the component around it is not.
+
 * **F-Med-3, F-Med-4** — product calls, see rows 13-14.
 * **Senior-designer suggestions S1-S13** — out of scope for the compliance fix
   phase by the pass's own ordering. S1 (re-tune `.glass` alpha now that the blur

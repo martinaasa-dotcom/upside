@@ -366,8 +366,10 @@ export const ANIMAL_BESTIARY: AnimalArchetype[] = [
 
 const ARCHETYPE_BY_ID = new Map(ANIMAL_BESTIARY.map((a) => [a.id, a]));
 
-/** Per-animal card chrome. Full Tailwind class strings so JIT picks them
- * up; keyed by archetype id so Wolf/Shark/Fox never share a grey shell. */
+/** Per-animal card chrome: the left accent bar, the pill next to a member
+ * name, the tile behind the emoji, and the milestone bar. Full literal
+ * Tailwind class strings so the JIT picks them up — these must never be
+ * built from a template literal, or the classes silently stop existing. */
 export type AnimalCardTone = {
   bar: string;
   border: string;
@@ -377,176 +379,175 @@ export type AnimalCardTone = {
   milestone: string;
 };
 
+/**
+ * One tone, derived from a single design token.
+ *
+ * This used to be 21 hand-picked Tailwind hues — one bespoke palette per
+ * archetype, including `bg-purple-400`, `bg-violet-400`, `bg-fuchsia-400`
+ * and `bg-indigo-400`, all four of which are banned app-wide, plus a
+ * `bg-<hue>-500/10` tinted card wash for every one of them, which is the
+ * pattern AGENTS.md bans by name. Twenty-one distinguishable hues cannot
+ * be picked tastefully; the attempt is what produced the rainbow.
+ *
+ * Two things make that unnecessary:
+ *
+ * 1. Every archetype already carries its own emoji and name. 🐺 Wolf is
+ *    not identified by being violet — colour was redundant with the two
+ *    strongest identity cues on the card.
+ * 2. The archetypes are not 21 unrelated things. Ten of them *are* the
+ *    theme animals — Beaver is AI computer builders, Rhino is data-center
+ *    power, Dragon is crypto — so they can share the theme's own colour
+ *    and agree with the Lab allocation bar for free. The other eleven
+ *    describe temperament, which is a real three-step axis, not eleven
+ *    arbitrary points.
+ *
+ * So colour here now means something, and every value comes from a token.
+ */
+const TONE = {
+  cat1: {
+    bar: "bg-[var(--cat-1)]",
+    border: "border-[color-mix(in_oklch,var(--cat-1),transparent_55%)]",
+    wash: "bg-[color-mix(in_oklch,var(--cat-1),transparent_88%)]",
+    well: "bg-[color-mix(in_oklch,var(--cat-1),transparent_80%)]",
+    name: "text-[var(--cat-1)]",
+    milestone: "bg-[var(--cat-1)]",
+  },
+  cat2: {
+    bar: "bg-[var(--cat-2)]",
+    border: "border-[color-mix(in_oklch,var(--cat-2),transparent_55%)]",
+    wash: "bg-[color-mix(in_oklch,var(--cat-2),transparent_88%)]",
+    well: "bg-[color-mix(in_oklch,var(--cat-2),transparent_80%)]",
+    name: "text-[var(--cat-2)]",
+    milestone: "bg-[var(--cat-2)]",
+  },
+  cat3: {
+    bar: "bg-[var(--cat-3)]",
+    border: "border-[color-mix(in_oklch,var(--cat-3),transparent_55%)]",
+    wash: "bg-[color-mix(in_oklch,var(--cat-3),transparent_88%)]",
+    well: "bg-[color-mix(in_oklch,var(--cat-3),transparent_80%)]",
+    name: "text-[var(--cat-3)]",
+    milestone: "bg-[var(--cat-3)]",
+  },
+  cat4: {
+    bar: "bg-[var(--cat-4)]",
+    border: "border-[color-mix(in_oklch,var(--cat-4),transparent_55%)]",
+    wash: "bg-[color-mix(in_oklch,var(--cat-4),transparent_88%)]",
+    well: "bg-[color-mix(in_oklch,var(--cat-4),transparent_80%)]",
+    name: "text-[var(--cat-4)]",
+    milestone: "bg-[var(--cat-4)]",
+  },
+  cat5: {
+    bar: "bg-[var(--cat-5)]",
+    border: "border-[color-mix(in_oklch,var(--cat-5),transparent_55%)]",
+    wash: "bg-[color-mix(in_oklch,var(--cat-5),transparent_88%)]",
+    well: "bg-[color-mix(in_oklch,var(--cat-5),transparent_80%)]",
+    name: "text-[var(--cat-5)]",
+    milestone: "bg-[var(--cat-5)]",
+  },
+  cat6: {
+    bar: "bg-[var(--cat-6)]",
+    border: "border-[color-mix(in_oklch,var(--cat-6),transparent_55%)]",
+    wash: "bg-[color-mix(in_oklch,var(--cat-6),transparent_88%)]",
+    well: "bg-[color-mix(in_oklch,var(--cat-6),transparent_80%)]",
+    name: "text-[var(--cat-6)]",
+    milestone: "bg-[var(--cat-6)]",
+  },
+  cat7: {
+    bar: "bg-[var(--cat-7)]",
+    border: "border-[color-mix(in_oklch,var(--cat-7),transparent_55%)]",
+    wash: "bg-[color-mix(in_oklch,var(--cat-7),transparent_88%)]",
+    well: "bg-[color-mix(in_oklch,var(--cat-7),transparent_80%)]",
+    name: "text-[var(--cat-7)]",
+    milestone: "bg-[var(--cat-7)]",
+  },
+  cat9: {
+    bar: "bg-[var(--cat-9)]",
+    border: "border-[color-mix(in_oklch,var(--cat-9),transparent_55%)]",
+    wash: "bg-[color-mix(in_oklch,var(--cat-9),transparent_88%)]",
+    well: "bg-[color-mix(in_oklch,var(--cat-9),transparent_80%)]",
+    name: "text-[var(--cat-9)]",
+    milestone: "bg-[var(--cat-9)]",
+  },
+  cat10: {
+    bar: "bg-[var(--cat-10)]",
+    border: "border-[color-mix(in_oklch,var(--cat-10),transparent_55%)]",
+    wash: "bg-[color-mix(in_oklch,var(--cat-10),transparent_88%)]",
+    well: "bg-[color-mix(in_oklch,var(--cat-10),transparent_80%)]",
+    name: "text-[var(--cat-10)]",
+    milestone: "bg-[var(--cat-10)]",
+  },
+  /** Steady temperament, and the "no clear theme" fallback. */
+  neutral: {
+    bar: "bg-[var(--cat-neutral)]",
+    border: "border-[color-mix(in_oklch,var(--cat-neutral),transparent_50%)]",
+    wash: "bg-[color-mix(in_oklch,var(--cat-neutral),transparent_88%)]",
+    well: "bg-[color-mix(in_oklch,var(--cat-neutral),transparent_78%)]",
+    name: "text-[var(--cat-neutral)]",
+    milestone: "bg-[var(--cat-neutral)]",
+  },
+  /** Balanced temperament — the app's own accent. */
+  balanced: {
+    bar: "bg-primary",
+    border: "border-primary/45",
+    wash: "bg-primary/12",
+    well: "bg-primary/20",
+    name: "text-primary",
+    milestone: "bg-primary",
+  },
+  /** Runs hot. `--warning` is the caution token, which is exactly what a
+   * jumpy, concentrated book is — not a loss, and not decoration. */
+  hot: {
+    bar: "bg-warning",
+    border: "border-warning/45",
+    wash: "bg-warning/12",
+    well: "bg-warning/20",
+    name: "text-warning",
+    milestone: "bg-warning",
+  },
+} as const satisfies Record<string, AnimalCardTone>;
+
+/**
+ * Archetype -> tone.
+ *
+ * The ten theme animals point at the same `--cat-*` step their theme uses
+ * in `THEME_COLOR` below, so a Beaver card and the "AI computer builders"
+ * slice of the allocation bar are the same colour without anyone having to
+ * remember to keep them in sync.
+ *
+ * The remaining eleven are graded by temperament, which is what they
+ * actually describe: steady, balanced, or running hot.
+ */
 export const ANIMAL_CARD_TONE: Record<string, AnimalCardTone> = {
-  hatchling: {
-    bar: "bg-zinc-400",
-    border: "border-zinc-600/80",
-    wash: "bg-zinc-500/10",
-    well: "bg-zinc-500/20",
-    name: "text-zinc-300",
-    milestone: "bg-zinc-400",
-  },
-  squirrel: {
-    bar: "bg-amber-400",
-    border: "border-amber-500/40",
-    wash: "bg-amber-500/10",
-    well: "bg-amber-500/20",
-    name: "text-amber-300",
-    milestone: "bg-amber-400",
-  },
-  dragon: {
-    bar: "bg-rose-500",
-    border: "border-rose-500/45",
-    wash: "bg-rose-500/10",
-    well: "bg-rose-500/20",
-    name: "text-rose-300",
-    milestone: "bg-rose-400",
-  },
-  panda: {
-    bar: "bg-emerald-400",
-    border: "border-emerald-500/40",
-    wash: "bg-emerald-500/10",
-    well: "bg-emerald-500/20",
-    name: "text-emerald-300",
-    milestone: "bg-emerald-400",
-  },
-  beaver: {
-    bar: "bg-lime-400",
-    border: "border-lime-500/40",
-    wash: "bg-lime-500/10",
-    well: "bg-lime-500/20",
-    name: "text-lime-300",
-    milestone: "bg-lime-400",
-  },
-  rhino: {
-    bar: "bg-slate-400",
-    border: "border-slate-500/40",
-    wash: "bg-slate-500/10",
-    well: "bg-slate-500/20",
-    name: "text-slate-300",
-    milestone: "bg-slate-400",
-  },
-  badger: {
-    bar: "bg-neutral-400",
-    border: "border-neutral-500/40",
-    wash: "bg-neutral-500/10",
-    well: "bg-neutral-500/20",
-    name: "text-neutral-300",
-    milestone: "bg-neutral-400",
-  },
-  scorpion: {
-    bar: "bg-red-400",
-    border: "border-red-500/40",
-    wash: "bg-red-500/10",
-    well: "bg-red-500/20",
-    name: "text-red-300",
-    milestone: "bg-red-400",
-  },
-  otter: {
-    bar: "bg-green-400",
-    border: "border-green-500/40",
-    wash: "bg-green-500/10",
-    well: "bg-green-500/20",
-    name: "text-green-300",
-    milestone: "bg-green-400",
-  },
-  chameleon: {
-    bar: "bg-fuchsia-400",
-    border: "border-fuchsia-500/45",
-    wash: "bg-fuchsia-500/10",
-    well: "bg-fuchsia-500/20",
-    name: "text-fuchsia-300",
-    milestone: "bg-fuchsia-400",
-  },
-  flamingo: {
-    bar: "bg-pink-400",
-    border: "border-pink-500/40",
-    wash: "bg-pink-500/10",
-    well: "bg-pink-500/20",
-    name: "text-pink-300",
-    milestone: "bg-pink-400",
-  },
-  octopus: {
-    bar: "bg-violet-400",
-    border: "border-violet-500/45",
-    wash: "bg-violet-500/10",
-    well: "bg-violet-500/20",
-    name: "text-violet-300",
-    milestone: "bg-violet-400",
-  },
-  squid: {
-    bar: "bg-purple-400",
-    border: "border-purple-500/45",
-    wash: "bg-purple-500/10",
-    well: "bg-purple-500/20",
-    name: "text-purple-300",
-    milestone: "bg-purple-400",
-  },
-  crab: {
-    bar: "bg-gray-400",
-    border: "border-gray-500/40",
-    wash: "bg-gray-500/10",
-    well: "bg-gray-500/20",
-    name: "text-gray-300",
-    milestone: "bg-gray-400",
-  },
-  shark: {
-    bar: "bg-cyan-400",
-    border: "border-cyan-500/45",
-    wash: "bg-cyan-500/10",
-    well: "bg-cyan-500/20",
-    name: "text-cyan-300",
-    milestone: "bg-cyan-400",
-  },
-  wolf: {
-    bar: "bg-sky-400",
-    border: "border-sky-500/40",
-    wash: "bg-sky-500/10",
-    well: "bg-sky-500/20",
-    name: "text-sky-300",
-    milestone: "bg-sky-400",
-  },
-  falcon: {
-    bar: "bg-yellow-400",
-    border: "border-yellow-500/40",
-    wash: "bg-yellow-500/10",
-    well: "bg-yellow-500/20",
-    name: "text-yellow-300",
-    milestone: "bg-yellow-400",
-  },
-  turtle: {
-    bar: "bg-teal-400",
-    border: "border-teal-500/40",
-    wash: "bg-teal-500/10",
-    well: "bg-teal-500/20",
-    name: "text-teal-300",
-    milestone: "bg-teal-400",
-  },
-  owl: {
-    bar: "bg-indigo-400",
-    border: "border-indigo-500/45",
-    wash: "bg-indigo-500/10",
-    well: "bg-indigo-500/20",
-    name: "text-indigo-300",
-    milestone: "bg-indigo-400",
-  },
-  elephant: {
-    bar: "bg-stone-400",
-    border: "border-stone-500/50",
-    wash: "bg-stone-500/10",
-    well: "bg-stone-500/25",
-    name: "text-stone-300",
-    milestone: "bg-stone-400",
-  },
-  fox: {
-    bar: "bg-orange-400",
-    border: "border-orange-400/45",
-    wash: "bg-orange-400/10",
-    well: "bg-orange-400/20",
-    name: "text-orange-300",
-    milestone: "bg-orange-400",
-  },
+  // Theme animals — colour matches the theme they represent.
+  beaver: TONE.cat2, // ai_infra
+  rhino: TONE.cat3, // ai_power
+  badger: TONE.cat5, // semi
+  scorpion: TONE.cat7, // drones
+  otter: TONE.cat4, // fintech
+  chameleon: TONE.cat10, // software
+  flamingo: TONE.cat6, // healthcare
+  dragon: TONE.cat1, // crypto
+  elephant: TONE.cat9, // index
+  panda: TONE.neutral, // a theme with no animal of its own
+
+  // Steady: no names yet, sitting on cash, or calm and short.
+  hatchling: TONE.neutral,
+  squirrel: TONE.neutral,
+  turtle: TONE.neutral,
+  owl: TONE.neutral,
+
+  // Balanced: genuinely spread, or deliberately in the middle.
+  octopus: TONE.balanced,
+  crab: TONE.balanced,
+  falcon: TONE.balanced,
+  fox: TONE.balanced,
+
+  // Runs hot: jumpy names, or a mix that runs hot.
+  squid: TONE.hot,
+  shark: TONE.hot,
+  wolf: TONE.hot,
 };
+
 
 export function animalCardTone(id: string | undefined | null): AnimalCardTone {
   return (id && ANIMAL_CARD_TONE[id]) || ANIMAL_CARD_TONE.hatchling!;

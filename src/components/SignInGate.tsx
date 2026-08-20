@@ -6,7 +6,6 @@ import { UpsideLogo } from "@/components/UpsideLogo";
 import { InsightText, MicroLabel, Panel, Pill, Reading } from "@/components/ui/Panel";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/format";
@@ -48,7 +47,6 @@ export function SignInGate({ children }: Props) {
   );
   const loadingMessage = useLoadingMessage();
   const [invite, setInvite] = useState<InviteLanding | null>(null);
-  const [ageOk, setAgeOk] = useState(false);
   /**
    * GDPR Article 8 lets each member state set the digital-consent age
    * anywhere from 13 to 16, and this app is EU-facing. Rather than pick one
@@ -205,19 +203,10 @@ export function SignInGate({ children }: Props) {
             </ul>
 
             <div className="signin-rise-3 mt-10 flex max-w-sm flex-col gap-2.5">
-              <label className="flex items-center gap-2 text-left text-xs text-muted-foreground/80">
-                <Checkbox
-                  checked={ageOk}
-                  onCheckedChange={(v) => setAgeOk(v === true)}
-                  aria-label={`I am ${minAge} or older`}
-                />
-                I am {minAge} or older.
-              </label>
-
               <Button
                 type="button"
                 size="lg"
-                disabled={busy || !ageOk}
+                disabled={busy}
                 onClick={() => void onSignIn()}
                 className="h-11 w-full gap-2.5 rounded-full text-base md:w-auto md:min-w-[17rem]"
               >
@@ -232,8 +221,19 @@ export function SignInGate({ children }: Props) {
               </p>
             )}
 
+            {/*
+              * Age is asserted here, in the same sentence as Terms and
+              * Privacy, rather than behind its own checkbox. A separate tick
+              * box is a thing to get past, not a thing anyone reads, and it
+              * put a dead "Continue" button in front of every new person.
+              * `minAge` still varies (13 for a classroom invite, 16 for
+              * self-serve — see the note where it is computed), so the
+              * sentence states the number that actually applies to this
+              * visitor rather than a generic one.
+              */}
             <p className="signin-rise-4 mt-6 max-w-sm text-sm leading-relaxed text-muted-foreground">
-              By continuing you agree to the{" "}
+              By continuing you confirm you are {minAge} or older and agree to
+              the{" "}
               <Link href="/terms" className="underline hover:text-muted-foreground">
                 Terms
               </Link>{" "}

@@ -91,27 +91,74 @@ added here first, then used.
 
 | Token | Value | Token | Value |
 |---|---|---|---|
-| `--cat-1` | `oklch(0.72 0.1 90)` | `--cat-6` | `oklch(0.72 0.1 15)` |
-| `--cat-2` | `oklch(0.72 0.1 200)` | `--cat-7` | `oklch(0.72 0.1 120)` |
-| `--cat-3` | `oklch(0.72 0.1 40)` | `--cat-8` | `oklch(0.72 0.1 225)` |
-| `--cat-4` | `oklch(0.72 0.1 150)` | `--cat-9` | `oklch(0.72 0.1 65)` |
-| `--cat-5` | `oklch(0.72 0.1 250)` | `--cat-10` | `oklch(0.72 0.1 175)` |
+| `--cat-1` | `oklch(0.78 0.1 195)` | `--cat-6` | `oklch(0.62 0.11 195)` |
+| `--cat-2` | `oklch(0.62 0.11 230)` | `--cat-7` | `oklch(0.78 0.1 340)` |
+| `--cat-3` | `oklch(0.78 0.1 125)` | `--cat-8` | `oklch(0.62 0.1 125)` |
+| `--cat-4` | `oklch(0.62 0.11 340)` | `--cat-9` | `oklch(0.78 0.09 230)` |
+| `--cat-5` | `oklch(0.78 0.09 260)` | `--cat-10` | `oklch(0.62 0.11 260)` |
 | `--cat-neutral` | `oklch(0.62 0 0)` | | |
 
 Rules for this ramp:
 
-1. **Same lightness, same chroma, hue only.** Every step is `0.72 / 0.10`,
-   close to `--primary`'s own restraint (`0.8 / 0.09`). That is what makes
-   it read as one tonal family seen from different angles instead of a
-   rainbow — and it is why you must not "just add" a step at a different
-   lightness or chroma.
-2. **Hues stay out of 270-330.** Violet/fuchsia/magenta are banned
-   app-wide. The table this replaced (`#a78bfa`, `#e879f9`, `#818cf8`,
-   `#f59e0b`, hardcoded hex, no tokens) is exactly what had put them back
-   on screen, as the widest strip of colour in the product.
-3. **Chart categories only.** Never chrome, never status, never anything a
-   person reads as good/bad — `--gain`/`--loss`/`--warning` own that, and
-   a category borrowing one of them makes both meaningless.
+1. **Five hues at two lightness steps, not ten hues at one.** Low chroma
+   throughout (0.09-0.11, near `--primary`'s own 0.09) so it reads as one
+   restrained family. Ten distinguishable *hues* is not actually available
+   here: the banned violet arc (270-330) plus the four hues spoken for by
+   semantic colours (loss 16, warning 45, primary 90, gain 162) leave well
+   under 180 degrees of usable wheel, which would space ten hues about 14
+   degrees apart — indistinguishable at this chroma. Splitting the
+   lightness gets ten separable steps honestly.
+2. **Every hue clears all four semantic hues by at least 18 degrees, and
+   none falls in 270-330.** Keep both properties if you change a value.
+   This was learned the hard way: an earlier all-one-lightness version put
+   crypto on hue 90 and data-center power on hue 40, so on the Circle
+   bestiary the Dragon card came out the same colour as the Fox card
+   (`--primary`) and the Rhino card the same colour as the Shark card
+   (`--warning`). The table before *that* (`#a78bfa`, `#e879f9`,
+   `#818cf8`, `#f59e0b`, hardcoded hex, no tokens) is what had put the
+   banned hues on screen in the first place, as the widest strip of colour
+   in the product.
+3. **Chart categories and archetype chrome only.** Never status, never
+   anything a person reads as good/bad — `--gain`/`--loss`/`--warning` own
+   that, and a category borrowing one of them makes both meaningless.
+
+### Who consumes this ramp
+
+Two tables, both in `src/lib/portfolio-personality.ts`, and they agree by
+construction:
+
+- **`THEME_COLOR`** — the Lab allocation bar and its legend, one step per
+  `ForecastTheme`.
+- **`ANIMAL_CARD_TONE`** — the Circle bestiary cards, the pill next to a
+  member's name, the tile behind the emoji, and the milestone bar.
+
+`ANIMAL_CARD_TONE` used to be 21 hand-picked Tailwind hues — one bespoke
+palette per archetype, including all four banned ones plus a
+`bg-{hue}-500/10` tinted card wash apiece. Twenty-one distinguishable hues
+cannot be picked tastefully; the attempt is what produced the rainbow. It
+is now 13 shared tones, because the archetypes are not 21 unrelated
+things:
+
+- **Ten of them are the theme animals.** Beaver *is* AI computer builders,
+  Rhino *is* data-center power, Dragon *is* crypto. They point at the same
+  `--cat-*` step their theme uses in `THEME_COLOR`, so a Beaver card and
+  the matching slice of the allocation bar are the same colour without
+  anyone having to keep them in sync by hand.
+- **The other eleven describe temperament**, which is a real three-step
+  axis rather than eleven arbitrary points: steady (`--cat-neutral`),
+  balanced (`--primary`), and runs hot (`--warning` — a jumpy,
+  concentrated book is a caution, which is exactly what that token means).
+
+Colour there now carries information. Identity was never the job: every
+archetype already ships an emoji and a name, which are far stronger cues
+than hue.
+
+**One constraint if you touch those class strings:** they are literal
+Tailwind arbitrary values (`bg-[var(--cat-2)]`,
+`bg-[color-mix(in_oklch,var(--cat-2),transparent_80%)]`). The JIT scans
+source for literal strings, so building them from a template literal makes
+the classes silently stop existing. Verify against the compiled bundle,
+not the source.
 
 ## Pass 2: violet → subtle warm yellow, plus glass surfaces
 
@@ -130,7 +177,7 @@ were re-measured from the running app in the Round 2 audit — the numbers
 originally written here had drifted from the code:**
 
 - **`.glass`** — `background-color: color-mix(in oklch, var(--card),
-  transparent 48%)` plus `backdrop-filter: blur(28px) saturate(1.6)`. The
+  transparent 38%)` plus `backdrop-filter: blur(28px) saturate(1.6)`. The
   standard fill for every top-level card/panel (`BOX`, `SCORE_CELL`,
   `SHELL_TONES`, `LIST`, `Reading`, the shadcn `Card` primitive, and the
   hand-rolled `bg-card ring-1 ring-foreground/10` pattern that recurred
@@ -158,8 +205,9 @@ source and only showed up in the compiled bundle — check there, not here.
 The ambient glow itself (`.page-frame::before`) also got stronger, since
 translucent cards dilute whatever glow sits behind them and the ask was
 explicitly to see it through the cards, not just in the gutters between
-them. **Current measured values: 24% / 12% opacity at 1700x1300px and
-1300x1000px radii, both in `--primary`.** (This doc previously said
+them. **Current measured values: a 1250x1000px key lobe at 52% off the
+top-left corner (`-4% -8%`), plus a faint 1300x1000px counter-lobe at 14%
+bottom-right — both in `--primary`.** (This doc previously said
 30%/22% at 1600/1400px, and described a second gain-green lobe — both
 wrong; see "Gradient/glow pattern" below.)
 
@@ -223,3 +271,42 @@ the right against rgb(37,34,21) warm on the left. That was the
   Round 2 (see "Categorical data ramp" below); `ANIMAL_CARD_TONE` is
   **still open** and is tracked in
   `docs/audit/01-visual-cohesion-fix-log.md`.
+
+
+## Why the glass is mostly *edge*, not blur (2026-08-20)
+
+Turning the standard `backdrop-filter` back on (it had been silently
+dropped from the compiled bundle — see above) produced **no visible
+change**, which is worth writing down so nobody re-fixes it.
+
+A blur can only reveal itself if the backdrop it samples has structure.
+Measured behind a typical card, the ambient field varied by about **11
+levels out of 255**, in a perfectly smooth radial ramp. Blurring a smooth
+4% ramp is arithmetically indistinguishable from not blurring it. The
+glass was working; there was nothing behind it to refract.
+
+So on a true-black field, what actually reads as glass is, in order:
+
+1. **The specular edge.** A bright hairline along the top where a pane
+   catches the light, and a much fainter one along the bottom where light
+   wraps under it. This is the strongest cue by a wide margin.
+2. **A room with real dynamic range.** The key lobe was tightened and
+   roughly doubled (measured page-wide spread **33 → 68** of 255), so the
+   light actually ramps across a row of cards and each pane picks up the
+   part of the light it sits in.
+3. **The blur itself** — which mostly matters where a card overlaps other
+   content rather than empty field.
+
+Two things were tried and measured *worse*, so don't reach for them:
+
+- **A second strong lobe** (top-right). It lit both sides evenly and
+  flattened the left-to-right difference between cards from 13 to 5 —
+  i.e. it made every card look the same, which is the opposite of the
+  goal. One key light plus a faint counter-lobe is the composition.
+- **More transparency alone.** On a flat field, a more transparent card
+  is just a darker card; it does not become glassier. Transparency only
+  pays off once the field behind it has something to show (point 2).
+
+When judging a change here, measure rather than eyeball: page-wide field
+spread, the left-vs-right difference between two cards in the same row,
+and the top-edge lift in luminance levels.

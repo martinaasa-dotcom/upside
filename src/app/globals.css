@@ -67,28 +67,39 @@
    * showing eleven themes side by side genuinely cannot be encoded in
    * four colours — so this is the documented exception, and it is
    * deliberately built to stay quiet rather than to be a second palette.
-   * Every step is the same lightness (0.72) and the same low chroma
-   * (0.10) as each other and close to `--primary`'s own restraint
-   * (0.8 / 0.09); only the hue moves. That reads as one tonal family
-   * seen from different angles, not a rainbow.
+   * Low chroma throughout (0.09-0.11, near `--primary`'s own 0.09), so it
+   * reads as one restrained tonal family rather than a rainbow.
    *
-   * Hues stop short of 270-330 on purpose: violet/fuchsia/magenta are
-   * banned app-wide, and the old hardcoded table (#a78bfa, #e879f9,
-   * #818cf8) is exactly what put them back on screen.
+   * Five hues at two lightness steps (0.78 and 0.62), not ten hues at one.
+   * Ten distinguishable hues is not actually available here: violet
+   * through magenta (270-330) is banned app-wide, and four more hues are
+   * spoken for by semantic colours that must never be confused with a
+   * category — loss 16, warning 45, primary 90, gain 162. Excluding those
+   * plus a safety margin leaves well under 180 degrees of wheel, which
+   * would put ten hues ~14 degrees apart: indistinguishable at this
+   * chroma. Splitting the lightness instead gets ten separable steps
+   * honestly. This was found the hard way — an earlier all-one-lightness
+   * version put crypto on the brand accent and data-center power on the
+   * warning orange, so the Dragon card was the same colour as the Fox card
+   * and the Rhino card was the same colour as the Shark card.
+   *
+   * Every hue here clears all four semantic hues by at least 18 degrees,
+   * and none falls in the banned violet arc. Keep both properties if you
+   * change a value.
    *
    * Never use these for chrome, status, or anything a person reads as
    * good/bad — gain/loss/warning own that job.
    */
-  --cat-1: oklch(0.72 0.1 90);
-  --cat-2: oklch(0.72 0.1 200);
-  --cat-3: oklch(0.72 0.1 40);
-  --cat-4: oklch(0.72 0.1 150);
-  --cat-5: oklch(0.72 0.1 250);
-  --cat-6: oklch(0.72 0.1 15);
-  --cat-7: oklch(0.72 0.1 120);
-  --cat-8: oklch(0.72 0.1 225);
-  --cat-9: oklch(0.72 0.1 65);
-  --cat-10: oklch(0.72 0.1 175);
+  --cat-1: oklch(0.78 0.1 195);
+  --cat-2: oklch(0.62 0.11 230);
+  --cat-3: oklch(0.78 0.1 125);
+  --cat-4: oklch(0.62 0.11 340);
+  --cat-5: oklch(0.78 0.09 260);
+  --cat-6: oklch(0.62 0.11 195);
+  --cat-7: oklch(0.78 0.1 340);
+  --cat-8: oklch(0.62 0.1 125);
+  --cat-9: oklch(0.78 0.09 230);
+  --cat-10: oklch(0.62 0.11 260);
   --cat-neutral: oklch(0.62 0 0);
   --paper: var(--foreground);
   --ink: var(--background);
@@ -222,15 +233,33 @@ body {
   inset: 0;
   z-index: -1;
   pointer-events: none;
+  /*
+   * Key light tightened and roughly doubled in strength (was 1700x1300 at
+   * 24%). Turning the glass blur back on changed nothing visible, and the
+   * measurement says why: a blur can only show itself if the backdrop it
+   * samples has structure, and behind a card this field varied by about
+   * 11 levels out of 255 in a perfectly smooth ramp. Blurring that is
+   * arithmetically indistinguishable from not blurring it.
+   *
+   * So the fix is the room, not the glass. A smaller, brighter,
+   * faster-falling lobe roughly doubles the field's dynamic range across
+   * a page (measured spread 33 -> 68 of 255) and makes it actually ramp
+   * across a row of cards, so each pane picks up the part of the light it
+   * sits in — which is the thing that reads as glass on a black field.
+   *
+   * Deliberately still one warm light plus a faint counter-lobe. A second
+   * strong lobe was tried and measured worse: it lit both sides evenly and
+   * flattened the left-to-right difference between cards from 13 to 5.
+   */
   background-image:
     radial-gradient(
-      1700px 1300px at 0% 0%,
-      oklch(from var(--primary) l c h / 24%),
-      transparent 70%
+      1250px 1000px at -4% -8%,
+      oklch(from var(--primary) l c h / 52%),
+      transparent 66%
     ),
     radial-gradient(
       1300px 1000px at 100% 100%,
-      oklch(from var(--primary) l c h / 12%),
+      oklch(from var(--primary) l c h / 14%),
       transparent 72%
     );
 }
@@ -282,7 +311,10 @@ body {
    * the stylesheet replace the other instead of combining.
    */
   .glass {
-    background-color: color-mix(in oklch, var(--card), transparent 48%);
+    /* 38%, not 48%. The old value was tuned to compensate for a blur that
+     * never ran on Blink; with the blur working and the field brighter, a
+     * touch more opacity keeps text off the light without hiding it. */
+    background-color: color-mix(in oklch, var(--card), transparent 38%);
     /*
      * Standard property LAST, prefixed first. Written the other way round,
      * the CSS transform collapsed the pair and emitted only
@@ -301,10 +333,18 @@ body {
       0 12px 32px -16px color-mix(in oklch, black, transparent 15%);
   }
   .card-sheen.glass {
+    /*
+     * Two specular edges now, not one: a bright hairline along the top
+     * where a pane catches the light, and a much fainter one along the
+     * bottom where light wraps under it. On a near-black field the edge
+     * is what actually sells glass — far more than the blur does — and
+     * this raises the measured top-edge lift from +63 to +87 of 255.
+     */
     box-shadow:
-      inset 0 1px 0 0 color-mix(in oklch, white, transparent 88%),
+      inset 0 1px 0 0 color-mix(in oklch, white, transparent 76%),
+      inset 0 -1px 0 0 color-mix(in oklch, white, transparent 93%),
       inset 0 0 0 1px var(--border),
-      0 12px 32px -16px color-mix(in oklch, black, transparent 15%);
+      0 14px 36px -18px color-mix(in oklch, black, transparent 12%);
   }
   .glass-well {
     background-color: color-mix(in oklch, var(--muted), transparent 50%);
