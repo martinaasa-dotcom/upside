@@ -130,7 +130,7 @@ were re-measured from the running app in the Round 2 audit — the numbers
 originally written here had drifted from the code:**
 
 - **`.glass`** — `background-color: color-mix(in oklch, var(--card),
-  transparent 48%)` plus `backdrop-filter: blur(28px) saturate(1.6)`. The
+  transparent 38%)` plus `backdrop-filter: blur(28px) saturate(1.6)`. The
   standard fill for every top-level card/panel (`BOX`, `SCORE_CELL`,
   `SHELL_TONES`, `LIST`, `Reading`, the shadcn `Card` primitive, and the
   hand-rolled `bg-card ring-1 ring-foreground/10` pattern that recurred
@@ -158,8 +158,9 @@ source and only showed up in the compiled bundle — check there, not here.
 The ambient glow itself (`.page-frame::before`) also got stronger, since
 translucent cards dilute whatever glow sits behind them and the ask was
 explicitly to see it through the cards, not just in the gutters between
-them. **Current measured values: 24% / 12% opacity at 1700x1300px and
-1300x1000px radii, both in `--primary`.** (This doc previously said
+them. **Current measured values: a 1250x1000px key lobe at 52% off the
+top-left corner (`-4% -8%`), plus a faint 1300x1000px counter-lobe at 14%
+bottom-right — both in `--primary`.** (This doc previously said
 30%/22% at 1600/1400px, and described a second gain-green lobe — both
 wrong; see "Gradient/glow pattern" below.)
 
@@ -223,3 +224,42 @@ the right against rgb(37,34,21) warm on the left. That was the
   Round 2 (see "Categorical data ramp" below); `ANIMAL_CARD_TONE` is
   **still open** and is tracked in
   `docs/audit/01-visual-cohesion-fix-log.md`.
+
+
+## Why the glass is mostly *edge*, not blur (2026-08-20)
+
+Turning the standard `backdrop-filter` back on (it had been silently
+dropped from the compiled bundle — see above) produced **no visible
+change**, which is worth writing down so nobody re-fixes it.
+
+A blur can only reveal itself if the backdrop it samples has structure.
+Measured behind a typical card, the ambient field varied by about **11
+levels out of 255**, in a perfectly smooth radial ramp. Blurring a smooth
+4% ramp is arithmetically indistinguishable from not blurring it. The
+glass was working; there was nothing behind it to refract.
+
+So on a true-black field, what actually reads as glass is, in order:
+
+1. **The specular edge.** A bright hairline along the top where a pane
+   catches the light, and a much fainter one along the bottom where light
+   wraps under it. This is the strongest cue by a wide margin.
+2. **A room with real dynamic range.** The key lobe was tightened and
+   roughly doubled (measured page-wide spread **33 → 68** of 255), so the
+   light actually ramps across a row of cards and each pane picks up the
+   part of the light it sits in.
+3. **The blur itself** — which mostly matters where a card overlaps other
+   content rather than empty field.
+
+Two things were tried and measured *worse*, so don't reach for them:
+
+- **A second strong lobe** (top-right). It lit both sides evenly and
+  flattened the left-to-right difference between cards from 13 to 5 —
+  i.e. it made every card look the same, which is the opposite of the
+  goal. One key light plus a faint counter-lobe is the composition.
+- **More transparency alone.** On a flat field, a more transparent card
+  is just a darker card; it does not become glassier. Transparency only
+  pays off once the field behind it has something to show (point 2).
+
+When judging a change here, measure rather than eyeball: page-wide field
+spread, the left-vs-right difference between two cards in the same row,
+and the top-edge lift in luminance levels.
