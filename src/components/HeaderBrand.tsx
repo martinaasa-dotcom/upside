@@ -26,7 +26,11 @@ type Props = {
  * motion-safe; the brightness still lands for reduced-motion users.
  */
 const BRAND_INTERACTION_CLASS = cn(
-  "inline-flex shrink-0 items-center rounded-md border-0 bg-transparent p-0",
+  // `touch-target` because this is a real link home, not decoration, and
+  // the wordmark's own box is only 20px tall — under both platform
+  // minimums on a phone. The 44px floor fits inside the 56px header, so
+  // nothing about the chrome's height moves.
+  "touch-target inline-flex shrink-0 items-center rounded-md border-0 bg-transparent p-0",
   "outline-none transition duration-200 ease-out",
   "hover:brightness-110 active:brightness-95",
   "motion-safe:hover:-translate-y-px motion-safe:active:translate-y-0",

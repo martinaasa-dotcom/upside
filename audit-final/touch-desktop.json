@@ -1,0 +1,110 @@
+[
+  {
+    "t": "Skip to content",
+    "w": 1,
+    "h": 1,
+    "cls": "sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:rounded"
+  },
+  {
+    "t": "Upside Lab",
+    "w": 115,
+    "h": 20,
+    "cls": "touch-target inline-flex shrink-0 items-center rounded-md border-0 bg-transparent p-0 outl"
+  },
+  {
+    "t": "Add holdingAdd",
+    "w": 120,
+    "h": 32,
+    "cls": "group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-tra"
+  },
+  {
+    "t": "View",
+    "w": 74,
+    "h": 32,
+    "cls": "group/button inline-flex shrink-0 items-center justify-center rounded-lg border bg-clip-pa"
+  },
+  {
+    "t": "USD",
+    "w": 46,
+    "h": 32,
+    "cls": "group-data-[spacing=0]/toggle-group:px-2 focus:z-10 focus-visible:z-10 group-data-[spacing"
+  },
+  {
+    "t": "EUR",
+    "w": 46,
+    "h": 32,
+    "cls": "group-data-[spacing=0]/toggle-group:px-2 focus:z-10 focus-visible:z-10 group-data-[spacing"
+  },
+  {
+    "t": "Cash$0.00",
+    "w": 96,
+    "h": 28,
+    "cls": "touch-target inline-flex items-center gap-2 rounded-md px-2 py-1 text-left transition hove"
+  },
+  {
+    "t": "Import screenshot",
+    "w": 162,
+    "h": 32,
+    "cls": "group/button inline-flex shrink-0 items-center justify-center rounded-lg border bg-clip-pa"
+  },
+  {
+    "t": "Import CSV",
+    "w": 117,
+    "h": 32,
+    "cls": "group/button inline-flex shrink-0 items-center justify-center rounded-lg border bg-clip-pa"
+  },
+  {
+    "t": "Add holding manually",
+    "w": 183,
+    "h": 32,
+    "cls": "group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-tra"
+  },
+  {
+    "t": "Ask Margus",
+    "w": 120,
+    "h": 32,
+    "cls": "group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-tra"
+  },
+  {
+    "t": "Ask Margus",
+    "w": 120,
+    "h": 32,
+    "cls": "group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-tra"
+  },
+  {
+    "t": "Aasa",
+    "w": 71,
+    "h": 43,
+    "cls": "touch-target relative shrink-0 snap-start px-3 text-sm font-medium transition text-muted-f"
+  },
+  {
+    "t": "Anu",
+    "w": 64,
+    "h": 43,
+    "cls": "touch-target relative shrink-0 snap-start px-3 text-sm font-medium transition text-muted-f"
+  },
+  {
+    "t": "MaryAnn",
+    "w": 96,
+    "h": 43,
+    "cls": "touch-target relative shrink-0 snap-start px-3 text-sm font-medium transition text-muted-f"
+  },
+  {
+    "t": "Karud",
+    "w": 77,
+    "h": 43,
+    "cls": "touch-target relative shrink-0 snap-start px-3 text-sm font-medium transition text-muted-f"
+  },
+  {
+    "t": "My portfolio",
+    "w": 103,
+    "h": 43,
+    "cls": "touch-target relative shrink-0 snap-start px-3 text-sm font-medium transition text-foregro"
+  },
+  {
+    "t": "New",
+    "w": 67,
+    "h": 43,
+    "cls": "touch-target inline-flex shrink-0 items-center gap-1 px-2.5 text-sm text-muted-foreground "
+  }
+]

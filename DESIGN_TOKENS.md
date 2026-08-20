@@ -70,6 +70,49 @@ Four colors total, three of them semantic single-purpose (warning/gain/loss)
 and one general brand accent (warm yellow). Nothing else gets a new color
 without adding a row here first.
 
+### `--loss` chroma (corrected in Round 2)
+
+`--loss` is `oklch(0.645 0.21 16.439)`, not `0.246`. At 0.246 this
+hue/lightness sits outside sRGB and browsers clipped it to
+`rgb(255,32,86)` — a channel-maxed red, far louder than `--gain`'s
+in-gamut `rgb(0,188,125)`. Two colours meant to carry equal weight were
+not reading as equals. 0.21 resolves to `rgb(242,67,95)`. `--chart-5`,
+which shares the value, moved with it. If you ever change this, verify
+in-gamut by rasterising to a canvas and checking no channel pins to 0 or
+255 — `oklch()` will happily accept a value the display cannot show.
+
+## Categorical data ramp (`--cat-1` … `--cat-10`, `--cat-neutral`)
+
+The Accent Palette above is a ceiling for **decorative** colour. It is not
+workable for **categorical data**: the allocation bar encodes eleven
+themes side by side, and four colours cannot tell eleven things apart. So
+this is the documented exception the Accent Palette's own rule asks for —
+added here first, then used.
+
+| Token | Value | Token | Value |
+|---|---|---|---|
+| `--cat-1` | `oklch(0.72 0.1 90)` | `--cat-6` | `oklch(0.72 0.1 15)` |
+| `--cat-2` | `oklch(0.72 0.1 200)` | `--cat-7` | `oklch(0.72 0.1 120)` |
+| `--cat-3` | `oklch(0.72 0.1 40)` | `--cat-8` | `oklch(0.72 0.1 225)` |
+| `--cat-4` | `oklch(0.72 0.1 150)` | `--cat-9` | `oklch(0.72 0.1 65)` |
+| `--cat-5` | `oklch(0.72 0.1 250)` | `--cat-10` | `oklch(0.72 0.1 175)` |
+| `--cat-neutral` | `oklch(0.62 0 0)` | | |
+
+Rules for this ramp:
+
+1. **Same lightness, same chroma, hue only.** Every step is `0.72 / 0.10`,
+   close to `--primary`'s own restraint (`0.8 / 0.09`). That is what makes
+   it read as one tonal family seen from different angles instead of a
+   rainbow — and it is why you must not "just add" a step at a different
+   lightness or chroma.
+2. **Hues stay out of 270-330.** Violet/fuchsia/magenta are banned
+   app-wide. The table this replaced (`#a78bfa`, `#e879f9`, `#818cf8`,
+   `#f59e0b`, hardcoded hex, no tokens) is exactly what had put them back
+   on screen, as the widest strip of colour in the product.
+3. **Chart categories only.** Never chrome, never status, never anything a
+   person reads as good/bad — `--gain`/`--loss`/`--warning` own that, and
+   a category borrowing one of them makes both meaningless.
+
 ## Pass 2: violet → subtle warm yellow, plus glass surfaces
 
 The violet from Pass 1 (above) tested live and didn't land — the request
@@ -82,18 +125,28 @@ from `--warning`'s hue 45° that the two don't get confused.
 `--primary-foreground` moves back to near-black (`oklch(0.145 0 0)`), same
 reasoning as the original gold: light backgrounds need dark text.
 
-Same pass added two shared utility classes in `globals.css`:
+Same pass added two shared utility classes in `globals.css`. **Values below
+were re-measured from the running app in the Round 2 audit — the numbers
+originally written here had drifted from the code:**
 
 - **`.glass`** — `background-color: color-mix(in oklch, var(--card),
-  transparent 25%)` plus `backdrop-filter: blur(20px)`. The standard fill
-  for every top-level card/panel (`BOX`, `SCORE_CELL`, `SHELL_TONES`,
-  `LIST`, `Reading`, the shadcn `Card` primitive, and the hand-rolled
-  `bg-card ring-1 ring-foreground/10` pattern that recurred across ~13
-  files) — translucent instead of opaque so the ambient corner glow shows
-  through, blurred, instead of stopping dead at the card edge.
-- **`.glass-well`** — same idea for nested `bg-muted` wells, lighter
-  translucency (35% transparent), no blur of its own (it's already inside
-  a blurred ancestor).
+  transparent 48%)` plus `backdrop-filter: blur(28px) saturate(1.6)`. The
+  standard fill for every top-level card/panel (`BOX`, `SCORE_CELL`,
+  `SHELL_TONES`, `LIST`, `Reading`, the shadcn `Card` primitive, and the
+  hand-rolled `bg-card ring-1 ring-foreground/10` pattern that recurred
+  across ~13 files) — translucent instead of opaque so the ambient corner
+  glow shows through, blurred, instead of stopping dead at the card edge.
+- **`.glass-well`** — same idea for nested `bg-muted` wells: `transparent
+  50%` and `backdrop-filter: blur(16px) saturate(1.4)`. It *does* carry
+  its own blur (an earlier version of this doc said it didn't).
+
+**Write the prefixed `-webkit-backdrop-filter` first and the standard
+`backdrop-filter` last in both rules.** Authored the other way round, the
+CSS transform collapsed the pair and emitted only the prefixed form; Blink
+does not honour that alias, so `backdrop-filter` computed to `none` and
+every glass surface in the app rendered as a flat translucent tint with no
+blur on desktop Chrome, Edge and Android Chrome. It was invisible in
+source and only showed up in the compiled bundle — check there, not here.
 - **`.card-sheen`** changed from a `--card`-to-lighter-`--card` gradient
   to a white-to-transparent specular wash. The old version's stops were
   both opaque, so layering it over `.glass`'s translucent
@@ -102,11 +155,13 @@ Same pass added two shared utility classes in `globals.css`:
   effect. The new version never references `--card` at all, so it composes
   with either an opaque or translucent base underneath.
 
-The ambient glow itself (`.page-frame::before`) also got stronger — 16%/12%
-opacity and 1200px/900px radii became 30%/22% and 1600px/1400px — since
-translucent cards dilute whatever glow sits behind them, and the ask was
+The ambient glow itself (`.page-frame::before`) also got stronger, since
+translucent cards dilute whatever glow sits behind them and the ask was
 explicitly to see it through the cards, not just in the gutters between
-them.
+them. **Current measured values: 24% / 12% opacity at 1700x1300px and
+1300x1000px radii, both in `--primary`.** (This doc previously said
+30%/22% at 1600/1400px, and described a second gain-green lobe — both
+wrong; see "Gradient/glow pattern" below.)
 
 The button `default` variant's gradient changed from a two-stop
 lighten-toward-white wash to a three-stop highlight/base/shadow gradient
@@ -128,12 +183,17 @@ nothing reads from would just be more dead weight with a less-honest name.
 
 ## Gradient/glow pattern (from the landing page, now shared app-wide)
 
-The landing page's ambient background — two large, heavily blurred radial
-shapes, one in the primary color at low opacity, one in gain-green at
-lower opacity — is now the shared `.page-frame::before` treatment
-(`src/app/globals.css`) instead of a landing-page-only effect. It already
-read this way from an earlier pass in this repo's history; this token
-change is what makes it reference the new violet instead of gold.
+Two large, heavily blurred radial shapes, **both in `--primary`**, shared
+app-wide as `.page-frame::before` (`src/app/globals.css`).
+
+**One colour only, on purpose.** Gain-green is a financial signal — it
+means "this went up" — so it does not belong in ambient chrome that has
+nothing to do with performance. The Round 2 audit found green still in two
+places on the signed-out page (`bg-gain/10` at `blur(130px)`, and a
+`to-gain/10` stop in the sample card's halo), measured as rgb(0,11,7) on
+the right against rgb(37,34,21) warm on the left. That was the
+"unexplained green glow" the design reviews kept flagging. Both are now
+`--primary`.
 
 ## Explicitly out of scope for this pass
 
@@ -151,9 +211,15 @@ change is what makes it reference the new violet instead of gold.
   it is a graphic-design task outside a token/component pass, and nobody
   asked for the brand mark itself to change, only the app's UI color
   system. Left as gold intentionally.
-- **`src/lib/portfolio-personality.ts`**'s `ANIMAL_CARD_TONE` (an
-  archetype color system with amber/yellow entries among ~10 other hues)
-  — confirmed via `grep` that nothing in `src/` imports or renders this
-  export. Dead code, not part of any of the six audited pages. Left
-  untouched rather than editing an unreachable file for a pass whose
-  point is fixing what's actually on screen.
+- ~~**`src/lib/portfolio-personality.ts`**'s `ANIMAL_CARD_TONE` is dead
+  code~~ — **no longer true, and it was the single worst colour offender
+  found in the Round 2 audit.** Six modules import from this file
+  (`LabSheet`, `CommunityView`, `UpsidePortfolioPage`, `TickerDrawer`,
+  `allocation`, `book-insights`), and the power-animal work made the tone
+  table live. It is a 21-hue rainbow — `bg-purple-400`, `bg-violet-400`,
+  `bg-fuchsia-400`, `bg-indigo-400` among them — each with a
+  `wash: "bg-<hue>-500/10"` tinted card background, which is the exact
+  pattern `AGENTS.md` bans by name. Its sibling `THEME_COLOR` was fixed in
+  Round 2 (see "Categorical data ramp" below); `ANIMAL_CARD_TONE` is
+  **still open** and is tracked in
+  `docs/audit/01-visual-cohesion-fix-log.md`.

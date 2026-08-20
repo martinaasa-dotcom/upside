@@ -1,75 +1,66 @@
-# Fix log — Upside Lab design audit punch list
+# Pass 1 — Visual Cohesion fix log (Round 2)
 
-Tracks `AUDIT_REPORT.md` §8's compliance punch list, one row per item.
-Design-quality suggestions (§7) are left open per that section — noted at
-the bottom. `npx tsc --noEmit` and `npx eslint --max-warnings 0` on all
-touched files both pass clean after every fix in this table; `npx tsx
-scripts/test-invariants.ts` has the same 3 pre-existing failures before and
-after this pass (circle-awards grid, em-dashes in `AccountPage`/
-`UpgradeNudge`, Fund-note `<Card>` check) — none touch files this pass
-edited, confirmed by diffing a `git stash` run against HEAD.
+Companion to `docs/audit/01-visual-cohesion.md`. One row per punch-list item.
+**No row is marked Resolved without fresh re-verification evidence gathered
+*after* the fix, using the same method that surfaced the finding.** Rows that
+could not be verified in this sandbox stay Unable to Verify — they are not
+upgraded because the code change looks right.
 
-| Item | Status | Attempts | Evidence | Notes |
-|---|---|---|---|---|
-| 1. SignInGate CTA glow (Critical, R2 #10/#16) | **Resolved** | 1 | `grep -n "shadow-\[" src/components/SignInGate.tsx` → no match. Diff: removed `shadow-[0_18px_40px_-16px_var(--primary)]` from the "Continue with Google" button, leaving the same flat treatment the in-app default `Button` variant already uses. | Could not re-screenshot the live sign-in page (see `AUDIT_REPORT.md` §0 — local-demo mode bypasses `/login`); verified by source/grep only. |
-| 2. WatchCard / DailyDuelCard opaque `bg-card` (Critical, R2 #7) | **Resolved** | 2 | `grep -n "bg-card" src/components/WatchlistStrip.tsx src/components/DailyDuelCard.tsx` → no match (post-fix). `WatchCard`'s two states now use `glass-well` (+ `card-sheen` on the populated state); `DailyDuelCard`'s two `<section>` shells now use `card-sheen glass`. | First attempt's `replace_all` on `DailyDuelCard.tsx` only caught one of the two call sites — its two occurrences had different indentation (8 vs 10 spaces) so the string match missed the second. Caught by the mandatory re-grep in this same fix pass, not left for a separate loop — fixed directly, now both instances confirmed. |
-| 3. Compound `text-caution`/`bg-caution` misuse (Major, new) | **Resolved** | 1 | `grep -n "text-caution\|bg-caution" src/components/CompoundInterestSheet.tsx` → no match. Screenshot `audit-current/compound-fixed.png` (fresh, post-fix) shows "Of that, growth $53,199" now rendering in the same gain-green as "Ends up at $123,897", not orange. | Six call sites fixed: hero KPI, mobile year-cards (×2), desktop table header + two body cells. |
-| 4. Dead `iconTone: "violet"` + stale comment (Minor) | **Resolved** | 1 | `grep -n 'iconTone.*violet\|violet:' src/components/ui/Panel.tsx` → no match. `"violet"` removed from the type union and the `iconTones` map; the doc comment at line 57 now reads "Primary is warm yellow" instead of "Primary is violet." | `icon`/`iconTone` prop itself is unused app-wide (zero call sites at all, not just `"violet"`) — out of scope for this item, noted for a possible future cleanup, not touched here. |
-| 5. Unused `--chart-1`/`--chart-4` tokens (Minor) | **Resolved** | 1 | `grep -n "chart-1\|chart-4" src/app/globals.css` → no match. Removed both from `:root` and their `@theme inline` `--color-chart-*` aliases; `--chart-2/3/5` (gain/warning/loss aliases, already in the sanctioned palette) left untouched. | — |
-| 6. `GoldNavChart.tsx` stale naming/comment (Minor) | **Resolved** | 1 | `grep -rn "GoldNavChart" src scripts` → no match. File renamed to `BookNavChart.tsx` (`git mv`), its inner `GoldNavChart` function renamed to `MobileBookNavChart`, the "Book NAV as a gold line" comment updated to "brand-colored line", and every importer (`ForecastPanel.tsx`, `OverviewDashboard.tsx`, `scripts/test-invariants.ts`) updated to the new path. `npx tsc --noEmit` clean; `test-invariants.ts` passes the same baseline set (3 pre-existing failures, none new). | Went further than the punch-list wording ("rename... or update its comment") — did both, since the rename was mechanical and low-risk once traced. |
+Final captures: `audit-final/`. Phase 1 captures: `audit-current/`.
 
-## Design-quality suggestions left open (not fixed in this pass)
+| # | Item | Round/§ | Platforms | Status | Attempts | Evidence | Notes |
+|---|---|---|---|---|---|---|---|
+| 1 | Glass blur dead in Blink | R2-7 / C1 | Desktop, Android | **Resolved** | 1 | Compiled bundle now emits `-webkit-backdrop-filter` **and** `backdrop-filter` (`.glass` and `.glass-well`); computed `backdrop-filter: blur(28px) saturate(1.6)` on both desktop and Android, was `none`. Mechanism proof: `audit-current/probe-backdrop.png` | Cause was source order — the standard property was authored first and the CSS transform collapsed the pair to the prefixed one only. Prefixed first, standard last. |
+| 1i | same | R2-7 | **iOS** | **Unable to Verify (WebKit Unavailable)** | — | `npx playwright install webkit` fails in this sandbox | Needs a real WebKit engine or device. WebKit honours the prefixed form, so iOS was likely the only platform where this ever worked. |
+| 2 | Gray-to-gray card gradient | R2-8 | Desktop, Android | **Resolved** | 1 | `gradientBgs` is `[]` on every signed-in page both before and after — there was never a card gradient. The vertical ramp on the Movers panel was the ambient glow through an unblurred film; it now blurs | Diagnosed as a symptom of C1, not a separate defect. Closed by item 1. |
+| 2i | same | R2-8 | **iOS** | **Unable to Verify (WebKit Unavailable)** | — | as above | |
+| 3 | Ambient glow clipped at the header | R2-13 / C2 | Desktop, Android | **Resolved** | 1 | Vertical pixel scan at x=30, re-run on all three targets: chrome band was `rgb(0,0,0)` at cssY 94 stepping to `rgb(45,40,25)` at 98; now reads `rgb(11,10,6)` through the band — the glow carries through instead of terminating | `AppHeader.tsx:122` and `MobileTopBar.tsx:74` were opaque `bg-background`; both now `bg-background/75 backdrop-blur-xl`, matching the desktop header. Mobile gains translucent chrome for the first time. |
+| 3i | same | R2-13 | **iOS** | **Unable to Verify (WebKit Unavailable)** | — | Chromium-emulated scan matches Android, but `backdrop-blur` fidelity is the WebKit question | |
+| 4 | Unexplained green glow | R2-14 | Desktop, iOS, Android | **Resolved** | 2 | Sampled the same four points: `(1330,560)` was `rgb(1,15,9)` (G-dominant), now `rgb(13,11,7)`; `(1380,620)` was `rgb(0,9,5)`, now `rgb(9,8,5)`. Every point is R>G>B, matching the warm top-left reference `rgb(37,34,21)` | Attempt 1 removed the `to-gain/10` stop from the card halo — measured *still green*. Attempt 2 found the real source: a second hand-rolled ambient lobe, `bg-gain/10 blur-[130px]` at `SignInGate.tsx:138`. Not a WebKit-sensitive property, so iOS is verified here. |
+| 5 | Purple/violet/fuchsia/indigo still shipped | R1-3 / C3 | Desktop, iOS, Android | **Partially Resolved** | 1 | `THEME_COLOR` now references `var(--cat-*)`; the only remaining hex in the file is inside the comment naming what was removed. Rendered legend re-measured: teal `rgb(72,183,189)`, slate-blue `rgb(115,169,225)`, sky `rgb(86,178,212)`, gold `rgb(189,162,87)`, coral `rgb(208,151,95)`, neutral `rgb(125,125,125)` — no violet/fuchsia/indigo/cyan. `audit-final/lab-desktop.png` | **`ANIMAL_CARD_TONE` is deliberately left open — see the Deferred section below.** |
+| 6 | Hero headline gradient text | R1-1 / F-High-1 | Desktop, iOS, Android | **Resolved** | 1 | `gradientText` count on the sign-in page was `1`, now `0`; `[]` app-wide | Solid `--foreground`. Measured contrast before the change was 19.26:1 → 14.73:1, i.e. never a legibility failure — recorded honestly in the report rather than overstated. |
+| 7 | Sign-in halo overdone | R2-17 / F-High-3 | Desktop, iOS, Android | **Resolved** | 1 | Same computed-style dump: `blur(64px)` at 395×666px / `opacity-90` → `blur(40px)` at 347×617px / `opacity-70`, and the gradient no longer terminates in `--gain` | Now in line with the signed-in baseline, whose loudest effect is `0 12px 32px -16px`. |
+| 8 | Mobile touch targets under 44pt/48dp | F-High-2 | iOS, Android | **Resolved** | 3 | Re-ran the same measurement on Pixel 7 and iPhone 14 Pro: **8 → 0** real offenders. Only `Skip to content` (1×1, `sr-only`, keyboard-only, expands on focus) remains and is correctly excluded. `audit-final/touch-android.json` | Attempt 1: extended the `[data-slot="button"]` rule from icon-only to every size (8→3). Attempt 2: `touch-target` on the hand-rolled cash control, `PortfolioTable.tsx:460` (3→2). Attempt 3: `touch-target` on the brand link, `HeaderBrand.tsx:29` (2→1). Layout re-checked on both targets — nothing shifted, and no desktop pixel moves (the rule is pointer-gated). |
+| 9 | `DESIGN_TOKENS.md` stale | F-High-4 | — | **Resolved** | 1 | All five claims corrected against measured values, plus a new "Categorical data ramp" section and a `--loss` chroma note | The doc had drifted far enough to be actively misleading — it described `.glass` at the wrong alpha and blur, claimed `.glass-well` had no blur, described an ambient glow that no longer exists, and asserted `ANIMAL_CARD_TONE` was dead code. |
+| 10 | `--loss` out of sRGB gamut | F-Med-1 | Desktop, iOS, Android | **Resolved** | 1 | Movers accent bars re-sampled: loss bar was `rgb(255,32,86)` (two channels pinned), now `rgb(242,67,95)`; gain bar unchanged at `rgb(0,188,125)`. Candidate values rasterised to canvas to confirm in-gamut before choosing | `--chart-5` shared the value and moved with it. |
+| 11 | Concentration figures using `--loss` | F-Med-2 | Desktop, iOS, Android | **Resolved** | 1 | `LabSheet.tsx` — both `valueClassName` branches now `text-warning`; `grep -c "text-warning"` → 2 | "Largest position" and "Top N combined" are cautions, not losses. |
+| 12 | Toasts collide with the mobile tab bar | **New (F-New-1)** | iOS, Android | **Resolved** | 1 | Re-ran the bottom-band overlap probe on a Pixel 7: previously two `cn-toast` elements at y=770/757 over a nav starting at y=774; now the nav is the only element in that band | Found during Phase 2 re-verification, not in the Phase 1 report. Sonner swaps to `mobileOffset` below its 600px breakpoint and ignores `offset` entirely, so the dock-aware offset never applied on a phone and it fell back to sonner's own 16px. Both props now carry the `--dock-pad` expression. |
+| 13 | Movers ragged final row | F-Med-3 | all | **Deferred** | 0 | — | Cosmetic, and the honest fix is a product call about how many movers to show (4 vs 6 vs fill), not a style change. Flagged for Martin. |
+| 14 | Mobile Movers loses the comparison | F-Med-4 | iOS, Android | **Deferred** | 0 | — | Suggested fix (horizontal snap rail, S10) is a layout redesign, not a compliance fix. Flagged for Martin. |
+| 15 | Off-scale line-heights | F-Low-1 | — | **No action** | — | `styles-desktop.json.fontScale` | `22.75px`/`19.25px` are Tailwind's own `leading-relaxed`/`leading-snug` on 14px. Legitimate; recorded for completeness only. |
+| 16 | Circle tab not visually audited | F-Low-2 | all | **Unable to Verify (Environment-Blocked)** | — | `/?tab=circle` silently falls back to Overview without Supabase | Needs a seeded community and a signed-in session. Carries into Pass 11 as a known coverage gap. |
 
-- Confirm the flat-fill button direction with Martin — a taste decision,
-  not a code fix.
-- Re-run the Movers-panel visual check once live market quotes are
-  reachable from a dev sandbox — the code traces clean but was never
-  pixel-verified with real data in this session.
+## Investigated and dismissed
 
-## Final pass
+* **A dark "N" circle overlapping the Home tab on mobile.** Visible in every
+  mobile capture and initially read as a layout collision. `elementsFromPoint`
+  at the overlap identifies it as `<nextjs-portal>` — the Next.js dev-tools
+  badge, present only under `next dev`. Not app UI, no fix. (The *toast*
+  overlap in the same corner, row 12, was real and separate.)
 
-All 6 compliance punch-list items: **Resolved**. No Stuck items. Re-ran
-`npx tsc --noEmit` and the touched-file `eslint` set after the last fix
-(item 2's second call site) — both clean. Did not re-screenshot every page
-into `/audit-final/` per §9.4 of the brief, because the populated-data
-screenshots this sandbox can't produce (see `AUDIT_REPORT.md` §0) are
-exactly the ones a final pass would need to add anything beyond what's
-already in `/audit-current/` — re-running the same empty-state screenshots
-would not surface a new regression. The one genuinely unverified item
-(Movers panel with live data) is carried forward above as an open
-follow-up, not silently dropped.
+## Deferred, with reasons
 
----
+* **`ANIMAL_CARD_TONE` (`portfolio-personality.ts:380-556`)** — the 21-hue
+  rainbow with `bg-<hue>-500/10` tinted washes. Left open **deliberately**, not
+  dropped. It renders on `CommunityView`, which needs a signed-in session and a
+  seeded community; this sandbox has neither, so 126 class strings would be
+  changed with no way to re-verify the result visually. That fails this pass's
+  own standard, and the standard matters more than the row. Two things also need
+  Martin's call first: whether 21 archetypes each need their own colour at all,
+  and whether the accent should move to a border/`Badge` (per `AGENTS.md`'s
+  no-tinted-wash rule) rather than being recoloured in place. Its sibling
+  `THEME_COLOR` — which *is* renderable and *was* verified — is fixed, and the
+  `--cat-*` ramp it now uses is ready for `ANIMAL_CARD_TONE` to adopt.
+* **F-Med-3, F-Med-4** — product calls, see rows 13-14.
+* **Senior-designer suggestions S1-S13** — out of scope for the compliance fix
+  phase by the pass's own ordering. S1 (re-tune `.glass` alpha now that the blur
+  actually runs) is the one worth doing soon; 48% transparent was almost
+  certainly chosen to compensate for a blur nobody could see.
 
-# Part 2 — the final Pass 1 report's backlog
+## Standing gap for Pass 11
 
-Everything above tracks the **first** run of this pass, against the
-punch list in what is now
-[`01-visual-cohesion-report-original.md`](01-visual-cohesion-report-original.md).
-That run was superseded: PRs #26–#29 landed the design-unification and
-two rounds of live feedback while it was in flight, and the final report
-([`01-visual-cohesion.md`](01-visual-cohesion.md)) was re-derived against
-`main` in its actual state.
-
-The final report found **0 Critical and 0 High open** — the three
-Critical items the first run identified (`.glass`/`.glass-well` missing,
-`--primary` not the brand color, `--warning` sharing a hue family with
-the accent) were all independently resolved by #26–#29, confirmed
-directly against `src/app/globals.css` rather than from commit messages.
-
-What it left as backlog, and where each stands:
-
-| Item | Severity | Status | Evidence | Notes |
-|---|---|---|---|---|
-| `text-[0.8rem]` in `button.tsx:27` / `toggle.tsx:20` (`sm` size) | Medium | **Resolved** | Both now `text-sm`. `grep -rn 'text-\[[0-9]' src/app src/components` returns nothing outside the documented `UpsideLogo` exception — this was the last arbitrary text size in the app. | Rounded **up**, not down: `text-xs` is the app's stated font *floor* rather than a default, `sm` buttons carry real labels (Save, Cancel, Add holding), and the `xs` variant already exists for the genuinely tiny case. Also matches shadcn upstream, where buttons are `text-sm` and sizes differ by height/padding. Measured the cost against the compiled stylesheet: labels grow 3–11px, box stays `h-7`/28px so nothing clips. |
-| `CommunitiesList.tsx:266` hand-rolls `animate-pulse rounded-lg bg-muted` instead of `<Skeleton>` | Medium | **Resolved** | Now `<Skeleton className="h-[3.75rem]" />`. The only visible delta is `rounded-lg` → `rounded-md` on a loading placeholder. | Trivial once the type-scale decision made it clear these Pass 1 items were being worked rather than held as a set. |
-| Overlay surfaces (`Dialog`, `Sheet`, `Drawer`, `Popover`, `DropdownMenu`, `Select`, `Command`) are opaque, not glass | Medium | **Deferred — needs Martin's decision** | — | Deliberate and self-consistent today: opaque `bg-popover` + a hairline ring, with `backdrop-blur-xs` only on the dimming scrim. Making them glass now that top-level cards are is a genuine design decision — blur behind small menu text risks legibility — and the report routed it to "Needs a decision" for exactly that reason. |
-| Six Low items (`global-error.tsx` hex colors, `UpsideLogo` arbitrary sizes, `native-select` system colors, icon stroke widths, unused `next-themes`, container widths) | Low | **Resolved** (the one real item) | `next-themes` removed from `package.json`; `grep -rn next-themes src/ scripts/` returns nothing, and the lockfile no longer carries it. | Five of the six were documented deliberate exceptions or non-findings, confirmed by the report. The sixth — the unused `next-themes` dependency — was real: the app is single-theme by design (`html { color-scheme: dark }`) and nothing imported it, so it misled a reader into expecting a theme toggle that doesn't exist. |
-
-## Status
-
-No Critical or High items open, and the three actionable Medium/Low rows
-above are now closed. The single remaining row is the overlay-glass
-question, which is a genuine design decision rather than a defect: those
-surfaces are deliberately opaque and self-consistent today, and blurring
-small menu text risks legibility.
+Three items carry **Unable to Verify (WebKit Unavailable)** on iOS: R2-7,
+R2-8, R2-13 (rows 1i, 2i, 3i). Every one is specifically a WebKit-vs-Blink
+rendering question, and a Chromium stand-in cannot answer it. They must be
+confirmed on a real iOS device before anyone treats the glass material as
+verified on iOS.

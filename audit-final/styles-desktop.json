@@ -1,0 +1,389 @@
+{
+  "styles": {
+    "header": {
+      "tag": "header",
+      "cls": "sticky top-0 z-40 bg-background/75 backdrop-blur-xl pt-[env(safe-area-inset-top)] md:hidden",
+      "background-color": "oklab(0 0 0 / 0.75)",
+      "background-image": "none",
+      "backdrop-filter": "blur(24px)",
+      "-webkit-backdrop-filter": "",
+      "box-shadow": "none",
+      "border": "0px solid lab(100 0 0 / 0.16)",
+      "border-radius": "0px",
+      "opacity": "1",
+      "color": "lab(98.26 0 0)",
+      "filter": "none",
+      "_box": {
+        "w": 0,
+        "h": 0
+      }
+    },
+    "glass": [
+      {
+        "tag": "div",
+        "cls": "card-sheen glass min-w-0 rounded-xl p-6 ring-1 ring-foreground/20",
+        "background-color": "oklch(0.205 0.00000521543 none / 0.52)",
+        "background-image": "none",
+        "backdrop-filter": "blur(28px) saturate(1.6)",
+        "-webkit-backdrop-filter": "",
+        "box-shadow": "lab(100 0 0 / 0.12) 0px 1px 0px 0px inset, lab(100 0 0 / 0.16) 0px 0px 0px 1px inset, lab(0 0 0 / 0.85) 0px 12px 32px -16px",
+        "border": "0px solid lab(100 0 0 / 0.16)",
+        "border-radius": "14px",
+        "opacity": "1",
+        "color": "lab(98.26 0 0)",
+        "filter": "none",
+        "_box": {
+          "w": 276,
+          "h": 136
+        }
+      },
+      {
+        "tag": "div",
+        "cls": "card-sheen glass min-w-0 rounded-xl p-6 ring-1 ring-foreground/20",
+        "background-color": "oklch(0.205 0.00000521543 none / 0.52)",
+        "background-image": "none",
+        "backdrop-filter": "blur(28px) saturate(1.6)",
+        "-webkit-backdrop-filter": "",
+        "box-shadow": "lab(100 0 0 / 0.12) 0px 1px 0px 0px inset, lab(100 0 0 / 0.16) 0px 0px 0px 1px inset, lab(0 0 0 / 0.85) 0px 12px 32px -16px",
+        "border": "0px solid lab(100 0 0 / 0.16)",
+        "border-radius": "14px",
+        "opacity": "1",
+        "color": "lab(98.26 0 0)",
+        "filter": "none",
+        "_box": {
+          "w": 276,
+          "h": 136
+        }
+      },
+      {
+        "tag": "div",
+        "cls": "card-sheen glass min-w-0 rounded-xl p-6 ring-1 ring-foreground/20",
+        "background-color": "oklch(0.205 0.00000521543 none / 0.52)",
+        "background-image": "none",
+        "backdrop-filter": "blur(28px) saturate(1.6)",
+        "-webkit-backdrop-filter": "",
+        "box-shadow": "lab(100 0 0 / 0.12) 0px 1px 0px 0px inset, lab(100 0 0 / 0.16) 0px 0px 0px 1px inset, lab(0 0 0 / 0.85) 0px 12px 32px -16px",
+        "border": "0px solid lab(100 0 0 / 0.16)",
+        "border-radius": "14px",
+        "opacity": "1",
+        "color": "lab(98.26 0 0)",
+        "filter": "none",
+        "_box": {
+          "w": 276,
+          "h": 136
+        }
+      },
+      {
+        "tag": "div",
+        "cls": "card-sheen glass min-w-0 rounded-xl p-6 ring-1 ring-foreground/20",
+        "background-color": "oklch(0.205 0.00000521543 none / 0.52)",
+        "background-image": "none",
+        "backdrop-filter": "blur(28px) saturate(1.6)",
+        "-webkit-backdrop-filter": "",
+        "box-shadow": "lab(100 0 0 / 0.12) 0px 1px 0px 0px inset, lab(100 0 0 / 0.16) 0px 0px 0px 1px inset, lab(0 0 0 / 0.85) 0px 12px 32px -16px",
+        "border": "0px solid lab(100 0 0 / 0.16)",
+        "border-radius": "14px",
+        "opacity": "1",
+        "color": "lab(98.26 0 0)",
+        "filter": "none",
+        "_box": {
+          "w": 276,
+          "h": 136
+        }
+      },
+      {
+        "tag": "div",
+        "cls": "card-sheen glass rounded-xl text-foreground ring-1 ring-foreground/20 p-6",
+        "background-color": "oklch(0.205 0.00000521543 none / 0.52)",
+        "background-image": "none",
+        "backdrop-filter": "blur(28px) saturate(1.6)",
+        "-webkit-backdrop-filter": "",
+        "box-shadow": "lab(100 0 0 / 0.12) 0px 1px 0px 0px inset, lab(100 0 0 / 0.16) 0px 0px 0px 1px inset, lab(0 0 0 / 0.85) 0px 12px 32px -16px",
+        "border": "0px solid lab(100 0 0 / 0.16)",
+        "border-radius": "14px",
+        "opacity": "1",
+        "color": "lab(98.26 0 0)",
+        "filter": "none",
+        "_box": {
+          "w": 1152,
+          "h": 222
+        }
+      },
+      {
+        "tag": "div",
+        "cls": "card-sheen glass rounded-xl text-foreground ring-1 ring-foreground/20 p-6",
+        "background-color": "oklch(0.205 0.00000521543 none / 0.52)",
+        "background-image": "none",
+        "backdrop-filter": "blur(28px) saturate(1.6)",
+        "-webkit-backdrop-filter": "",
+        "box-shadow": "lab(100 0 0 / 0.12) 0px 1px 0px 0px inset, lab(100 0 0 / 0.16) 0px 0px 0px 1px inset, lab(0 0 0 / 0.85) 0px 12px 32px -16px",
+        "border": "0px solid lab(100 0 0 / 0.16)",
+        "border-radius": "14px",
+        "opacity": "1",
+        "color": "lab(98.26 0 0)",
+        "filter": "none",
+        "_box": {
+          "w": 1152,
+          "h": 128
+        }
+      }
+    ],
+    "glassWell": [
+      {
+        "tag": "button",
+        "cls": "group relative flex h-full min-w-0 flex-col justify-center gap-1.5 overflow-hidden rounded-lg p-6 text-left ring-1 transition glass-well ring-foreground/12 hover:scale-[1.01] hover:bg-accent/70 active:scale-[0.995]",
+        "background-color": "oklch(0.268999 0.00000679093 none / 0.5)",
+        "background-image": "none",
+        "backdrop-filter": "blur(16px) saturate(1.4)",
+        "-webkit-backdrop-filter": "",
+        "box-shadow": "oklch(0.999998 0.0000253939 none / 0.104) 0px 0px 0px 1px inset",
+        "border": "0px solid lab(100 0 0 / 0.16)",
+        "border-radius": "10px",
+        "opacity": "1",
+        "color": "lab(98.26 0 0)",
+        "filter": "none",
+        "_box": {
+          "w": 360,
+          "h": 132
+        }
+      },
+      {
+        "tag": "button",
+        "cls": "group relative flex h-full min-w-0 flex-col justify-center gap-1.5 overflow-hidden rounded-lg p-6 text-left ring-1 transition glass-well ring-foreground/12 hover:scale-[1.01] hover:bg-accent/70 active:scale-[0.995]",
+        "background-color": "oklch(0.268999 0.00000679093 none / 0.5)",
+        "background-image": "none",
+        "backdrop-filter": "blur(16px) saturate(1.4)",
+        "-webkit-backdrop-filter": "",
+        "box-shadow": "oklch(0.999998 0.0000253939 none / 0.104) 0px 0px 0px 1px inset",
+        "border": "0px solid lab(100 0 0 / 0.16)",
+        "border-radius": "10px",
+        "opacity": "1",
+        "color": "lab(98.26 0 0)",
+        "filter": "none",
+        "_box": {
+          "w": 360,
+          "h": 132
+        }
+      },
+      {
+        "tag": "button",
+        "cls": "group relative flex h-full min-w-0 flex-col justify-center gap-1.5 overflow-hidden rounded-lg p-6 text-left ring-1 transition glass-well ring-foreground/12 hover:scale-[1.01] hover:bg-accent/70 active:scale-[0.995]",
+        "background-color": "oklch(0.268999 0.00000679093 none / 0.5)",
+        "background-image": "none",
+        "backdrop-filter": "blur(16px) saturate(1.4)",
+        "-webkit-backdrop-filter": "",
+        "box-shadow": "oklch(0.999998 0.0000253939 none / 0.104) 0px 0px 0px 1px inset",
+        "border": "0px solid lab(100 0 0 / 0.16)",
+        "border-radius": "10px",
+        "opacity": "1",
+        "color": "lab(98.26 0 0)",
+        "filter": "none",
+        "_box": {
+          "w": 360,
+          "h": 132
+        }
+      },
+      {
+        "tag": "button",
+        "cls": "group relative flex h-full min-w-0 flex-col justify-center gap-1.5 overflow-hidden rounded-lg p-6 text-left ring-1 transition glass-well ring-foreground/12 hover:scale-[1.01] hover:bg-accent/70 active:scale-[0.995]",
+        "background-color": "oklch(0.268999 0.00000679093 none / 0.5)",
+        "background-image": "none",
+        "backdrop-filter": "blur(16px) saturate(1.4)",
+        "-webkit-backdrop-filter": "",
+        "box-shadow": "oklch(0.999998 0.0000253939 none / 0.104) 0px 0px 0px 1px inset",
+        "border": "0px solid lab(100 0 0 / 0.16)",
+        "border-radius": "10px",
+        "opacity": "1",
+        "color": "lab(98.26 0 0)",
+        "filter": "none",
+        "_box": {
+          "w": 0,
+          "h": 0
+        }
+      },
+      {
+        "tag": "button",
+        "cls": "group relative flex h-full min-w-0 flex-col justify-center gap-1.5 overflow-hidden rounded-lg p-6 text-left ring-1 transition glass-well ring-foreground/12 hover:scale-[1.01] hover:bg-accent/70 active:scale-[0.995]",
+        "background-color": "oklch(0.268999 0.00000679093 none / 0.5)",
+        "background-image": "none",
+        "backdrop-filter": "blur(16px) saturate(1.4)",
+        "-webkit-backdrop-filter": "",
+        "box-shadow": "oklch(0.999998 0.0000253939 none / 0.104) 0px 0px 0px 1px inset",
+        "border": "0px solid lab(100 0 0 / 0.16)",
+        "border-radius": "10px",
+        "opacity": "1",
+        "color": "lab(98.26 0 0)",
+        "filter": "none",
+        "_box": {
+          "w": 0,
+          "h": 0
+        }
+      },
+      {
+        "tag": "button",
+        "cls": "group relative flex h-full min-w-0 flex-col justify-center gap-1.5 overflow-hidden rounded-lg p-6 text-left ring-1 transition glass-well ring-foreground/12 hover:scale-[1.01] hover:bg-accent/70 active:scale-[0.995]",
+        "background-color": "oklch(0.268999 0.00000679093 none / 0.5)",
+        "background-image": "none",
+        "backdrop-filter": "blur(16px) saturate(1.4)",
+        "-webkit-backdrop-filter": "",
+        "box-shadow": "oklch(0.999998 0.0000253939 none / 0.104) 0px 0px 0px 1px inset",
+        "border": "0px solid lab(100 0 0 / 0.16)",
+        "border-radius": "10px",
+        "opacity": "1",
+        "color": "lab(98.26 0 0)",
+        "filter": "none",
+        "_box": {
+          "w": 0,
+          "h": 0
+        }
+      }
+    ],
+    "gradientBgs": [],
+    "gradientText": [],
+    "boxShadows": [
+      {
+        "value": "lab(100 0 0 / 0.12) 0px 1px 0px 0px inset, lab(100 0 0 / 0.16) 0px 0px 0px 1px inset, lab(0 0 0 / 0.85) 0px 12px 32px -16px",
+        "count": 18,
+        "sample": "card-sheen glass min-w-0 rounded-xl p-6 ring-1 ring-foreground/20",
+        "text": "Portfolio$1,121,5004 portfolio"
+      },
+      {
+        "value": "oklch(0.999998 0.0000253939 none / 0.104) 0px 0px 0px 1px inset",
+        "count": 6,
+        "sample": "group relative flex h-full min-w-0 flex-col justify-center gap-1.5 overflow-hidden rounded-lg p-6 text-left ring-1 trans",
+        "text": "$NBIS+$20,96854% of today's mo"
+      },
+      {
+        "value": "lab(100 0 0 / 0.12) 0px 1px 0px 0px inset, oklch(0.999998 0.0000253939 none / 0.104) 0px 0px 0px 1px inset",
+        "count": 4,
+        "sample": "card-sheen glass-well group flex w-full flex-col gap-4 rounded-lg p-6 text-left ring-1 ring-foreground/20 transition hov",
+        "text": "MMaryAnn6 holdings · $14,500 c"
+      },
+      {
+        "value": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 1px 2px 0px",
+        "count": 2,
+        "sample": "group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-",
+        "text": "Add a holding"
+      },
+      {
+        "value": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px",
+        "count": 2,
+        "sample": "group-data-[spacing=0]/toggle-group:px-2 focus:z-10 focus-visible:z-10 group-data-[spacing=0]/toggle-group:has-data-[ico",
+        "text": "All time"
+      },
+      {
+        "value": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, lab(100 0 0 / 0.16) 0px 0px 0px 1px inset, rgba(0, 0, 0, 0) 0px 0px 0px 0px",
+        "count": 2,
+        "sample": "grid h-12 w-full overflow-hidden rounded-lg bg-muted ring-1 ring-inset ring-border grid-cols-5",
+        "text": "HomePulseLabGrowthCircle"
+      },
+      {
+        "value": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, oklab(0.800001 -0.00000652671 0.0900127 / 0.4) 0px 0px 0px 1px, rgba(0, 0, 0, 0.1) 0px 1px 3px 0px, rgba(0, 0, 0, 0.1) 0px 1px 2px -1px",
+        "count": 1,
+        "sample": "group-data-[spacing=0]/toggle-group:px-2 focus:z-10 focus-visible:z-10 group-data-[spacing=0]/toggle-group:has-data-[ico",
+        "text": "Today"
+      },
+      {
+        "value": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, lab(98.26 0 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px",
+        "count": 1,
+        "sample": "h-8 w-full min-w-0 border-input px-2.5 py-1 text-base transition-colors outline-none file:inline-flex file:h-6 file:bord",
+        "text": ""
+      },
+      {
+        "value": "lab(100 0 0 / 0.16) 0px 0px 0px 1px inset, rgba(0, 0, 0, 0.85) 0px 12px 32px -16px",
+        "count": 1,
+        "sample": "flex w-full min-w-0 flex-col items-center justify-center gap-4 rounded-xl p-6 text-center text-balance glass flex-none b",
+        "text": "Nothing on the list yetAdd a n"
+      }
+    ],
+    "dropShadows": [],
+    "fontScale": [
+      [
+        "14px/500/20px",
+        26
+      ],
+      [
+        "14px/400/20px",
+        22
+      ],
+      [
+        "14px/600/20px",
+        12
+      ],
+      [
+        "12px/400/16px",
+        9
+      ],
+      [
+        "16px/600/24px",
+        8
+      ],
+      [
+        "16px/400/24px",
+        7
+      ],
+      [
+        "14px/500/14px",
+        7
+      ],
+      [
+        "18px/600/28px",
+        6
+      ],
+      [
+        "12px/500/12px",
+        5
+      ],
+      [
+        "24px/700/24px",
+        4
+      ],
+      [
+        "20px/700/28px",
+        4
+      ],
+      [
+        "14px/400/22.75px",
+        3
+      ],
+      [
+        "14px/700/14px",
+        2
+      ],
+      [
+        "14px/400/14px",
+        2
+      ],
+      [
+        "16px/500/26px",
+        2
+      ],
+      [
+        "12px/500/16px",
+        1
+      ],
+      [
+        "24px/600/32px",
+        1
+      ],
+      [
+        "14px/400/19.25px",
+        1
+      ]
+    ],
+    "tokens": {
+      "--background": "lab(0% 0 0)",
+      "--card": "lab(7.78201% -.0000149012 0)",
+      "--primary": "lab(77.1133% 2.40737 37.0395)",
+      "--border": "lab(100% 0 0 / .16)",
+      "--muted": "lab(15.204% 0 -.00000596046)",
+      "--gain": "lab(66.9756% -58.27 19.5419)",
+      "--loss": "lab(56.5143% 67.8373 26.0464)",
+      "--warning": "lab(55.3673% 61.6649 107.22)",
+      "--radius": ".625rem",
+      "--destructive": "lab(63.7053% 60.745 31.3109)",
+      "--muted-foreground": "lab(66.128% -.0000298023 .0000119209)"
+    },
+    "bodyBg": "lab(0 0 0)"
+  }
+}

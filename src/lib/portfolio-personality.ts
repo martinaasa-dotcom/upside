@@ -555,18 +555,33 @@ export function animalCardTone(id: string | undefined | null): AnimalCardTone {
 /** Stable color per forecast theme, shared by every theme chart (Lab's
  * allocation fingerprint, the community sector chart) and their legends so
  * a swatch always means the same theme wherever you see it. */
+/**
+ * Theme colours for the allocation bar and its legend.
+ *
+ * These are `var(--cat-*)` references, not hex. The table used to be
+ * eleven hardcoded Tailwind hex values (#a78bfa violet, #e879f9 fuchsia,
+ * #818cf8 indigo, #f59e0b amber, plus cyan/sky/blue/teal/rose) — four of
+ * them explicitly banned app-wide, all of them outside any token, and all
+ * of them rendered as the widest strip of colour in the product. The ramp
+ * they now point at is defined once in `globals.css` and documented in
+ * DESIGN_TOKENS.md: one lightness, one chroma, hue only.
+ *
+ * Ordered so the themes that most often sit next to each other in a real
+ * book (ai_infra / ai_power / semi are usually the three biggest slices)
+ * land on well-separated hues rather than neighbours.
+ */
 export const THEME_COLOR: Record<ForecastTheme, string> = {
-  crypto: "#f59e0b",
-  space: "#a78bfa",
-  ai_infra: "#38bdf8",
-  drones: "#22d3ee",
-  semi: "#818cf8",
-  ai_power: "#e879f9",
-  fintech: "#34d399",
-  software: "#60a5fa",
-  other: "#a1a1aa",
-  healthcare: "#fb7185",
-  index: "#2dd4bf",
+  ai_infra: "var(--cat-2)",
+  ai_power: "var(--cat-3)",
+  semi: "var(--cat-5)",
+  crypto: "var(--cat-1)",
+  space: "var(--cat-8)",
+  fintech: "var(--cat-4)",
+  software: "var(--cat-10)",
+  healthcare: "var(--cat-6)",
+  drones: "var(--cat-7)",
+  index: "var(--cat-9)",
+  other: "var(--cat-neutral)",
 };
 
 export const THEME_LABEL: Record<ForecastTheme, string> = {

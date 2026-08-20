@@ -448,9 +448,13 @@ export const LabSheet = memo(function LabSheet({
                     label="Largest position"
                     value={`${(concentration.topWeightPct * 100).toFixed(1)}%`}
                     sub={concentration.topWeightTicker ?? undefined}
+                    /* --warning, not --loss. A concentrated position is a
+                     * caution, not a loss: nothing here has lost money, and
+                     * spending the P&L colour on a non-P&L number weakens
+                     * both. DESIGN_TOKENS.md assigns orange to exactly this. */
                     valueClassName={
                       concentration.topWeightPct >= 0.25
-                        ? "text-loss"
+                        ? "text-warning"
                         : undefined
                     }
                   />
@@ -472,11 +476,12 @@ export const LabSheet = memo(function LabSheet({
                           ? "The rest barely moves the needle."
                           : "The rest of your portfolio carries real weight."
                       }
+                      /* --warning, not --loss — see the note above. */
                       valueClassName={
                         (concentration.positionCount > 5
                           ? concentration.topFivePct
                           : concentration.topThreePct) >= 0.8
-                          ? "text-loss"
+                          ? "text-warning"
                           : undefined
                       }
                     />
