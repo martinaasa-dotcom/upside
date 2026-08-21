@@ -98,7 +98,13 @@ function DeltaBadge({
 }
 
 /** Enough to see the shape of the day. Eight was a wall of cards. */
-const MOVERS_SHOWN = 5;
+/*
+ * Even, because Movers is a two-column grid and five left the last row with
+ * a single card floating beside a gap. Six fills three complete rows, and
+ * an even number is also the right shape for what this block is: the names
+ * that moved most, up and down.
+ */
+const MOVERS_SHOWN = 6;
 const EMPTY_ALERTS: UpsideAlert[] = [];
 
 type Props = {
@@ -496,7 +502,7 @@ function MoverTile({
       onClick={onOpen}
       title={sheets || undefined}
       className={cn(
-        "veil-hover card-sheen glass group relative flex h-full w-full min-w-0 items-center justify-between gap-2 overflow-hidden rounded-lg p-6 text-left ring-1 transition hover:scale-[1.01] sm:gap-3",
+        "veil-hover card-sheen glass group relative flex h-full w-full min-w-0 items-center justify-between gap-2 overflow-hidden rounded-lg p-4 text-left ring-1 transition hover:scale-[1.01] sm:gap-3 sm:p-6",
         isUp ? "ring-gain/20 hover:ring-gain/40" : "ring-loss/20 hover:ring-loss/40"
       )}
     >
@@ -981,12 +987,26 @@ export const OverviewDashboard = memo(function OverviewDashboard({
             />
           }
         />
+        {/*
+          * Two columns on a phone as well, not a six-tall stack.
+          *
+          * Movers exists to be compared -- what went up against what went
+          * down -- and a single column turns that into a scroll where only
+          * two are ever on screen. The suggested fix was a horizontal snap
+          * rail, which trades a scrolling problem for a discoverability
+          * one: it hides half your movers behind a gesture with no
+          * affordance.
+          *
+          * Verified rather than assumed: rendered at 360, 390 and 430 px,
+          * the tile lands at 151/166/186 px wide with nothing clipped, and
+          * six fit in three tidy rows.
+          */}
         {movers.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             Waiting on prices.
           </p>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
             {movers.map(({ t, mode }) => (
               <MoverTile
                 key={`${mode}-${t.ticker}`}

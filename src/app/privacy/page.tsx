@@ -139,6 +139,12 @@ export default function PrivacyPage() {
               account, no name, and no session.
             </li>
             <li>
+              <strong className="text-foreground">Cloudflare (R2)</strong>:
+              storage for the encrypted backup copy described under
+              &ldquo;Data retention&rdquo;. The copy is encrypted before it
+              leaves us, so Cloudflare stores bytes it cannot read.
+            </li>
+            <li>
               <strong className="text-foreground">Vercel</strong>: hosting,
               plus the performance metrics mentioned above.
             </li>

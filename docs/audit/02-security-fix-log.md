@@ -49,6 +49,13 @@ Also verified:
 - **Non-destructive** — the seeded row survives. The migration revokes
   access; it does not drop tables.
 
+> **Decided 2026-08-21 — see `deferred-decisions.md`.** Migration `001` is
+> left untouched. Editing applied SQL is what this repo's own migration doc
+> warns against, and the chain already heals itself: replayed end to end,
+> `001` opens the hole and the revoke plus archive close it, leaving a fresh
+> environment safe with its seed rows preserved. The only window where the
+> tables are reachable is during the migration run itself.
+
 **Deliberately left for Martin:** whether to drop these three tables
 outright. That is the tidier end state, but it is irreversible against data
 nobody has inspected, and the exposure is fully closed without it. Each
