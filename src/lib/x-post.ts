@@ -10,7 +10,15 @@ const TWEET_URL = "https://api.x.com/2/tweets";
 export type XPostResult =
   | { ok: true; skipped: true }
   | { ok: true; skipped: false; id: string }
-  | { ok: false; skipped: false; error: string };
+  | {
+      ok: false;
+      skipped: false;
+      error: string;
+      /** X is out of credits or rate-limited (402/429). A billing state,
+       * not a bug — callers should degrade quietly rather than logging an
+       * application error on every run. */
+      quotaExhausted: boolean;
+    };
 
 function env(name: string): string {
   return process.env[name]?.trim() ?? "";
@@ -23,6 +31,23 @@ export function xPostingConfigured(): boolean {
       env("X_ACCESS_TOKEN") &&
       env("X_ACCESS_TOKEN_SECRET")
   );
+}
+
+/**
+ * Auto-posting is opt-in, and the keys being present is not the opt-in.
+ *
+ * Credentials stay configured across a paused plan, so "keys are set"
+ * kept meaning "post on every run" long after the X account had run out
+ * of credits — every fund run then burned a request to be told 402 and
+ * wrote a red row into /admin. Posting now also needs
+ * `X_POSTING_ENABLED=true`, set deliberately once there are credits to
+ * spend. Unset, nothing here ever touches the network.
+ *
+ * The fund still composes its daily post and saves it on the report
+ * either way, so updates can be posted by hand while this is off.
+ */
+export function xPostingEnabled(): boolean {
+  return xPostingConfigured() && env("X_POSTING_ENABLED").toLowerCase() === "true";
 }
 
 /** RFC 3986, the encoding X's OAuth 1.0a signer expects. */
@@ -108,6 +133,7 @@ export async function postTweet(text: string): Promise<XPostResult> {
         ok: false,
         skipped: false,
         error: `X ${res.status}: ${raw.slice(0, 300)}`,
+        quotaExhausted: res.status === 402 || res.status === 429,
       };
     }
     let id = "";
@@ -118,7 +144,12 @@ export async function postTweet(text: string): Promise<XPostResult> {
       id = "";
     }
     if (!id) {
-      return { ok: false, skipped: false, error: "X returned no post id" };
+      return {
+        ok: false,
+        skipped: false,
+        error: "X returned no post id",
+        quotaExhausted: false,
+      };
     }
     return { ok: true, skipped: false, id };
   } catch (err) {
@@ -126,6 +157,7 @@ export async function postTweet(text: string): Promise<XPostResult> {
       ok: false,
       skipped: false,
       error: err instanceof Error ? err.message : "X post failed",
+      quotaExhausted: false,
     };
   }
 }

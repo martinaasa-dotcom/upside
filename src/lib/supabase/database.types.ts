@@ -652,6 +652,7 @@ export type Database = {
           portfolio_value: number
           report_date: string
           spy_price: number | null
+          x_post: string | null
           total_return_pct: number | null
         }
         Insert: {
@@ -666,6 +667,7 @@ export type Database = {
           portfolio_value: number
           report_date: string
           spy_price?: number | null
+          x_post?: string | null
           total_return_pct?: number | null
         }
         Update: {
@@ -680,6 +682,7 @@ export type Database = {
           portfolio_value?: number
           report_date?: string
           spy_price?: number | null
+          x_post?: string | null
           total_return_pct?: number | null
         }
         Relationships: []

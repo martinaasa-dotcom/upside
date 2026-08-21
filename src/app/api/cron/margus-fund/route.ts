@@ -40,7 +40,7 @@ import {
   composeWeeklyFundPost,
   type FundXPostInput,
 } from "@/lib/fund-x-copy";
-import { postTweet, xPostingConfigured } from "@/lib/x-post";
+import { postTweet, xPostingEnabled } from "@/lib/x-post";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { logError } from "@/lib/error-log";
 import { generateObject } from "ai";
@@ -239,16 +239,32 @@ async function maybeGenerateWeeklyRecap(
   }
 }
 
-/** Best-effort X post. Never fails the fund run. */
+/**
+ * Best-effort X post. Never fails the fund run.
+ *
+ * Returns false without touching the network unless auto-posting is
+ * explicitly switched on — see `xPostingEnabled()`. The composed text is
+ * saved on the report either way, so the update still exists to post by
+ * hand.
+ */
 async function maybeTweetFundUpdate(text: string): Promise<boolean> {
-  if (!xPostingConfigured()) return false;
+  if (!xPostingEnabled()) return false;
   const result = await postTweet(text);
   if (!result.ok) {
-    await logError({
-      source: "server",
-      message: `Upside Fund X post failed: ${result.error}`,
-      path: "/api/cron/margus-fund",
-    });
+    /*
+     * A depleted quota is a billing state, not a bug. X answers 402
+     * ("credits depleted") or 429 on every single call once the plan is
+     * out, so logging it as an application error filled /admin with the
+     * same red row after every run and buried anything that was
+     * genuinely broken. The run still returns false and carries on.
+     */
+    if (!result.quotaExhausted) {
+      await logError({
+        source: "server",
+        message: `Upside Fund X post failed: ${result.error}`,
+        path: "/api/cron/margus-fund",
+      });
+    }
     return false;
   }
   return !result.skipped;
@@ -700,24 +716,6 @@ async function handleGET(req: Request) {
       decision.closingNote,
     ];
 
-    const { data: report, error: reportErr } = await supabase
-      .from(PORTFELL_TABLES.margusFundReports)
-      .insert({
-        report_date: today,
-        headline: decision.headline,
-        body: humanizeMargusText(bodyLines.join("\n")),
-        actions: humanizeMargusTree(actions),
-        portfolio_value: totalValueAfter,
-        cash,
-        day_change_dollar: dayChangeDollar,
-        day_change_pct: dayChangePct,
-        total_return_pct: totalReturnPct,
-        spy_price: spyQuote?.price ?? null,
-      })
-      .select()
-      .single();
-    if (reportErr) throw new Error(reportErr.message);
-
     const startCap = Number(fundRow.starting_capital);
     const monday = usWeekMondayKey(today);
     const weekAnchor = reportHistory.find((r) => r.report_date < monday);
@@ -761,12 +759,42 @@ async function handleGET(req: Request) {
       radar: watchlist,
     };
 
-    const tweeted = await maybeTweetFundUpdate(
-      composeDailyFundPost({
-        serial: (existingReportCount ?? 0) + 1,
-        ...xCard,
+    /*
+     * Compose the post before writing the report, and store it on the row.
+     *
+     * The text used to be composed only to hand straight to the X client
+     * and was thrown away if the send didn't happen. That made "post the
+     * fund update by hand" impossible — the update existed only inside a
+     * request that had already ended. Now every trading day's post is
+     * saved whether or not it is ever sent, so it can be copied out of
+     * /admin, and so turning auto-posting on later changes nothing about
+     * what gets written.
+     */
+    const xPost = composeDailyFundPost({
+      serial: (existingReportCount ?? 0) + 1,
+      ...xCard,
+    });
+
+    const { data: report, error: reportErr } = await supabase
+      .from(PORTFELL_TABLES.margusFundReports)
+      .insert({
+        report_date: today,
+        headline: decision.headline,
+        body: humanizeMargusText(bodyLines.join("\n")),
+        actions: humanizeMargusTree(actions),
+        portfolio_value: totalValueAfter,
+        cash,
+        day_change_dollar: dayChangeDollar,
+        day_change_pct: dayChangePct,
+        total_return_pct: totalReturnPct,
+        spy_price: spyQuote?.price ?? null,
+        x_post: xPost,
       })
-    );
+      .select()
+      .single();
+    if (reportErr) throw new Error(reportErr.message);
+
+    const tweeted = await maybeTweetFundUpdate(xPost);
 
     // Fire-and-forget-ish: still awaited so logs/errors are captured in
     // this invocation, but wrapped so a recap issue never fails the

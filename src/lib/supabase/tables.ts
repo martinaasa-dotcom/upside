@@ -43,7 +43,7 @@ export const MARGUS_FUND_COLUMNS =
 export const MARGUS_FUND_HOLDING_COLUMNS =
   "id, ticker, shares, cost_basis, entry_date, thesis, target_timeframe, exit_plan, status, closed_at, exit_reasoning, realized_pnl";
 export const MARGUS_FUND_REPORT_COLUMNS =
-  "id, report_date, headline, body, actions, portfolio_value, cash, day_change_dollar, day_change_pct, total_return_pct, spy_price, created_at";
+  "id, report_date, headline, body, actions, portfolio_value, cash, day_change_dollar, day_change_pct, total_return_pct, spy_price, x_post, created_at";
 export const MARGUS_FUND_RECAP_COLUMNS =
   "id, week_ending, headline, body, week_return_pct, spy_week_return_pct, portfolio_value_start, portfolio_value_end, created_at";
 export const ERROR_LOG_COLUMNS =
