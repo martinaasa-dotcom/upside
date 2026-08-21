@@ -106,6 +106,15 @@ cleanly, so Stripe does not retry them forever.
 `npm test` **169 tests / 35 files** (157 before) ·
 `npm run test:invariants` green.
 
+## Verification waived (2026-08-21)
+
+Martin closed the outstanding Stripe test-mode run as an accepted risk
+rather than performing it. **Nothing below became verified as a result** —
+the three fixes are still argued from documented Stripe behaviour and
+mutation tests, not observed against Stripe. `11-go-no-go.md` B2 lists what
+remains unverified and the six telemetry events that surface each failure
+mode in production.
+
 ## Unable to Verify (Environment-Blocked)
 
 Carried into Pass 11, unchanged in kind:

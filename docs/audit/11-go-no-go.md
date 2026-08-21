@@ -21,13 +21,20 @@
 > The Sunday letter is unblocked, and the app no longer depends on the
 > migration having run at all.
 >
-> **The verdict is now gated on one thing, not two: Stripe (B2).**
+> **Updated again, later the same day: B2 closed as an accepted risk.**
+> Martin waived the Stripe test-mode run ("just close it, I'm sure it
+> works"). That is his call to make and a reasonable one — see B2 below for
+> what it does and does not mean.
+>
+> **The verdict is Go.**
 
 ## Verdict
 
-**Go for the people already using it. No-Go for taking money from
-strangers — until ~~four migrations are applied and~~ billing is exercised
-in Stripe test mode.**
+**Go.**
+
+~~No-Go for taking money from strangers until four migrations are applied
+and billing is exercised in Stripe test mode.~~ The migrations are applied
+and verified; the Stripe run was waived by the owner as an accepted risk.
 
 Not a hedge. The two halves rest on different evidence:
 
@@ -78,7 +85,11 @@ shipped in one commit, and they apply at different times.
 not a migration in production, and the gap between them is invisible from
 inside the code.
 
-### B2 — Billing has never been exercised
+### B2 — ~~Billing has never been exercised~~ — **ACCEPTED RISK, not verified**
+
+*Closed 2026-08-21 at Martin's direction. Recorded as accepted rather than
+resolved, because nothing here was tested and a later reader must not
+mistake one for the other.*
 
 Pass 6 found three High defects in payment handling and fixed all three,
 but there are no Stripe keys in this environment, so **nothing in that pass
@@ -89,6 +100,35 @@ incomplete states — are documented behaviour reproduced in test doubles.
 Before a stranger's card is charged: one test-mode checkout, one delivered
 webhook, one cancellation. That is an hour of work and it converts the
 best-argued pass in this audit into a verified one.
+
+**Why accepting this is defensible.** The three fixes rest on Stripe
+behaviour that is documented rather than inferred — retry on non-2xx,
+newest-first list ordering, `status: "all"` including incomplete states —
+and each was mutation-tested by reverting it and watching the relevant test
+fail. And nothing is gated on `subscription_status` today, so if a fix is
+wrong the visible damage is a confusing Account page, not a paying customer
+locked out.
+
+**What is still unverified, precisely.** That the webhook signature verifies
+against a real secret; that Stripe's retry actually arrives after the 500;
+that `subscriptions.list` orders and filters the way the reconcile fix
+assumes; and that cancellation on account deletion really stops the charges.
+
+**What to watch instead of a test.** Every one of those failure modes writes
+a telemetry event, visible on `/admin`:
+
+| event | means |
+|---|---|
+| `stripe_webhook_bad_signature` | the webhook secret is wrong or someone is probing |
+| `stripe_webhook_sync_failed` | a subscription write failed; Stripe will retry |
+| `stripe_webhook_sync_no_profile` | a payment landed for a customer id no profile carries |
+| `billing_reconcile_corrected` | the nightly job changed someone's status — **expected occasionally, suspicious in bulk** |
+| `account_delete_stripe_cancel_failed` | someone was deleted and may still be billed |
+| `account_delete_stripe_list_failed` | deletion could not ask Stripe what was live |
+
+The first paying customer is the real test. `stripe_webhook_sync_no_profile`
+and `account_delete_stripe_cancel_failed` are the two that cost money if
+they appear, so they are the ones worth an alert.
 
 ---
 
@@ -184,13 +224,14 @@ happen.
    better than the assumption: the legacy tables were never there.
 2. ~~Confirm the Sunday letter runs.~~ The marker column is present, and
    the letter no longer depends on it either way.
-3. **Run one Stripe test-mode checkout, webhook and cancellation.** This is
-   the only thing still standing between the current state and taking a
-   stranger's money.
-4. Then open it to people outside the family.
+3. ~~Run one Stripe test-mode checkout, webhook and cancellation.~~
+   **Waived** — accepted as a risk rather than tested. Watch the six
+   telemetry events listed under B2 instead; two of them cost money if they
+   ever fire.
+4. Open it to people outside the family.
 
-Step 3 is about an hour, and it is the last argument in these documents
-that has not been converted into a fact.
+Everything in this audit is now either verified or explicitly accepted.
+Nothing is pending, and nothing is claimed as tested that was not.
 
 ## Housekeeping
 
