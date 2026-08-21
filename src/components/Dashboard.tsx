@@ -3492,7 +3492,7 @@ export function Dashboard() {
       portfolios={portfolios}
       activeId={onBook ? activeId : null}
       onChange={selectDockTarget}
-      onAdd={handleAddSheet}
+      onAdd={() => setCreatingSheet(true)}
       sheetTodayTone={sheetTodayTone}
       hiddenModeIds={hiddenMetaTabIds}
       hideAdd={!onBook}

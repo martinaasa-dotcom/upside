@@ -1,6 +1,6 @@
 "use client";
 
-import { useCircleHref } from "@/components/CircleDockLink";
+import { useCircleHref } from "@/lib/use-circle-href";
 import { stashOpenTab } from "@/lib/active-sheet";
 import { cn } from "@/lib/format";
 import {
@@ -129,7 +129,7 @@ export function MobileTabBar({
         <div
           role="tablist"
           className={cn(
-            "grid h-12 w-full overflow-hidden rounded-lg bg-muted ring-1 ring-inset ring-border",
+            "grid h-12 w-full overflow-hidden rounded-lg glass-well",
             cols === 3 && "grid-cols-3",
             cols === 4 && "grid-cols-4",
             cols === 5 && "grid-cols-5"
