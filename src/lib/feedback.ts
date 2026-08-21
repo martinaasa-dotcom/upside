@@ -1,16 +1,20 @@
-/** In-app feedback. Weekly prompt is directed chips. Manual is a topic plus a rant. */
+/**
+ * In-app feedback. The scheduled prompt walks one question at a time and
+ * shows up once a month. Manual is a topic plus a rant.
+ */
 
 export const FEEDBACK_TO = "martin.aasa@upthink.ee";
-export const FEEDBACK_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+/** How long a person is left alone: before the first prompt, and between prompts. */
+export const FEEDBACK_MONTH_MS = 30 * 24 * 60 * 60 * 1000;
 export const FEEDBACK_STORAGE_KEY = "upside-feedback-v1";
 
-export const WEEKLY_FEEL = [
+export const MONTHLY_FEEL = [
   { id: "easy", label: "Easy to follow" },
   { id: "mixed", label: "Mixed" },
   { id: "stuck", label: "Confusing or in the way" },
 ] as const;
 
-export const WEEKLY_HELPED = [
+export const MONTHLY_HELPED = [
   { id: "prices", label: "Seeing what I own and today's prices" },
   { id: "pulse", label: "Pulse" },
   { id: "forecast", label: "Forecast" },
@@ -20,7 +24,7 @@ export const WEEKLY_HELPED = [
   { id: "nothing", label: "Nothing yet" },
 ] as const;
 
-export const WEEKLY_BLOCKED = [
+export const MONTHLY_BLOCKED = [
   { id: "crowded", label: "Too much on screen" },
   { id: "lost", label: "Couldn't find a thing" },
   { id: "next", label: "Didn't know what to do next" },
@@ -28,7 +32,7 @@ export const WEEKLY_BLOCKED = [
   { id: "none", label: "Nothing got in the way" },
 ] as const;
 
-export const WEEKLY_CHANGE = [
+export const MONTHLY_CHANGE = [
   { id: "home", label: "Home and the briefing" },
   { id: "adding", label: "Adding names" },
   { id: "pulse", label: "Pulse" },
@@ -38,10 +42,79 @@ export const WEEKLY_CHANGE = [
   { id: "other", label: "Something I haven't named" },
 ] as const;
 
-export type WeeklyFeelId = (typeof WEEKLY_FEEL)[number]["id"];
-export type WeeklyHelpedId = (typeof WEEKLY_HELPED)[number]["id"];
-export type WeeklyBlockedId = (typeof WEEKLY_BLOCKED)[number]["id"];
-export type WeeklyChangeId = (typeof WEEKLY_CHANGE)[number]["id"];
+export type MonthlyFeelId = (typeof MONTHLY_FEEL)[number]["id"];
+export type MonthlyHelpedId = (typeof MONTHLY_HELPED)[number]["id"];
+export type MonthlyBlockedId = (typeof MONTHLY_BLOCKED)[number]["id"];
+export type MonthlyChangeId = (typeof MONTHLY_CHANGE)[number]["id"];
+
+export type MonthlyFeedbackAnswers = {
+  feel: MonthlyFeelId | null;
+  helped: MonthlyHelpedId[];
+  blocked: MonthlyBlockedId[];
+  change: MonthlyChangeId | null;
+  changeNote: string;
+};
+
+export type MonthlyStepId = keyof Omit<MonthlyFeedbackAnswers, "changeNote">;
+
+/**
+ * One row per question. The modal walks these one at a time, the summary
+ * table lists them, and the email is built from the same rows — so the
+ * three can never drift apart.
+ */
+export const MONTHLY_STEPS = [
+  {
+    id: "feel",
+    /** Column label in the summary table. Keep it short enough to sit in a cell. */
+    short: "The month",
+    question: "How did the last month feel?",
+    hint: null,
+    multi: false,
+    options: MONTHLY_FEEL,
+    /** Line label in the email. */
+    emailLabel: "How the month felt",
+  },
+  {
+    id: "helped",
+    short: "Helped",
+    question: "What actually helped?",
+    hint: "Pick every one that did.",
+    multi: true,
+    options: MONTHLY_HELPED,
+    emailLabel: "What helped",
+  },
+  {
+    id: "blocked",
+    short: "In the way",
+    question: "What got in the way?",
+    hint: "Pick every one that did.",
+    multi: true,
+    options: MONTHLY_BLOCKED,
+    emailLabel: "What got in the way",
+  },
+  {
+    id: "change",
+    short: "Change",
+    question: "If you could change one thing for next month, what is it?",
+    hint: null,
+    multi: false,
+    options: MONTHLY_CHANGE,
+    emailLabel: "One thing to change",
+  },
+] as const satisfies readonly {
+  id: MonthlyStepId;
+  short: string;
+  question: string;
+  hint: string | null;
+  multi: boolean;
+  options: readonly { id: string; label: string }[];
+  emailLabel: string;
+}[];
+
+export type MonthlyStep = (typeof MONTHLY_STEPS)[number];
+
+/** Shown wherever a question has no answer yet. */
+export const NO_ANSWER = "—";
 
 export type FeedbackSchedule = {
   firstSeenAt: string;
@@ -50,23 +123,15 @@ export type FeedbackSchedule = {
   snoozeUntil: string | null;
 };
 
-export type WeeklyFeedbackAnswers = {
-  feel: WeeklyFeelId | null;
-  helped: WeeklyHelpedId[];
-  blocked: WeeklyBlockedId[];
-  change: WeeklyChangeId | null;
-  changeNote: string;
-};
-
 export type ManualFeedbackDraft = {
   topic: string;
   body: string;
 };
 
-const FEEL_IDS = new Set(WEEKLY_FEEL.map((o) => o.id));
-const HELPED_IDS = new Set(WEEKLY_HELPED.map((o) => o.id));
-const BLOCKED_IDS = new Set(WEEKLY_BLOCKED.map((o) => o.id));
-const CHANGE_IDS = new Set(WEEKLY_CHANGE.map((o) => o.id));
+const FEEL_IDS = new Set(MONTHLY_FEEL.map((o) => o.id));
+const HELPED_IDS = new Set(MONTHLY_HELPED.map((o) => o.id));
+const BLOCKED_IDS = new Set(MONTHLY_BLOCKED.map((o) => o.id));
+const CHANGE_IDS = new Set(MONTHLY_CHANGE.map((o) => o.id));
 
 function defaultSchedule(nowIso: string): FeedbackSchedule {
   return {
@@ -77,7 +142,7 @@ function defaultSchedule(nowIso: string): FeedbackSchedule {
   };
 }
 
-export function emptyWeeklyAnswers(): WeeklyFeedbackAnswers {
+export function emptyMonthlyAnswers(): MonthlyFeedbackAnswers {
   return {
     feel: null,
     helped: [],
@@ -119,7 +184,7 @@ export function saveFeedbackSchedule(state: FeedbackSchedule) {
   }
 }
 
-/** Stamp first seen. Older accounts keep their created date so a week is already due. */
+/** Stamp first seen. Older accounts keep their created date so a month is already due. */
 export function touchFeedbackSchedule(
   accountCreatedAt?: string | null,
   now = Date.now()
@@ -139,15 +204,29 @@ export function touchFeedbackSchedule(
   return next;
 }
 
-export function isWeeklyFeedbackDue(
+function isAtLeastAMonthAfter(stamp: string | null, now: number): boolean {
+  if (!stamp) return true;
+  const at = Date.parse(stamp);
+  if (!Number.isFinite(at)) return true;
+  return now >= at + FEEDBACK_MONTH_MS;
+}
+
+/**
+ * Due at most once a month: a month of use before the first one, then a
+ * month clear of the last prompt and the last send. `lastPromptAt` is
+ * checked on its own so a schedule written by an older build — which
+ * snoozed only a week — still waits the full month.
+ */
+export function isMonthlyFeedbackDue(
   schedule: FeedbackSchedule,
   now = Date.now()
 ): boolean {
   const start = Date.parse(schedule.firstSeenAt);
-  if (!Number.isFinite(start) || now < start + FEEDBACK_WEEK_MS) return false;
+  if (!Number.isFinite(start) || now < start + FEEDBACK_MONTH_MS) return false;
   const snooze = schedule.snoozeUntil ? Date.parse(schedule.snoozeUntil) : NaN;
   if (Number.isFinite(snooze) && now < snooze) return false;
-  return true;
+  if (!isAtLeastAMonthAfter(schedule.lastPromptAt, now)) return false;
+  return isAtLeastAMonthAfter(schedule.lastSubmittedAt, now);
 }
 
 export function snoozeFeedbackSchedule(
@@ -157,7 +236,7 @@ export function snoozeFeedbackSchedule(
   const next: FeedbackSchedule = {
     ...schedule,
     lastPromptAt: new Date(now).toISOString(),
-    snoozeUntil: new Date(now + FEEDBACK_WEEK_MS).toISOString(),
+    snoozeUntil: new Date(now + FEEDBACK_MONTH_MS).toISOString(),
   };
   saveFeedbackSchedule(next);
   return next;
@@ -171,7 +250,7 @@ export function markFeedbackSubmitted(
     ...schedule,
     lastPromptAt: new Date(now).toISOString(),
     lastSubmittedAt: new Date(now).toISOString(),
-    snoozeUntil: new Date(now + FEEDBACK_WEEK_MS).toISOString(),
+    snoozeUntil: new Date(now + FEEDBACK_MONTH_MS).toISOString(),
   };
   saveFeedbackSchedule(next);
   return next;
@@ -195,7 +274,7 @@ function uniqueIds<T extends string>(raw: unknown, allowed: Set<T>): T[] {
   return out;
 }
 
-export function weeklyHasAnswer(answers: WeeklyFeedbackAnswers): boolean {
+export function monthlyHasAnswer(answers: MonthlyFeedbackAnswers): boolean {
   return Boolean(
     answers.feel ||
       answers.helped.length ||
@@ -204,29 +283,59 @@ export function weeklyHasAnswer(answers: WeeklyFeedbackAnswers): boolean {
   );
 }
 
-export function parseWeeklyFeedback(body: unknown):
-  | { ok: true; answers: WeeklyFeedbackAnswers }
+/** True once the reader has picked something for this question. */
+export function stepIsAnswered(
+  step: MonthlyStep,
+  answers: MonthlyFeedbackAnswers
+): boolean {
+  const value = answers[step.id];
+  return Array.isArray(value) ? value.length > 0 : value != null;
+}
+
+function labelOf(
+  options: readonly { id: string; label: string }[],
+  id: string
+): string {
+  return options.find((o) => o.id === id)?.label ?? id;
+}
+
+/** What a question currently reads as, for the summary table and the email. */
+export function stepAnswerText(
+  step: MonthlyStep,
+  answers: MonthlyFeedbackAnswers
+): string {
+  const value = answers[step.id];
+  if (Array.isArray(value)) {
+    if (value.length === 0) return NO_ANSWER;
+    return value.map((id) => labelOf(step.options, id)).join(", ");
+  }
+  return value ? labelOf(step.options, value) : NO_ANSWER;
+}
+
+export function parseMonthlyFeedback(body: unknown):
+  | { ok: true; answers: MonthlyFeedbackAnswers }
   | { ok: false; error: string } {
   const raw = (body ?? {}) as Record<string, unknown>;
   const feel =
-    typeof raw.feel === "string" && FEEL_IDS.has(raw.feel as WeeklyFeelId)
-      ? (raw.feel as WeeklyFeelId)
+    typeof raw.feel === "string" && FEEL_IDS.has(raw.feel as MonthlyFeelId)
+      ? (raw.feel as MonthlyFeelId)
       : null;
   const helped = uniqueIds(raw.helped, HELPED_IDS);
   const blocked = uniqueIds(raw.blocked, BLOCKED_IDS);
   const change =
-    typeof raw.change === "string" && CHANGE_IDS.has(raw.change as WeeklyChangeId)
-      ? (raw.change as WeeklyChangeId)
+    typeof raw.change === "string" &&
+    CHANGE_IDS.has(raw.change as MonthlyChangeId)
+      ? (raw.change as MonthlyChangeId)
       : null;
   const changeNote = clip(String(raw.changeNote ?? ""), 400);
-  const answers: WeeklyFeedbackAnswers = {
+  const answers: MonthlyFeedbackAnswers = {
     feel,
     helped,
     blocked,
     change,
     changeNote,
   };
-  if (!weeklyHasAnswer(answers)) {
+  if (!monthlyHasAnswer(answers)) {
     return { ok: false, error: "Pick at least one answer." };
   }
   return { ok: true, answers };
@@ -245,29 +354,12 @@ export function parseManualFeedback(body: unknown):
   return { ok: true, draft: { topic, body: text } };
 }
 
-function labelOf<T extends { id: string; label: string }>(
-  list: readonly T[],
-  id: string | null
+export function formatMonthlyFeedbackText(
+  answers: MonthlyFeedbackAnswers
 ): string {
-  if (!id) return "—";
-  return list.find((o) => o.id === id)?.label ?? id;
-}
-
-export function formatWeeklyFeedbackText(answers: WeeklyFeedbackAnswers): string {
-  const helped =
-    answers.helped.length === 0
-      ? "—"
-      : answers.helped.map((id) => labelOf(WEEKLY_HELPED, id)).join(", ");
-  const blocked =
-    answers.blocked.length === 0
-      ? "—"
-      : answers.blocked.map((id) => labelOf(WEEKLY_BLOCKED, id)).join(", ");
-  const lines = [
-    "How the week felt: " + labelOf(WEEKLY_FEEL, answers.feel),
-    "What helped: " + helped,
-    "What got in the way: " + blocked,
-    "One thing to change: " + labelOf(WEEKLY_CHANGE, answers.change),
-  ];
+  const lines = MONTHLY_STEPS.map(
+    (step) => `${step.emailLabel}: ${stepAnswerText(step, answers)}`
+  );
   if (answers.changeNote) lines.push("In their words: " + answers.changeNote);
   return lines.join("\n");
 }

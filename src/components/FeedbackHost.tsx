@@ -3,7 +3,7 @@
 import { useAuth } from "@/components/AuthProvider";
 import { FeedbackModal, type FeedbackMode } from "@/components/FeedbackModal";
 import {
-  isWeeklyFeedbackDue,
+  isMonthlyFeedbackDue,
   markFeedbackSubmitted,
   snoozeFeedbackSchedule,
   touchFeedbackSchedule,
@@ -45,7 +45,7 @@ export function FeedbackHost({ children }: { children: ReactNode }) {
 
   const close = useCallback(() => {
     setMode((current) => {
-      if (current === "weekly" && scheduleRef.current) {
+      if (current === "monthly" && scheduleRef.current) {
         scheduleRef.current = snoozeFeedbackSchedule(scheduleRef.current);
       }
       return null;
@@ -62,10 +62,10 @@ export function FeedbackHost({ children }: { children: ReactNode }) {
       user.created_at && user.created_at.length > 0 ? user.created_at : null;
     const schedule = touchFeedbackSchedule(created);
     scheduleRef.current = schedule;
-    if (!isWeeklyFeedbackDue(schedule)) return;
+    if (!isMonthlyFeedbackDue(schedule)) return;
 
     const wait = window.setTimeout(() => {
-      setMode((current) => (current ? current : "weekly"));
+      setMode((current) => (current ? current : "monthly"));
     }, 1600);
     return () => window.clearTimeout(wait);
   }, [ready, user]);

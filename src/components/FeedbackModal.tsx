@@ -2,27 +2,38 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { ViewportOverlay } from "@/components/ui/ViewportOverlay";
 import { cn } from "@/lib/format";
 import {
-  WEEKLY_BLOCKED,
-  WEEKLY_CHANGE,
-  WEEKLY_FEEL,
-  WEEKLY_HELPED,
-  emptyWeeklyAnswers,
-  weeklyHasAnswer,
-  type WeeklyBlockedId,
-  type WeeklyFeedbackAnswers,
-  type WeeklyHelpedId,
+  MONTHLY_STEPS,
+  NO_ANSWER,
+  emptyMonthlyAnswers,
+  monthlyHasAnswer,
+  stepAnswerText,
+  stepIsAnswered,
+  type MonthlyBlockedId,
+  type MonthlyChangeId,
+  type MonthlyFeedbackAnswers,
+  type MonthlyFeelId,
+  type MonthlyHelpedId,
+  type MonthlyStep,
 } from "@/lib/feedback";
 import { plainError } from "@/lib/plain-error";
 import { postJsonOrQueue } from "@/lib/offline/queued-fetch";
 import { useTimeout } from "@/lib/use-timeout";
-import { X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { useState } from "react";
 
-export type FeedbackMode = "weekly" | "manual";
+export type FeedbackMode = "monthly" | "manual";
 
 type Props = {
   mode: FeedbackMode;
@@ -30,28 +41,133 @@ type Props = {
   onSent: () => void;
 };
 
-function Chip({
+const LAST_STEP = MONTHLY_STEPS.length - 1;
+
+function Option({
   selected,
+  showCheck,
   onClick,
   children,
 }: {
   selected: boolean;
+  showCheck: boolean;
   onClick: () => void;
   children: string;
 }) {
   return (
-    <button
+    <Button
       type="button"
+      variant={selected ? "default" : "outline"}
+      aria-pressed={selected}
       onClick={onClick}
-      className={cn(
-        "rounded-lg border px-3 py-2 text-left text-sm transition",
-        selected
-          ? "border-border bg-accent text-foreground"
-          : "border-border bg-muted/60 text-foreground hover:border-border"
-      )}
+      className="h-auto w-full justify-start py-2.5 text-left whitespace-normal"
     >
+      {showCheck && (
+        <Check data-icon="inline-start" className={selected ? "" : "opacity-0"} />
+      )}
       {children}
-    </button>
+    </Button>
+  );
+}
+
+/** One filled bar per question answered so far, current question lit. */
+function StepBar({
+  index,
+  answers,
+}: {
+  index: number;
+  answers: MonthlyFeedbackAnswers;
+}) {
+  return (
+    <div className="flex shrink-0 flex-col gap-2">
+      <div className="flex gap-1.5">
+        {MONTHLY_STEPS.map((step, i) => (
+          <div
+            key={step.id}
+            className={cn(
+              "h-1 min-w-0 flex-1 rounded-full",
+              i === index || stepIsAnswered(step, answers)
+                ? "bg-primary"
+                : "bg-muted"
+            )}
+          />
+        ))}
+      </div>
+      <p className="text-sm text-muted-foreground">
+        Question {index + 1} of {MONTHLY_STEPS.length}
+      </p>
+    </div>
+  );
+}
+
+/**
+ * The four questions at a glance with what is picked so far. Doubles as
+ * the way back to any of them, so nobody has to scroll a wall of chips to
+ * change one answer.
+ */
+function AnswerTable({
+  index,
+  answers,
+  onJump,
+}: {
+  index: number;
+  answers: MonthlyFeedbackAnswers;
+  onJump: (i: number) => void;
+}) {
+  return (
+    <div className="shrink-0 rounded-lg border border-border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="h-8 px-3 text-xs font-normal text-muted-foreground">
+              Question
+            </TableHead>
+            <TableHead className="h-8 px-3 text-right text-xs font-normal text-muted-foreground">
+              Your answer
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {MONTHLY_STEPS.map((step, i) => {
+            const answer = stepAnswerText(step, answers);
+            const here = i === index;
+            return (
+              <TableRow
+                key={step.id}
+                data-state={here ? "selected" : undefined}
+                className="last:border-0"
+              >
+                <TableCell className="h-10 p-0">
+                  <button
+                    type="button"
+                    onClick={() => onJump(i)}
+                    aria-current={here ? "step" : undefined}
+                    className={cn(
+                      "h-10 w-full px-3 text-left text-sm",
+                      here ? "text-foreground" : "text-muted-foreground"
+                    )}
+                  >
+                    {step.short}
+                    <span className="sr-only">: {step.question}</span>
+                  </button>
+                </TableCell>
+                <TableCell
+                  title={answer === NO_ANSWER ? undefined : answer}
+                  className={cn(
+                    "h-10 w-full max-w-0 truncate px-3 text-right text-sm",
+                    answer === NO_ANSWER
+                      ? "text-muted-foreground"
+                      : "text-foreground"
+                  )}
+                >
+                  {answer}
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
   );
 }
 
@@ -61,12 +177,51 @@ function toggleId<T extends string>(list: T[], id: T): T[] {
 
 export function FeedbackModal({ mode, onClose, onSent }: Props) {
   const later = useTimeout();
-  const [weekly, setWeekly] = useState<WeeklyFeedbackAnswers>(emptyWeeklyAnswers);
+  const [answers, setAnswers] = useState<MonthlyFeedbackAnswers>(
+    emptyMonthlyAnswers
+  );
+  const [step, setStep] = useState(0);
   const [topic, setTopic] = useState("");
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+
+  const current: MonthlyStep = MONTHLY_STEPS[step] ?? MONTHLY_STEPS[0]!;
+
+  function pickSingle(step: MonthlyStep, id: string, atIndex: number) {
+    const cleared = answers[step.id] === id;
+    if (step.id === "feel") {
+      setAnswers((prev) => ({
+        ...prev,
+        feel: cleared ? null : (id as MonthlyFeelId),
+      }));
+    } else {
+      setAnswers((prev) => ({
+        ...prev,
+        change: cleared ? null : (id as MonthlyChangeId),
+        changeNote: cleared ? "" : prev.changeNote,
+      }));
+    }
+    // Picking an answer to a one-answer question moves on, the way the
+    // onboarding questions do. Clearing one stays put.
+    if (!cleared && atIndex < LAST_STEP) setStep(atIndex + 1);
+  }
+
+  function pickMulti(step: MonthlyStep, id: string) {
+    setAnswers((prev) =>
+      step.id === "helped"
+        ? { ...prev, helped: toggleId(prev.helped, id as MonthlyHelpedId) }
+        : { ...prev, blocked: toggleId(prev.blocked, id as MonthlyBlockedId) }
+    );
+  }
+
+  function isSelected(step: MonthlyStep, id: string): boolean {
+    const value = answers[step.id];
+    return Array.isArray(value)
+      ? (value as readonly string[]).includes(id)
+      : value === id;
+  }
 
   async function submit() {
     if (busy) return;
@@ -74,8 +229,8 @@ export function FeedbackModal({ mode, onClose, onSent }: Props) {
     setError(null);
     try {
       const payload =
-        mode === "weekly"
-          ? { kind: "weekly" as const, ...weekly }
+        mode === "monthly"
+          ? { kind: "monthly" as const, ...answers }
           : { kind: "manual" as const, topic, body };
       const res = await postJsonOrQueue("/api/feedback", payload, "draft");
       const data = await res.json().catch(() => ({}));
@@ -93,7 +248,10 @@ export function FeedbackModal({ mode, onClose, onSent }: Props) {
   }
 
   const canSend =
-    mode === "weekly" ? weeklyHasAnswer(weekly) : topic.trim() && body.trim().length >= 8;
+    mode === "monthly"
+      ? monthlyHasAnswer(answers)
+      : topic.trim() && body.trim().length >= 8;
+  const onLastStep = step >= LAST_STEP;
 
   return (
     <ViewportOverlay
@@ -108,15 +266,13 @@ export function FeedbackModal({ mode, onClose, onSent }: Props) {
         onClick={onClose}
         disabled={busy}
       />
-      <div
-        className="relative max-h-full w-full overflow-y-auto rounded-t-xl bg-popover ring-1 ring-foreground/20 p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:max-w-lg sm:rounded-xl sm:pb-6"
-      >
-        <div className="mb-3 flex items-start justify-between gap-3">
+      <div className="relative flex max-h-full w-full flex-col overflow-hidden rounded-t-xl bg-popover p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] ring-1 ring-foreground/20 sm:max-w-lg sm:rounded-xl sm:pb-6">
+        <div className="mb-3 flex shrink-0 items-start justify-between gap-3">
           <h3
             id="feedback-title"
             className="text-base font-semibold text-foreground"
           >
-            {mode === "weekly" ? "How was this week?" : "Tell Upside"}
+            {mode === "monthly" ? "How was this month?" : "Tell Upside"}
           </h3>
           <Button
             type="button"
@@ -136,121 +292,68 @@ export function FeedbackModal({ mode, onClose, onSent }: Props) {
           <p className="text-sm leading-relaxed text-foreground">
             Got it. Upside reads these.
           </p>
-        ) : mode === "weekly" ? (
-          <div className="flex flex-col gap-4">
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              A few pointed questions about this week in Upside Lab. Skip any
-              that don&apos;t fit.
-            </p>
+        ) : mode === "monthly" ? (
+          <div className="flex min-h-0 flex-1 flex-col gap-4">
+            {/* Said once, on the way in. After that the bar and the table
+                say where you are, and the screen stays short. */}
+            {step === 0 && (
+              <p className="shrink-0 text-sm leading-relaxed text-muted-foreground">
+                Four short questions about your last month in Upside Lab, one
+                at a time. Skip any that don&apos;t fit.
+              </p>
+            )}
 
-            <fieldset className="flex flex-col gap-2">
-              <legend className="text-sm font-medium text-foreground">
-                How did this week feel?
-              </legend>
-              <div className="grid gap-2">
-                {WEEKLY_FEEL.map((opt) => (
-                  <Chip
-                    key={opt.id}
-                    selected={weekly.feel === opt.id}
-                    onClick={() =>
-                      setWeekly((w) => ({
-                        ...w,
-                        feel: w.feel === opt.id ? null : opt.id,
-                      }))
-                    }
-                  >
-                    {opt.label}
-                  </Chip>
-                ))}
-              </div>
-            </fieldset>
+            <StepBar index={step} answers={answers} />
 
-            <fieldset className="flex flex-col gap-2">
-              <legend className="text-sm font-medium text-foreground">
-                What actually helped?
-              </legend>
-              <p className="text-sm text-muted-foreground">Pick every one that did.</p>
-              <div className="grid gap-2">
-                {WEEKLY_HELPED.map((opt) => (
-                  <Chip
-                    key={opt.id}
-                    selected={weekly.helped.includes(opt.id)}
-                    onClick={() =>
-                      setWeekly((w) => ({
-                        ...w,
-                        helped: toggleId(w.helped, opt.id as WeeklyHelpedId),
-                      }))
-                    }
-                  >
-                    {opt.label}
-                  </Chip>
-                ))}
-              </div>
-            </fieldset>
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              <fieldset className="flex flex-col gap-2">
+                <legend className="text-sm font-medium text-foreground">
+                  {current.question}
+                </legend>
+                {current.hint && (
+                  <p className="text-sm text-muted-foreground">{current.hint}</p>
+                )}
+                <div className="grid gap-2 pt-1">
+                  {current.options.map((opt) => (
+                    <Option
+                      key={opt.id}
+                      selected={isSelected(current, opt.id)}
+                      showCheck={current.multi}
+                      onClick={() =>
+                        current.multi
+                          ? pickMulti(current, opt.id)
+                          : pickSingle(current, opt.id, step)
+                      }
+                    >
+                      {opt.label}
+                    </Option>
+                  ))}
+                </div>
+                {current.id === "change" && answers.change && (
+                  <label className="flex flex-col gap-1 pt-2">
+                    <span className="text-sm text-muted-foreground">
+                      In one sentence, what should be different?
+                    </span>
+                    <Input
+                      value={answers.changeNote}
+                      onChange={(e) =>
+                        setAnswers((prev) => ({
+                          ...prev,
+                          changeNote: e.target.value,
+                        }))
+                      }
+                      maxLength={400}
+                      placeholder="Name the screen or the moment."
+                    />
+                  </label>
+                )}
+              </fieldset>
+            </div>
 
-            <fieldset className="flex flex-col gap-2">
-              <legend className="text-sm font-medium text-foreground">
-                What got in the way?
-              </legend>
-              <p className="text-sm text-muted-foreground">Pick every one that did.</p>
-              <div className="grid gap-2">
-                {WEEKLY_BLOCKED.map((opt) => (
-                  <Chip
-                    key={opt.id}
-                    selected={weekly.blocked.includes(opt.id)}
-                    onClick={() =>
-                      setWeekly((w) => ({
-                        ...w,
-                        blocked: toggleId(w.blocked, opt.id as WeeklyBlockedId),
-                      }))
-                    }
-                  >
-                    {opt.label}
-                  </Chip>
-                ))}
-              </div>
-            </fieldset>
-
-            <fieldset className="flex flex-col gap-2">
-              <legend className="text-sm font-medium text-foreground">
-                If you could change one thing for next week, what is it?
-              </legend>
-              <div className="grid gap-2">
-                {WEEKLY_CHANGE.map((opt) => (
-                  <Chip
-                    key={opt.id}
-                    selected={weekly.change === opt.id}
-                    onClick={() =>
-                      setWeekly((w) => ({
-                        ...w,
-                        change: w.change === opt.id ? null : opt.id,
-                        changeNote: w.change === opt.id ? "" : w.changeNote,
-                      }))
-                    }
-                  >
-                    {opt.label}
-                  </Chip>
-                ))}
-              </div>
-              {weekly.change && (
-                <label className="flex flex-col gap-1 pt-1">
-                  <span className="text-sm text-muted-foreground">
-                    In one sentence, what should be different?
-                  </span>
-                  <Input
-                    value={weekly.changeNote}
-                    onChange={(e) =>
-                      setWeekly((w) => ({ ...w, changeNote: e.target.value }))
-                    }
-                    maxLength={400}
-                    placeholder="Name the screen or the moment."
-                  />
-                </label>
-              )}
-            </fieldset>
+            <AnswerTable index={step} answers={answers} onJump={setStep} />
           </div>
         ) : (
-          <div className="flex flex-col gap-4">
+          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
             <p className="text-sm leading-relaxed text-muted-foreground">
               What is this about, then dump the rest. A bug, a missing thing, or
               a rant. Upside reads these.
@@ -278,25 +381,51 @@ export function FeedbackModal({ mode, onClose, onSent }: Props) {
           </div>
         )}
 
-        {error && <p className="mt-3 text-sm text-loss">{error}</p>}
+        {error && <p className="mt-3 shrink-0 text-sm text-loss">{error}</p>}
 
         {!sent && (
-          <div className="mt-4 flex justify-end gap-2">
+          <div className="mt-4 flex shrink-0 items-center justify-between gap-2">
             <Button
               type="button"
               variant="ghost"
               onClick={onClose}
               disabled={busy}
             >
-              {mode === "weekly" ? "Not this week" : "Cancel"}
+              {mode === "monthly" ? "Not this month" : "Cancel"}
             </Button>
-            <Button
-              type="button"
-              onClick={() => void submit()}
-              disabled={busy || !canSend}
-            >
-              {busy ? "Sending…" : mode === "weekly" ? "Send this week" : "Send it"}
-            </Button>
+            <div className="flex gap-2">
+              {mode === "monthly" && step > 0 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setStep((i) => Math.max(0, i - 1))}
+                  disabled={busy}
+                >
+                  Back
+                </Button>
+              )}
+              {mode === "monthly" && !onLastStep ? (
+                <Button
+                  type="button"
+                  onClick={() => setStep((i) => Math.min(LAST_STEP, i + 1))}
+                  disabled={busy}
+                >
+                  Next
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  onClick={() => void submit()}
+                  disabled={busy || !canSend}
+                >
+                  {busy
+                    ? "Sending…"
+                    : mode === "monthly"
+                      ? "Send this month"
+                      : "Send it"}
+                </Button>
+              )}
+            </div>
           </div>
         )}
       </div>

@@ -88,11 +88,14 @@ import {
   inviteUsesLabel,
 } from "../src/lib/community-invite-admin";
 import {
+  FEEDBACK_MONTH_MS,
   FEEDBACK_TO,
-  FEEDBACK_WEEK_MS,
-  isWeeklyFeedbackDue,
+  formatMonthlyFeedbackText,
+  isMonthlyFeedbackDue,
+  MONTHLY_STEPS,
   parseManualFeedback,
-  parseWeeklyFeedback,
+  parseMonthlyFeedback,
+  stepAnswerText,
 } from "../src/lib/feedback";
 import { parseSharePortfolioIds } from "../src/lib/community-share";
 import {
@@ -6012,12 +6015,12 @@ run("circle portfolios show unless you turn one off", () => {
   assert.match(list, /portfolioIds/);
 });
 
-run("in-app feedback is directed weekly and freeform when you open it", () => {
+run("in-app feedback is a monthly walk-through and freeform when you open it", () => {
   assert.equal(FEEDBACK_TO, "martin.aasa@upthink.ee");
-  assert.equal(FEEDBACK_WEEK_MS, 7 * 24 * 60 * 60 * 1000);
+  assert.equal(FEEDBACK_MONTH_MS, 30 * 24 * 60 * 60 * 1000);
   const now = Date.parse("2026-08-16T12:00:00Z");
   assert.equal(
-    isWeeklyFeedbackDue(
+    isMonthlyFeedbackDue(
       {
         firstSeenAt: "2026-08-16T11:00:00Z",
         lastPromptAt: null,
@@ -6026,12 +6029,26 @@ run("in-app feedback is directed weekly and freeform when you open it", () => {
       },
       now
     ),
-    false
+    false,
+    "a fresh account is left alone"
   );
   assert.equal(
-    isWeeklyFeedbackDue(
+    isMonthlyFeedbackDue(
       {
         firstSeenAt: "2026-08-01T12:00:00Z",
+        lastPromptAt: null,
+        lastSubmittedAt: null,
+        snoozeUntil: null,
+      },
+      now
+    ),
+    false,
+    "two weeks in is not a month yet"
+  );
+  assert.equal(
+    isMonthlyFeedbackDue(
+      {
+        firstSeenAt: "2026-06-01T12:00:00Z",
         lastPromptAt: null,
         lastSubmittedAt: null,
         snoozeUntil: null,
@@ -6041,20 +6058,58 @@ run("in-app feedback is directed weekly and freeform when you open it", () => {
     true
   );
   assert.equal(
-    isWeeklyFeedbackDue(
+    isMonthlyFeedbackDue(
       {
-        firstSeenAt: "2026-08-01T12:00:00Z",
-        lastPromptAt: "2026-08-15T12:00:00Z",
+        firstSeenAt: "2026-06-01T12:00:00Z",
+        lastPromptAt: "2026-08-10T12:00:00Z",
         lastSubmittedAt: null,
-        snoozeUntil: "2026-08-22T12:00:00Z",
+        snoozeUntil: "2026-09-09T12:00:00Z",
       },
       now
     ),
     false
   );
-  assert.equal(parseWeeklyFeedback({}).ok, false);
-  assert.equal(parseWeeklyFeedback({ feel: "easy" }).ok, true);
-  assert.equal(parseWeeklyFeedback({ feel: "nope" }).ok, false);
+  assert.equal(
+    isMonthlyFeedbackDue(
+      {
+        firstSeenAt: "2026-06-01T12:00:00Z",
+        lastPromptAt: "2026-08-10T12:00:00Z",
+        lastSubmittedAt: null,
+        // A week-long snooze written by the old build has already passed.
+        snoozeUntil: "2026-08-15T12:00:00Z",
+      },
+      now
+    ),
+    false,
+    "the last prompt still holds it for a month"
+  );
+  assert.equal(parseMonthlyFeedback({}).ok, false);
+  assert.equal(parseMonthlyFeedback({ feel: "easy" }).ok, true);
+  assert.equal(parseMonthlyFeedback({ feel: "nope" }).ok, false);
+  assert.equal(MONTHLY_STEPS.length, 4, "four questions, one per screen");
+  assert.deepEqual(
+    MONTHLY_STEPS.map((s) => s.id),
+    ["feel", "helped", "blocked", "change"]
+  );
+  const emptyRow = stepAnswerText(MONTHLY_STEPS[0]!, {
+    feel: null,
+    helped: [],
+    blocked: [],
+    change: null,
+    changeNote: "",
+  });
+  assert.equal(emptyRow, "—", "an unanswered question reads as a dash");
+  const letter = formatMonthlyFeedbackText({
+    feel: "easy",
+    helped: ["pulse", "forecast"],
+    blocked: [],
+    change: "emails",
+    changeNote: "Send it earlier.",
+  });
+  assert.match(letter, /How the month felt: Easy to follow/);
+  assert.match(letter, /What helped: Pulse, Forecast/);
+  assert.match(letter, /What got in the way: —/);
+  assert.match(letter, /In their words: Send it earlier\./);
   assert.equal(parseManualFeedback({ topic: "Bug", body: "short" }).ok, false);
   assert.equal(
     parseManualFeedback({
@@ -6068,18 +6123,25 @@ run("in-app feedback is directed weekly and freeform when you open it", () => {
     "utf8"
   );
   assert.match(api, /FEEDBACK_TO/);
-  assert.match(api, /kind === "weekly"/);
+  assert.match(api, /kind === "monthly"/);
+  assert.match(api, /kind === "weekly"/, "queued offline drafts still replay");
   assert.match(api, /kind === "manual"/);
   assert.match(api, /replyTo/);
   const modal = readFileSync(
     join(process.cwd(), "src/components/FeedbackModal.tsx"),
     "utf8"
   );
-  assert.match(modal, /How was this week\?/);
+  assert.match(modal, /How was this month\?/);
   assert.match(modal, /Tell Upside/);
-  assert.match(modal, /What actually helped\?/);
+  assert.match(modal, /Question \{index \+ 1\} of/, "one question at a time");
+  assert.match(modal, /AnswerTable/, "a small table of the questions so far");
   assert.match(modal, /What is this about\?/);
-  assert.match(modal, /mode === "weekly"/);
+  assert.match(modal, /mode === "monthly"/);
+  assert.doesNotMatch(
+    modal,
+    /MONTHLY_FEEL|MONTHLY_HELPED|MONTHLY_BLOCKED|MONTHLY_CHANGE/,
+    "questions come from MONTHLY_STEPS, not four hand-copied lists"
+  );
   assert.equal(
     (modal.match(/<Textarea/g) || []).length,
     1,
@@ -6094,7 +6156,7 @@ run("in-app feedback is directed weekly and freeform when you open it", () => {
     join(process.cwd(), "src/components/FeedbackHost.tsx"),
     "utf8"
   );
-  assert.match(host, /isWeeklyFeedbackDue/);
+  assert.match(host, /isMonthlyFeedbackDue/);
   assert.match(host, /setMode\("manual"\)/);
   assert.doesNotMatch(
     host,
