@@ -8,10 +8,12 @@
 > this environment could not check.
 >
 > **Verdict: Go for existing users. No-Go for taking money from strangers**
-> until four unapplied migrations are run and billing is exercised in
-> Stripe test mode. One of those migrations is not an improvement but live
-> breakage: shipped code selects `note_sunday_sent_at`, so until it exists
-> the Sunday letter sends nothing to anyone.
+> until billing is exercised in Stripe test mode.
+>
+> *Updated 2026-08-21:* all four migrations have been applied and verified.
+> The audit's only Critical (three world-writable legacy tables) turned out
+> **not to exist in production at all** — real in the migration history,
+> never exploitable in that database. Stripe is the one remaining blocker.
 >
 > Round 2 reports are `02`–`10` plus `deferred-items-fix-log.md`. Round 1's
 > index is kept below for history; where the two disagree, Round 2 was

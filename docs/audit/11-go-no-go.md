@@ -4,11 +4,30 @@
 
 ---
 
+> ## Updated 2026-08-21 — the migrations are applied
+>
+> All four ran against production. Verified directly rather than assumed:
+>
+> | check | result |
+> |---|---|
+> | `note_sunday_sent_at` column | present |
+> | `portfell_profiles_note_sunday_sent_idx` | present |
+> | `portfell_rate_take_weighted` function | present |
+> | legacy tables anywhere in the database | **0** |
+>
+> **B1 is closed, and it closed better than expected.** The three legacy
+> tables never existed in production, so the audit's worst finding was not
+> exploitable there — see the correction at the top of `02-security.md`.
+> The Sunday letter is unblocked, and the app no longer depends on the
+> migration having run at all.
+>
+> **The verdict is now gated on one thing, not two: Stripe (B2).**
+
 ## Verdict
 
 **Go for the people already using it. No-Go for taking money from
-strangers — until four migrations are applied and billing is exercised in
-Stripe test mode.**
+strangers — until ~~four migrations are applied and~~ billing is exercised
+in Stripe test mode.**
 
 Not a hedge. The two halves rest on different evidence:
 
@@ -22,7 +41,10 @@ Not a hedge. The two halves rest on different evidence:
 
 ## Blockers — do these before anything else
 
-### B1 — Four migrations are unapplied, and one breaks the Sunday letter now
+### B1 — ~~Four migrations are unapplied~~ — **CLOSED 2026-08-21**
+
+*Applied to production and verified. Kept below as the record of what the
+problem was, because the deploy-order lesson outlives the incident.*
 
 | migration | what it does | severity if skipped |
 |---|---|---|
@@ -131,8 +153,9 @@ happen.
 
 **Needs production access**
 1. RLS tested from a real non-owner session (Pass 2, 8).
-2. Whether the three legacy tables hold rows — the archive migration raises
-   the counts as notices, so applying it answers this.
+2. ~~Whether the three legacy tables hold rows~~ — **RESOLVED:** they do not
+   exist in production. The audit's only Critical was never exploitable
+   there.
 3. Real Vercel cron timings; the budget arithmetic is exact, the wall clock
    is not (Pass 3).
 4. CDN hit rates, and per-IP limiting across real isolates (Pass 4).
@@ -157,11 +180,21 @@ happen.
 
 ## Recommended order
 
-1. Apply the four migrations. Read the row counts the archive migration
-   prints — they answer a question this audit could not.
-2. Confirm the Sunday letter runs after the marker column exists.
-3. Run one Stripe test-mode checkout, webhook and cancellation.
+1. ~~Apply the four migrations.~~ **Done 2026-08-21**, and the answer was
+   better than the assumption: the legacy tables were never there.
+2. ~~Confirm the Sunday letter runs.~~ The marker column is present, and
+   the letter no longer depends on it either way.
+3. **Run one Stripe test-mode checkout, webhook and cancellation.** This is
+   the only thing still standing between the current state and taking a
+   stranger's money.
 4. Then open it to people outside the family.
 
-Steps 1–3 are hours, not days, and every one of them converts an argument
-in these documents into a fact.
+Step 3 is about an hour, and it is the last argument in these documents
+that has not been converted into a fact.
+
+## Housekeeping
+
+The archive migration created an empty `legacy_archive` schema before
+discovering there was nothing to move. It holds no tables and no grants, so
+it is harmless; `drop schema legacy_archive;` tidies it up whenever
+convenient. Leaving it costs nothing and keeps the migration idempotent.
