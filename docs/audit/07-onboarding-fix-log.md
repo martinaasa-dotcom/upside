@@ -1,26 +1,119 @@
-# Pass 7 — Onboarding: fix log
+# Pass 7 — Onboarding fix log (Round 2)
 
-One row per finding in [`07-onboarding.md`](07-onboarding.md). Status is
-**Resolved**, **Deferred**, or **Stuck**. Nothing is marked Resolved
-without fresh re-verification evidence attached.
+Companion to `docs/audit/07-onboarding.md`. One row per finding.
+**No row is Resolved without fresh re-verification by the method that
+surfaced it** — here, by re-running the same probe and by reverting each fix
+to watch the tests fail.
 
-Checks run after the fixes in this log: `npx tsc --noEmit` clean,
-`npx eslint --max-warnings 0` clean on every touched file, `npm run test`
-111/111, `npm run test:invariants` at its 2 pre-existing failures.
+| # | Finding | Severity | Status | Evidence |
+|---|---|---|---|---|
+| H1 | European number formats silently corrupt prices | High | **Resolved** | Probe re-run; 8 tests fail when reverted |
+| H2 | A second purchase lot silently replaces the first | High | **Resolved** | 4 tests fail when reverted |
+| M1 | A repeated Cash column is added up once per holding | Medium | **Resolved** | 3000 → 1000 |
+| M2 | The paste box has no cash ceiling | Medium | **Resolved** | Matches the CSV path |
 
-| # | Finding | Severity | Status | Evidence | Notes |
-|---|---|---|---|---|---|
-| H1 | The Supabase-hosted OAuth callback silently dropped sign-in failures | High | **Resolved** (prior session) | Report §High 1 | Fixed when the pass was first run, merged to `main`. |
-| H2 | Sheet co-owner invite landing hid its retry form once a URL had a code, making a failed invite a dead end | High | **Resolved** (prior session) | Report §High 2 | Fixed when the pass was first run. |
-| H3 | Circle/classroom invite landing had no recovery UI at all on failure | High | **Resolved** (prior session) | Report §High 3 | Fixed when the pass was first run. |
-| M1 | `ExperienceOnboardingGate` could silently overwrite a returning user's real tier with "investor" | Medium | **Resolved** | `src/components/ExperienceOnboardingGate.tsx:123-145` — the `saveStoredTier("investor")` + POST are now inside `if (!stored)`, so the inference only runs for someone who genuinely has no tier on this device. | The report declined to touch this ("not fixed here per the brief's instruction not to fix the disabled gate speculatively") but also named the exact fix and warned it becomes a real bug the moment the wizard or the hidden-tab maps are re-enabled. It's a two-line guard with no behavioural effect while the gate is disabled, so closing it now is strictly safer than leaving a latent silent-downgrade in code someone will switch on later. Deliberately did **not** add a heal-the-server push of the stored value: writing this browser's cached tier back to whatever account is signed in is the same shared-device hazard Pass 4's Critical #2 was about. |
-| M2 | `parseHoldingsPaste`'s docstring described a placeholder-price feature the code doesn't have | Medium | **Resolved** | `src/lib/csv-import.ts:203-214`. Confirmed the behaviour first at `csv-import.ts:241-248`: a line without a valid buy price is skipped with "Need a buy price after the share count" — no placeholder is ever substituted. The comment now says that, and names the missing fast path as an open product decision. | The report offered "either implement the placeholder or correct the comment" and called the behaviour change a real product call. Corrected the comment, which was actively misleading; left the behaviour alone. Whether pasting `NBIS 500` with no cost should land at $0.01 rather than be skipped is Martin's call — it changes what ends up in someone's book. **Decided since:** keep skipping, and make the message do the work. A $0.01 basis reads as a +1,000,000% gain, which then feeds the Sunday letter's add/trim suggestions, the position-size arithmetic and Pulse — a wrong number that spreads is worse than a skipped line. All three skip reasons now name the fix and show the shape (`"Need the price you paid per share, after the share count. Like: NBIS 500 85.10"`), and the docstring records the reasoning rather than leaving it open. |
-| M3 | Invite copy says "community" where the rest of the product says "Circle" | Medium | **Resolved** | `src/lib/invite-landing.ts:38`, `src/lib/email-letter.ts:175`, `src/app/api/communities/[id]/invites/route.ts:118` — the unnamed/generic case now says **"a group"**; where the kind is actually known, it says Circle or class. | Decided: pick per-kind wording where the kind is known, and use "group" — not "Circle" — for the one path that genuinely can't tell a Circle from a classroom apart (`inviteFromLocation` in `invite-landing.ts`, derived from the URL alone). Calling a school classroom invite "a Circle" would have been wrong, which is exactly why a blind find-and-replace was rejected originally. |
-| L1 | Generic invite copy differs slightly between the in-app landing and the email | Low | **Resolved as a side effect of M3** | Same three call sites as M3, now sharing the same per-kind wording. | The report's own note that the two are never shown to the same person side by side still holds — this was never urgent — but fixing M3 left no reason to keep them different. |
+---
 
-## Deferred summary
+## H1 — read both conventions, and use the file's own punctuation to choose
 
-Nothing left deferred. M2's behavioural question (whether a missing buy
-price should land at $0.01 instead of being skipped) was decided against
-— keep skipping, make the message name the fix instead. M3 and L1 are
-both resolved the same day.
+Two changes, and the second is the one that makes the first reliable.
+
+**The number reader** now finds the decimal separator instead of assuming
+one. When both `.` and `,` appear, whichever comes **last** is the decimal
+point — that is unambiguous and settles `1.234,56` and `1,234.56` without
+any guessing. Repeated separators (`1.234.567`) can only be grouping. Every
+flavour of space is stripped, including the non-breaking and narrow no-break
+spaces European exports actually emit, and accounting-style `(1 234,56)`
+now reads as negative.
+
+**The delimiter is the tiebreaker for what remains.** `1,234` is 1234 to an
+American and 1.234 to a European, and no amount of staring at the string
+settles it. But the file's delimiter does: **Excel writes `;` precisely
+because the machine's decimal separator is already `,`** — it cannot use one
+character for both jobs. So a `;`-delimited or tab-delimited file is read
+with comma-as-decimal, and a comma-delimited one is not. This is inference
+from how the file was written, not a guess about who wrote it.
+
+That also fixed a bug nobody had named. `parseCsvLine` treated `,` `;` and
+tab as interchangeable separators *simultaneously*, so `AAPL;10;150,25`
+split into four cells and the price column read `150` — the 25 cents landed
+in a cell nothing looked at. One file uses one delimiter; it now detects it
+and uses only that.
+
+## H2 — add the lot, do not replace it
+
+Duplicate tickers merge: shares are summed and the buy price becomes the
+**share-weighted average**, which is both what the person meant and exactly
+what the app labels that field. 300 @ 100 plus 100 @ 200 is 400 @ 125, not
+400 @ 150 — pinned by a test, because the row-count average is the easy
+mistake to make here.
+
+A later lot with a blank Call % no longer erases a target an earlier lot
+set. Applied to the paste box too, which had the same bug.
+
+## M1 — take the Cash column once
+
+First value wins. A later row that disagrees is **reported in the skipped
+list** rather than quietly folded in — at that point the file means
+something this importer does not understand, and guessing is exactly how the
+original bug happened. Genuine `CASH` rows still add up, since those really
+are separate amounts.
+
+## M2 — the same ceiling on both routes
+
+`isSafeSignedMoney`, matching the CSV path.
+
+## Verified by re-running the probe
+
+Same inputs, same instrument, before and after:
+
+| input | before | after |
+|---|---|---|
+| `1,234.56` (US) | 1234.56 | 1234.56 (unchanged) |
+| `1.234,56` (EU) | **1.23456** | 1234.56 |
+| `1 234,56` (EU) | **123456** | 1234.56 |
+| `AAPL;10;150,25` | **150** | 150.25 |
+| two AAPL lots | **100 @ 150** | 200 @ 100 |
+| Cash column ×3 | **3000** | 1000 |
+| pasted huge cash | **accepted** | rejected |
+
+## Verified by breaking the fixes
+
+Reverted in place, suite re-run:
+
+```
+old parseNumber restored:      8 failed | 14 passed
+lot merging removed:           4 failed | 18 passed
+```
+
+Both back to 22 passing once restored. The eight are worth naming, because
+they are the ones a future refactor would silently undo: European decimals,
+space thousands, non-breaking space, repeated grouping separators,
+accounting negatives, the semicolon price split, the delimiter tiebreaker,
+and tab-separated files.
+
+## Tests, where there were none
+
+`src/lib/csv-import.test.ts` — 22 tests across five groups: number
+punctuation, dialect detection, purchase lots, cash, and one that runs the
+**downloadable template through its own importer**, since a template the
+parser chokes on is the worst first impression available and was previously
+only assumed to work.
+
+## Verification
+
+`npm run typecheck` clean · `npm run lint` clean ·
+`npm test` **191 tests / 36 files** (169 before) ·
+`npm run test:invariants` green.
+
+## Unable to Verify (Environment-Blocked)
+
+Carried into Pass 11:
+
+1. **No real signup and no file uploaded through the browser.** The parser
+   is exercised directly; the modal around it is read.
+2. **No real broker exports** — the lot-merging fix is validated against
+   CSVs shaped like broker output, not an actual export from a named broker.
+3. **`1,234` in a comma-delimited file remains genuinely ambiguous.** The
+   delimiter tiebreaker cannot help there, so it reads as 1234. No parser
+   can do better without asking, and this one does not ask.
