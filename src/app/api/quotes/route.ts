@@ -70,7 +70,7 @@ async function handleGET(req: NextRequest) {
   // Looking up names that resolve nowhere is the expensive thing this
   // endpoint does, and an address that has spent its share of it is refused
   // before any provider is contacted. Real books never reach this.
-  const budget = checkUnresolvedBudget(req);
+  const budget = await checkUnresolvedBudget(req);
   if (!budget.ok) {
     return NextResponse.json(
       { error: "Too many unknown tickers. Try again shortly." },

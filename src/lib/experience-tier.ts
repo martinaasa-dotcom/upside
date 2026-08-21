@@ -93,14 +93,27 @@ const KNOWS_OPTIONS_STORAGE_KEY = "portfell-knows-options";
  * Tri-state: null = hasn't answered yet, true = opted in, false =
  * explicitly none.
  *
- * Temporarily disabled (2026-08-18, per product call): options UI is
- * never hidden regardless of the stored answer, until this gating is
- * fully thought through. Do not delete `knowsOptions`/its storage —
- * restore `return knowsOptions !== true;` to re-enable.
+ * **Hides on an explicit "no" only.** Someone who told us they do not know
+ * options does not get covered-call panels, strike alerts, Call % fields or
+ * Margus's options tools. Someone who has never been asked keeps what they
+ * already had.
+ *
+ * That last part is the whole reason this is not `knowsOptions !== true`,
+ * which is the stricter reading and was disabled outright on 2026-08-18
+ * rather than shipped. The problem with it is structural, not a matter of
+ * taste: `shouldSkipExperienceOnboarding` returns true as soon as
+ * `holdingsCount > 0`, so **anybody who already owns anything never sees
+ * the question**, and their answer stays null forever. Treating null as
+ * "hide" would therefore strip covered calls from every existing holder at
+ * once — people who had been using the feature for months, who were never
+ * asked, and who would have no idea why it vanished.
+ *
+ * Hiding on an explicit "no" keeps the protection where it was actually
+ * aimed. Anyone can change the answer either way in Account, and a null can
+ * still become a true or a false there, so nothing here is a dead end.
  */
 export function shouldHideOptions(knowsOptions: boolean | null): boolean {
-  void knowsOptions;
-  return false;
+  return knowsOptions === false;
 }
 
 /**

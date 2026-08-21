@@ -67,33 +67,96 @@ function budgetKey(req: Request): string {
 }
 
 /**
- * Is this address already over budget? Charges nothing, and deliberately
- * asks memory only.
+ * How long an instance may reuse a shared "this address is fine" answer
+ * before asking again.
  *
- * Consulting Postgres here would be the obvious way to make the answer
- * authoritative on a cold instance -- and it would put a database round
- * trip in front of every quote request the product serves, to tell honest
- * callers "yes, fine" millions of times over. That is a worse trade than
- * the gap it closes, and it would undo the work of the performance pass.
+ * This is the whole trick. An authoritative check is a database round
+ * trip; doing one per request would put Postgres in front of every quote
+ * the product serves. But the answer barely changes minute to minute, and
+ * the case that must never be stale -- a refusal -- does not depend on it
+ * at all, because a refusal is written into memory and memory is consulted
+ * first. So only the "yes, fine" answer is cached, and only briefly.
  *
- * The shared bucket is still what decides: `chargeUnresolvedBudget` writes
- * to it, and a refusal from it is written back into this instance's memory
- * by `takeDurableRateLimitWeighted`. So an instance learns the moment it
- * serves one offending request, and refuses for free from then on.
- *
- * The residual, stated plainly: an address spraying invented symbols gets
- * one request through per instance it has not yet been refused by, rather
- * than the unbounded number it got before. That is a ceiling of roughly
- * (instances x one request), and every one of those requests is itself
- * capped at `MAX_TICKERS_PER_REQUEST`.
+ * Cost works out at one round trip per address per instance per minute,
+ * instead of one per request. For a classroom of thirty students sharing
+ * one NAT address that is a single query a minute, not thousands.
  */
-export function checkUnresolvedBudget(req: Request): RateLimitResult {
-  return checkRateLimit(
-    budgetKey(req),
+const SHARED_OK_TTL_MS = 60_000;
+const MAX_VERDICTS = 5_000;
+
+/** address key -> epoch ms until which the shared bucket's "ok" stands. */
+const sharedOkUntil = new Map<string, number>();
+
+function rememberSharedOk(key: string, now: number) {
+  if (sharedOkUntil.size >= MAX_VERDICTS) {
+    for (const [k, until] of sharedOkUntil) {
+      if (until <= now) sharedOkUntil.delete(k);
+    }
+    if (sharedOkUntil.size >= MAX_VERDICTS) {
+      const oldest = sharedOkUntil.keys().next().value;
+      if (oldest !== undefined) sharedOkUntil.delete(oldest);
+    }
+  }
+  sharedOkUntil.set(key, now + SHARED_OK_TTL_MS);
+}
+
+/**
+ * Is this address already over budget? Charges nothing.
+ *
+ * Three layers, cheapest first, and the order is what makes this both
+ * correct and affordable:
+ *
+ * 1. **Local memory.** A refusal already known to this instance is
+ *    returned immediately. Refusals are written here by
+ *    `takeDurableRateLimitWeighted`, so this layer is never stale in the
+ *    direction that matters.
+ * 2. **A cached shared "ok"**, good for `SHARED_OK_TTL_MS`. This is what
+ *    keeps the hot path free for honest callers.
+ * 3. **The shared bucket in Postgres**, consulted only when neither of the
+ *    above can answer -- an address this instance has not vouched for in
+ *    the last minute.
+ *
+ * This closes the gap an earlier version of this module documented and
+ * left open: back then the peek was memory-only, so a cold instance handed
+ * an abusive caller one free request before learning anything, and an
+ * attacker could farm one request per instance. Now a cold instance asks
+ * the shared bucket before serving anyone it cannot vouch for, so that
+ * per-instance freebie is gone.
+ *
+ * Notably this needed no Redis or KV. The reason the obvious version of
+ * this was unaffordable was that it asked per *request*; asking per
+ * *address per minute* is the same guarantee at a tiny fraction of the
+ * cost, because the answer being cached is only ever the permissive one.
+ */
+export async function checkUnresolvedBudget(
+  req: Request
+): Promise<RateLimitResult> {
+  const key = budgetKey(req);
+  const now = Date.now();
+
+  // 1. A refusal this instance already knows about. Free, and authoritative.
+  const local = checkRateLimit(key, UNRESOLVED_LIMIT, UNRESOLVED_WINDOW_MS, 0);
+  if (!local.ok) return local;
+
+  // 2. A shared "ok" we are still entitled to reuse.
+  const until = sharedOkUntil.get(key);
+  if (until != null && now < until) return { ok: true };
+
+  // 3. Ask the shared bucket. A refusal here is written into local memory
+  //    by the durable helper, so step 1 answers for the rest of the window.
+  const shared = await takeDurableRateLimitWeighted(
+    key,
     UNRESOLVED_LIMIT,
     UNRESOLVED_WINDOW_MS,
     0
   );
+  if (shared.ok) rememberSharedOk(key, now);
+  return shared;
+}
+
+/** Test seam: forget every cached shared verdict. */
+export function resetUnresolvedBudgetForTests() {
+  sharedOkUntil.clear();
 }
 
 /**
@@ -109,10 +172,18 @@ export async function chargeUnresolvedBudget(
   newlyUnresolvable: readonly string[]
 ): Promise<void> {
   if (newlyUnresolvable.length === 0) return;
-  await takeDurableRateLimitWeighted(
-    budgetKey(req),
+  const key = budgetKey(req);
+  const result = await takeDurableRateLimitWeighted(
+    key,
     UNRESOLVED_LIMIT,
     UNRESOLVED_WINDOW_MS,
     newlyUnresolvable.length
   );
+  if (!result.ok) {
+    // Do not keep vouching for an address the shared bucket just refused.
+    // `takeDurableRateLimitWeighted` has already written the refusal into
+    // local memory, so this is belt and braces rather than the only guard
+    // -- but it means the cache can never disagree with the bucket.
+    sharedOkUntil.delete(key);
+  }
 }

@@ -151,24 +151,55 @@ than guessed at beforehand. `fetchQuotesWithFallback` now reports
 cache, so each genuinely paid for a full suffix walk. A repeat ask for a
 ticker already known to be dead is charged nothing, because it cost nothing.
 
-### The deliberate asymmetry, stated plainly
+### The peek: authoritative, and it did not need Redis
 
-The **peek is memory-only; the charge is durable.** Reversing this would be
-the textbook answer and is the wrong trade here: an authoritative peek means
-a database round trip on every quote request in the product.
+The first version of this made the peek **memory-only**, on the grounds that
+an authoritative peek means a database round trip on every quote request the
+product serves. That trade was real, but the residual it left was worse than
+it looked, and measuring it is what settled the matter.
 
-The shared bucket is still what decides. `takeDurableRateLimitWeighted`
-writes a refusal from Postgres back into the instance's memory, so an
-instance learns the moment it serves one offending request and refuses for
-free from then on.
+**The residual, measured.** Serverless spreads requests across instances,
+and an instance that has never met a caller has nothing in memory to refuse
+them with. Twenty requests, each inventing ten new symbols, from one address
+landing on a fresh instance every time:
 
-**The residual, not hidden:** an address spraying invented symbols gets one
-request through per instance that has not yet refused it — a ceiling of
-roughly (instances × one request), rather than the unbounded number it had
-before, and every one of those requests is itself capped at 120 tickers.
-Closing that last gap needs a shared cache in front of the limiter (Redis /
-Vercel KV), which is infrastructure work and remains the honest answer for
-Pass 11.
+| peek | served | refused | served past a spent budget | upstream calls |
+|---|---|---|---|---|
+| memory-only | 20 | 0 | **15** | 7 160 |
+| shared | 5 | 15 | **0** | 1 790 |
+
+Fifteen of twenty requests sailed past a budget that was already spent. That
+is not a limiter with a caveat; it is one an attacker can farm by doing
+nothing more clever than sending requests.
+
+**The fix, and why it costs almost nothing.** The mistake was framing the
+choice as "ask per request or do not ask". The answer barely changes minute
+to minute, and -- crucially -- **the verdict that must never be stale is the
+refusal, which does not need the database at all**, because refusals are
+written into memory and memory is consulted first. So only the *permissive*
+answer is cached, and only for 60 seconds:
+
+1. **Local memory** -- a refusal this instance already knows. Free, and
+   never stale in the direction that matters.
+2. **A cached shared "ok"**, good for `SHARED_OK_TTL_MS`. This is what keeps
+   the hot path free.
+3. **The shared bucket**, consulted only for an address this instance has
+   not vouched for in the last minute.
+
+Cost: **one round trip per address per instance per minute**, instead of one
+per request. A classroom of thirty students behind one NAT address is a
+single query a minute -- pinned by a test that runs 600 real-ticker lookups
+and asserts exactly one round trip, at cost 0.
+
+So this needed **no Redis and no KV**. The obvious version was unaffordable
+because it asked per *request*; asking per *address per minute* is the same
+guarantee at a fraction of the cost. Recorded plainly because an earlier
+version of this document named Redis as the honest answer, and was wrong
+about that.
+
+Pinned by `cannot be farmed by landing on a fresh instance every request`,
+which wipes both caches before each of twenty requests -- every one arriving
+at a brand-new instance -- and asserts **zero** get through.
 
 ### Measured, both directions, same instrument
 
@@ -203,8 +234,8 @@ rotates, disguises, or multiplies anything.
 
 ## Verification
 
-`npm run typecheck`, `npm run lint`, `npm test` — **149 tests, 32 files**,
-all passing (142 before this work).
+`npm run typecheck`, `npm run lint`, `npm test` — **157 tests, 33 files**,
+all passing, plus `npm run test:invariants` green.
 
 ## Unable to Verify (Environment-Blocked)
 
@@ -214,6 +245,6 @@ Carried into Pass 11, unchanged in kind:
    verified on a local Postgres 16 reproduction.
 2. **The production row counts for D1 are still unknown** — but the
    mechanism to learn them now exists and fires automatically on apply.
-3. **Real multi-instance behaviour on Vercel.** The residual described
-   above is reasoned from the architecture, not observed under production
-   traffic.
+3. **Real multi-instance behaviour on Vercel.** The cold-instance case is
+   simulated by wiping both caches between requests, which reproduces the
+   mechanism faithfully but is not production traffic.

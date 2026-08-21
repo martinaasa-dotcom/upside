@@ -1,31 +1,107 @@
-# Pass 5 — UX: fix log
+# Pass 5 — UX fix log (Round 2)
 
-One row per finding in [`05-ux.md`](05-ux.md). Status is **Resolved**,
-**Deferred**, or **Stuck**. Nothing is marked Resolved without fresh
-re-verification evidence attached.
+Companion to `docs/audit/05-ux.md`. One row per finding.
+**No row is Resolved without fresh re-verification by the method that
+surfaced it.**
 
-Checks run after the fixes in this log: `npx tsc --noEmit` clean,
-`npx eslint --max-warnings 0` clean on every touched file,
-`npm run test:invariants` at its 2 pre-existing failures.
+| # | Finding | Severity | Status | Evidence |
+|---|---|---|---|---|
+| H1 | The invariant suite was red — 5 stale rules, guarding nothing | High | **Resolved** | `npm run test:invariants` → **all invariants passed** (was `5 invariant(s) failed`) |
+| H2 | The watchlist box fails silently, four ways | High | **Resolved** | Every path now reports; pinned by a new invariant |
+| M1 | Options gating contradicted `AGENTS.md` | Medium | **Resolved (decision made)** | `shouldHideOptions` + `AGENTS.md` now agree; 5 tests |
 
-| # | Finding | Severity | Status | Evidence | Notes |
-|---|---|---|---|---|---|
-| H1 | Fourteen hand-rolled modals/drawers had no Escape-to-close and no focus trap | High | **Resolved** (prior session) | Report §High 1 | Fixed when the pass was first run, merged to `main`. |
-| H2 | Unmapped raw database errors could reach a paying stranger verbatim | High | **Resolved** (prior session) | `src/lib/plain-error.ts` — introduced this pass and now reused by Passes 6 and 7 | Fixed when the pass was first run. |
-| H3 | Thesis Pulse carried no "this is AI, it can be wrong" framing | High | **Resolved** (prior session) | Report §High 3; Pass 9 later replaced the duplicated literal with the shared `ADVICE_DISCLAIMER_SHORT` constant | Fixed when the pass was first run. |
-| M1 | Icon-only touch targets are 28px (`size-7` / `icon-sm`), below the ~44pt HIG and 48dp Material minimums | Medium | **Resolved** | `src/app/globals.css` — a `pointer: coarse` rule targets `[data-slot="button"][data-size="icon-sm"]` and `[data-size="icon-xs"]` (Button already emits `data-size` on every instance), growing the hit area to 44px on any touch device. | The open question was whether every icon button's *visual* size should grow app-wide, which would cost desktop information density for a problem a mouse doesn't have — that call was left to Martin. The resolution sidesteps it: grow the **hit area**, not the visible box, the same technique `.touch-target` already uses, applied automatically via the `data-size` attribute so no call site needs to opt in and no desktop pixel moves. The highest-traffic surfaces were already individually patched with `.touch-target` (f8d5114); this closes the systemic default for the other ~8 `icon-sm` call sites (`PulsePage`, `dialog.tsx`, `sheet.tsx`, `InvitePartnerModal`, `AdminPage`, `ClassroomPlanEditor`, `WatchlistStrip`, `UpgradeNudge`) without touching any of them individually. |
-| M2 | `EmptyBook` is already well-built | Medium | **Deferred** (no change needed) | — | Recorded by the report as the thing working well in the first-60-seconds flow, explicitly so a later pass doesn't "fix" it. No defect. |
-| M3 | `title=` used instead of `aria-label` on icon-only buttons | Medium | **Resolved** | `src/components/AdminPage.tsx:273,285,370` and `src/components/ClassroomPlanEditor.tsx:163`. Re-ran the check that found them — a scan for `<Button>` tags that are `size="icon*"`, carry a `title`, and lack an `aria-label` — across all of `src/components`: **0 remaining** (was 4). | Kept `title` (the hover tooltip is useful) and added `aria-label` alongside, matching the 36 other icon-only buttons. Gave the two Refresh buttons **distinct** names — "Refresh error log" and "Refresh user list" — since a screen-reader user hearing "Refresh" twice on one page can't tell them apart, and made the classroom one name the period it removes. |
-| M4 | `use-lab-sync`'s error toast can re-fire once per debounce window during a sustained sync failure | Medium | **Deferred** | — | The report's own assessment: already debounced, generation-counted, and cleaned up on unmount — "not a runaway loop, just could get a little noisy" during an extended Supabase outage while someone is actively typing. Not worth touching without a repro, and any fix (a suppression window) risks swallowing a real failure. |
-| L1 | `PulsePage.tsx`'s disclaimer was a literal, not the shared constant | Low | **Resolved** (Pass 9) | Pass 9 §Low 1 | Closed by a later pass; the invariant-test constraint that had blocked it was resolved there too. |
-| L2 | Paste `Textarea`s had no programmatic label | Low | **Resolved** (prior session) | Report §Low 2 — `aria-label` added to both in `CsvImportModal.tsx` and `OverviewDashboard.tsx` | Fixed when the pass was first run. |
-| L3 | Some `plainError` `KNOWN` entries map a string to itself | Low | **Deferred** (deliberately not "cleaned up") | — | Looked at this to collapse it and found the entries are **load-bearing, not redundant**. `plainError` only reaches its `return s` pass-through after `looksTechnical(s)`; an identity entry in `KNOWN` short-circuits at line 134 and *guarantees* that sentence reaches the user. Deleting it would put messages like "Those email addresses do not look right." at the mercy of a `looksTechnical` false positive, where the person would get a generic fallback instead. Leaving them, and recording why, so a future pass doesn't remove them as dead weight. |
+---
 
-## Deferred summary
+## H1 — repairing the guard without weakening it
 
-Five items left unfixed, none silently. **M1** is a design-system
-decision for Martin (the phone-facing cases are already fixed
-separately). **M2** and **L3** are cases where the right action is no
-change — and **L3** in particular is recorded above with the reason it
-must *stay*, since the report had it filed as a cleanup opportunity.
-**M4** needs a repro before it's worth touching.
+Two wrong ways to make a red suite green: revert the code until the old
+assertion passes, or soften the assertion until anything passes. Four of
+these five encode changes Martin explicitly asked for, so the code was
+right and the rule needed rewriting to say what is true **now** — with at
+least as much force as before.
+
+| Invariant | Was | Now asserts |
+|---|---|---|
+| power animals | every animal has a unique colour | each theme animal paints from **its theme's own CSS variable, checked against `THEME_COLOR`**, and the eleven others use exactly three distinct temperament grades |
+| chrome is quiet | active segment is `bg-background` | active segment is `bg-secondary` + `text-primary`, hover uses the shared `--hover` token, and **an opaque fill can never come back** (`doesNotMatch` on `bg-(background\|muted\|card)`) |
+| workspace nav | active room is `bg-primary text-primary-foreground` | `aria-current="page"` still emitted, active room is the quiet raised surface, and it **must not** wear the CTA fill |
+| legal pages | a standalone age checkbox | age is asserted **inside the same sentence as Terms and Privacy**, and a standalone age tickbox cannot return |
+| fund cron | gate on `xPostingConfigured` | gate is `xPostingEnabled`, **`xPostingConfigured` must not appear** in the route, and `x-post.ts` must require credentials **and** `X_POSTING_ENABLED` |
+
+Several are now **stronger** than what they replaced. The animals one is
+the clearest example: it used to assert four hardcoded colour names, and it
+now cross-checks the animal table against `THEME_COLOR`, so the two lists
+cannot drift apart — the actual property the design promises.
+
+**Verified by breaking it on purpose.** A test that cannot fail is worth
+less than no test, so the rewritten animal rule was mutation-tested:
+
+```
+$ sed -i 's/beaver: TONE.cat2/beaver: TONE.cat7/' src/lib/portfolio-personality.ts
+fail  power animal colours follow theme, then temperament
+  AssertionError: beaver should paint from ai_infra's colour (var(--cat-2))
+$ git checkout src/lib/portfolio-personality.ts
+ok    power animal colours follow theme, then temperament
+```
+
+**The real lesson, recorded because it is the reusable part:** the previous
+round's fix log noted "2 pre-existing failures" as acceptable background.
+That is how a suite dies — once red is normal, the sixth failure looks
+exactly like the first five. The suite is at zero now, and it should be
+treated as a build break, not a weather report.
+
+## H2 — the watchlist box now says what happened
+
+Four silent `return`s, each given the message it always owed the person:
+
+| Situation | Before | Now |
+|---|---|---|
+| Name resolves to nothing | nothing | `No company found for "…". Try the ticker symbol.` |
+| Search request threw | nothing | `Couldn't look that up just now. Try again in a second.` |
+| You already own it | nothing | `You already own NVDA, so it's in your portfolio, not your watchlist.` |
+| Already on the watchlist | silently re-added | `NVDA is already on your watchlist.` |
+
+Three details that are the difference between a message and a good one:
+
+- **A failed lookup is distinguishable from "no such company."** Only one of
+  the two is worth retrying, and lumping them together tells someone to
+  re-type a name that was never the problem.
+- **"You already own it" is not phrased as an error**, because it isn't one.
+  It names where the ticker actually is.
+- **`role="status"`, not `role="alert"`.** It is announced without stealing
+  focus from the box the person is still typing in.
+
+The slow path — turning a typed company name into a symbol — now shows a
+spinner and disables the submit button, and `add()` refuses re-entry while
+one is in flight.
+
+Pinned by a new invariant, `every text box that can fail tells you what
+happened`, which checks **both** this component and the onboarding modal, so
+the standard and the thing measured against it regress together or not at
+all.
+
+## M1 — the options gate, decided
+
+Full reasoning in the report. Short version: `AGENTS.md` said one thing, the
+code did the opposite, and **both literal readings were wrong**, because
+onboarding is skipped for anyone who already owns something — so "unanswered
+hides" would have taken covered calls away from every existing holder at
+once. The gate now hides on an explicit `false` only, `AGENTS.md` was
+rewritten to match with the reasoning inline, and 5 tests pin it, including
+one that ties the `null` case directly to `shouldSkipExperienceOnboarding`.
+
+## Verification
+
+`npm run typecheck` clean · `npm run lint` clean ·
+`npm test` **157 tests / 33 files** (149 before) ·
+`npm run test:invariants` **all invariants passed** (5 failing before).
+
+## Unable to Verify (Environment-Blocked)
+
+Carried into Pass 11:
+
+1. **No live browser.** The watchlist messages, hover states and focus
+   behaviour are verified from source and by the invariant suite, not by
+   driving a real page.
+2. **No real signup**, so the first-60-seconds flow is traced through code.
+3. **Touch targets not measured on real hardware.**

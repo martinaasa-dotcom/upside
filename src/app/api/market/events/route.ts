@@ -38,7 +38,7 @@ async function handleGET(req: NextRequest) {
   // contribute to the budget. It does honour it: an address already refused
   // for spraying invented symbols at /api/quotes does not get to keep
   // spending here instead.
-  const budget = checkUnresolvedBudget(req);
+  const budget = await checkUnresolvedBudget(req);
   if (!budget.ok) {
     return NextResponse.json(
       { error: "Too many unknown tickers. Try again shortly." },

@@ -121,7 +121,8 @@ import {
   KARUD_PRIMARY_EMAIL,
   SEED_EMAIL_SLUGS,
 } from "../src/lib/auth/identity";
-import { ANIMAL_CARD_TONE } from "../src/lib/portfolio-personality";
+import { ANIMAL_CARD_TONE, THEME_COLOR } from "../src/lib/portfolio-personality";
+import type { ForecastTheme } from "../src/lib/forecast-conviction";
 import { PALETTE } from "../src/lib/palette";
 import {
   asSurpriseFraction,
@@ -334,14 +335,69 @@ run("briefing kinds use plain-English labels", () => {
   assert.equal(BRIEFING_KIND_LABEL.play, "What's missing");
 });
 
-run("power animals each keep their own color", () => {
+/*
+ * Rewritten. The old rule was "every animal gets a colour nobody else has",
+ * which stopped being true on purpose: ten theme animals now take the
+ * colour of the theme they represent, so a Beaver card and the "AI
+ * computer builders" slice of the allocation bar match without anyone
+ * keeping two lists in sync, and the remaining eleven are graded by
+ * temperament, which is what they actually describe.
+ *
+ * Asserting uniqueness again would force those pairings apart. What is
+ * worth protecting is the property the old test was really after -- that
+ * the colours carry meaning and are not assigned at random -- so that is
+ * what this checks now.
+ */
+run("power animal colours follow theme, then temperament", () => {
   const bars = Object.values(ANIMAL_CARD_TONE).map((t) => t.bar);
-  assert.equal(new Set(bars).size, bars.length);
-  assert.ok(ANIMAL_CARD_TONE.dragon?.bar.includes("rose"));
-  assert.ok(ANIMAL_CARD_TONE.panda?.bar.includes("emerald"));
-  assert.ok(ANIMAL_CARD_TONE.octopus?.bar.includes("violet"));
-  assert.ok(ANIMAL_CARD_TONE.fox?.bar.includes("orange"));
-  assert.ok(!bars.some((bar) => /brand|mustard|gain|loss|muted/.test(bar)));
+
+  /*
+   * The property that actually matters, and the reason uniqueness was
+   * given up: a theme animal's card paints from the *same* CSS variable as
+   * that theme's slice of the allocation bar. Checked against THEME_COLOR
+   * itself, so the two lists cannot drift apart silently -- which is the
+   * whole thing the design note promises.
+   */
+  const themeAnimal: Record<string, ForecastTheme> = {
+    beaver: "ai_infra",
+    rhino: "ai_power",
+    badger: "semi",
+    scorpion: "drones",
+    otter: "fintech",
+    chameleon: "software",
+    flamingo: "healthcare",
+    dragon: "crypto",
+    elephant: "index",
+  };
+  for (const [animal, theme] of Object.entries(themeAnimal)) {
+    const cssVar = THEME_COLOR[theme];
+    assert.equal(
+      ANIMAL_CARD_TONE[animal]?.bar,
+      `bg-[${cssVar}]`,
+      `${animal} should paint from ${theme}'s colour (${cssVar})`
+    );
+  }
+
+  // The non-theme animals share exactly three temperament grades, so a new
+  // animal cannot quietly introduce a fourth.
+  const steady = ["hatchling", "squirrel", "turtle", "owl"];
+  const balanced = ["octopus", "crab", "falcon", "fox"];
+  const hot = ["squid", "shark", "wolf"];
+  for (const group of [steady, balanced, hot]) {
+    const first = ANIMAL_CARD_TONE[group[0]!];
+    for (const id of group) {
+      assert.equal(ANIMAL_CARD_TONE[id], first, `${id} shares its group's tone`);
+    }
+  }
+  assert.equal(
+    new Set([steady, balanced, hot].map((g) => ANIMAL_CARD_TONE[g[0]!]!.bar)).size,
+    3,
+    "the three temperament grades stay visually distinct"
+  );
+
+  // Every animal still resolves to a real tone -- no silent fallthrough.
+  assert.ok(bars.every((bar) => typeof bar === "string" && bar.length > 0));
+  assert.ok(!bars.some((bar) => /brand|mustard|gain|loss/.test(bar)));
   assert.equal(PALETTE.brand, "#d4bc79");
   assert.equal(PALETTE.bronze, "#d4bc79");
   assert.equal(PALETTE.teal, "#2dd4bf");
@@ -356,9 +412,17 @@ run("power animals each keep their own color", () => {
   assert.match(community, /border-border bg-muted/);
 });
 
-run("options gating is temporarily disabled — options UI always shows", () => {
+run("options UI hides on an explicit no, and only on an explicit no", () => {
+  // Told us they know options -> show.
   assert.equal(shouldHideOptions(true), false);
-  assert.equal(shouldHideOptions(false), false);
+  // Told us they do not -> hide. This is the protection.
+  assert.equal(shouldHideOptions(false), true);
+  /*
+   * Never asked -> show. Onboarding is skipped for anyone who already owns
+   * something (`shouldSkipExperienceOnboarding`, holdingsCount > 0), so
+   * null is the permanent state of every existing holder. Hiding on null
+   * would take covered calls away from all of them at once, silently.
+   */
   assert.equal(shouldHideOptions(null), false);
 });
 
@@ -1040,7 +1104,7 @@ run("Upside Fund X posts put P&L, ending value, and S&P on the same stretch", ()
   assert.ok(weekly.length <= 280);
 });
 
-run("fund cron posts to X after a new daily report", () => {
+run("fund cron composes an X post but only sends it when switched on", () => {
   const route = readFileSync(
     join(process.cwd(), "src/app/api/cron/margus-fund/route.ts"),
     "utf8"
@@ -1048,7 +1112,27 @@ run("fund cron posts to X after a new daily report", () => {
   assert.match(route, /composeDailyFundPost/);
   assert.match(route, /composeWeeklyFundPost/);
   assert.match(route, /maybeTweetFundUpdate/);
-  assert.match(route, /xPostingConfigured/);
+  /*
+   * Auto-posting is opt-in, and credentials being present is NOT the
+   * opt-in. Keys stay configured across a paused plan, so gating on
+   * `xPostingConfigured` alone meant every run burned a request to be told
+   * 402 and wrote a red row into /admin. The gate is `xPostingEnabled()`,
+   * which additionally requires X_POSTING_ENABLED=true, set deliberately
+   * once there are credits to spend.
+   */
+  assert.match(route, /xPostingEnabled/);
+  // Gating on "keys exist" alone must not come back.
+  assert.doesNotMatch(route, /xPostingConfigured/);
+  const xPost = readFileSync(
+    join(process.cwd(), "src/lib/x-post.ts"),
+    "utf8"
+  );
+  assert.match(xPost, /X_POSTING_ENABLED/);
+  assert.match(
+    xPost,
+    /xPostingConfigured\(\) && env\("X_POSTING_ENABLED"\)/,
+    "enabled must require BOTH credentials and the explicit switch"
+  );
   assert.match(route, /lastCompletedUsSessionKey/);
   assert.match(route, /deadlineAt/);
   assert.match(route, /maxDuration = 300/);
@@ -2097,8 +2181,25 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
   assert.doesNotMatch(segmented, /truncate/);
   assert.doesNotMatch(segmented, /border border-border bg-muted p-0.5/);
   assert.doesNotMatch(segmented, /variant="outline"/);
-  assert.match(segmented, /data-\[state=on\]:bg-background/);
-  assert.match(segmented, /hover:bg-foreground\/10/);
+  /*
+   * The active segment used to paint `bg-background` and hover used to be
+   * `bg-foreground/10`. Both changed on purpose: an opaque fill on a
+   * translucent card swallowed whatever sat under it, which is the "the
+   * default gray gets completely eaten up by the highlight" report. The
+   * active segment is now a raised secondary surface with primary text,
+   * and hover goes through the one shared `--hover` veil.
+   *
+   * What is worth protecting is not the specific colour but that the
+   * selected segment stays *distinguishable* and that hover keeps using
+   * the shared token rather than a one-off.
+   */
+  assert.match(segmented, /data-\[state=on\]:bg-secondary/);
+  assert.match(segmented, /data-\[state=on\]:text-primary/);
+  assert.match(segmented, /hover:bg-hover/);
+  // Never an opaque fill on the active segment again.
+  assert.doesNotMatch(segmented, /data-\[state=on\]:bg-(background|muted|card)\b/);
+  // Hover must not reintroduce a one-off alpha wash beside the token.
+  assert.doesNotMatch(segmented, /hover:bg-foreground\//);
   assert.doesNotMatch(panel, /bg-zinc-100 text-zinc-900/);
   assert.doesNotMatch(
     panel.slice(panel.indexOf("export function MicroLabel")),
@@ -5651,8 +5752,14 @@ run("workspace nav marks the current room and the skip link exists", () => {
     join(process.cwd(), "src/components/WorkspaceSwitcher.tsx"),
     "utf8"
   );
+  // Marking where you are is the invariant; it is not an action, so it
+  // must not wear the primary CTA fill and compete with the one real
+  // button in the bar. A raised secondary surface with primary text says
+  // "you are here" without shouting.
   assert.ok(/aria-current=\{active \? "page"/.test(switcher));
-  assert.ok(/bg-primary text-primary-foreground/.test(switcher));
+  assert.ok(/bg-secondary/.test(switcher));
+  assert.ok(/text-primary/.test(switcher));
+  assert.ok(!/bg-primary text-primary-foreground/.test(switcher));
   assert.ok(!/bg-zinc-100 text-zinc-900/.test(switcher));
   assert.ok(!/bg-brand\/20 text-brand-bright/.test(switcher));
   const providers = readFileSync(
@@ -6274,7 +6381,20 @@ run("legal pages name the operator and match the product", () => {
     // The UI must enforce exactly the ages the documents state.
     const gate = readFileSync("src/components/SignInGate.tsx", "utf8");
     assert.match(gate, /invite\?\.kind === "classroom" \? 13 : 16/);
-    assert.match(gate, /I am \{minAge\} or older/);
+    /*
+     * Age used to be its own checkbox. It is now asserted inside the same
+     * sentence as Terms and Privacy, the way most sites do it -- one
+     * consent, not a separate box to hunt for. The age itself is still
+     * enforced and still varies by invite kind, so what this checks is
+     * that the sentence carries it, not that a checkbox exists.
+     */
+    assert.match(gate, /you confirm you are \{minAge\} or older and agree to/);
+    // The age claim and the documents must stay in one statement.
+    const consent = gate.slice(gate.indexOf("you confirm you are"));
+    assert.match(consent.slice(0, 400), /Terms/);
+    assert.match(consent.slice(0, 400), /Privacy/);
+    // No going back to a standalone age tickbox.
+    assert.doesNotMatch(gate, /checked=\{ageOk\}|setAgeOk|ageConfirmed/);
   }
 
   assert.match(terms, /governed by the laws of \{LEGAL_COUNTRY\}/);
@@ -6658,6 +6778,43 @@ run("the four open write endpoints survive a serverless restart", () => {
       `${rel} still calls the in-memory limiter`
     );
   }
+});
+
+run("every text box that can fail tells you what happened", () => {
+  /*
+   * The watchlist box had four ways to do nothing at all: a name it could
+   * not resolve, a ticker already in your portfolio, one already on the
+   * list, and a search request that threw. Each was a bare `return`. You
+   * pressed Enter and got no message, no spinner, and your text still
+   * sitting there -- indistinguishable from the app being broken.
+   *
+   * The onboarding modal gets the same interaction right, so it is the
+   * standard rather than an invention. Both are checked here so neither
+   * regresses back to silence.
+   */
+  const watch = readFileSync(
+    join(process.cwd(), "src/components/WatchlistStrip.tsx"),
+    "utf8"
+  );
+  assert.match(watch, /setNote\(/, "watchlist reports outcomes");
+  assert.match(watch, /role="status"/, "and announces them to screen readers");
+  assert.match(watch, /No company found for/);
+  assert.match(watch, /already own/);
+  assert.match(watch, /already on your watchlist/);
+  // A slow company-name lookup must show it is working.
+  assert.match(watch, /setAdding\(true\)/);
+  assert.match(watch, /disabled=\{!draft\.trim\(\) \|\| adding\}/);
+  // A failed lookup must be distinguishable from "no such company",
+  // because only one of the two is worth retrying.
+  assert.match(watch, /Couldn't look that up just now/);
+
+  const onboarding = readFileSync(
+    join(process.cwd(), "src/components/ExperienceOnboardingModal.tsx"),
+    "utf8"
+  );
+  assert.match(onboarding, /setStockError\("Type a ticker or a company name\."\)/);
+  assert.match(onboarding, /Couldn't open a portfolio/);
+  assert.match(onboarding, /Couldn't save that holding/);
 });
 
 if (failed > 0) {
