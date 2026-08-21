@@ -6,7 +6,7 @@ surfaced it.**
 
 | # | Finding | Severity | Status | Attempts | Evidence |
 |---|---|---|---|---|---|
-| C1 | Legacy `public.portfolios` / `holdings` / `covered_call_targets` world-readable and world-writable via the anon key | Critical | **Resolved** | 1 | Exploit reproduced and then blocked on a local Postgres 16 — see below |
+| C1 | Legacy `public.portfolios` / `holdings` / `covered_call_targets` world-readable and world-writable via the anon key | ~~Critical~~ → **Low** | **Resolved** | 1 | Exploit reproduced and blocked on a local Postgres 16. **Corrected 2026-08-21: the tables do not exist in production** (`information_schema` returns 0), so this was never exploitable there — only in an environment built by replaying migration 001 |
 | M1 | `portfolios/join` had no rate limit while `communities/join` does | Medium | **Resolved** | 1 | `grep -c takeDurableRateLimit src/app/api/portfolios/join/route.ts` → 2 (was 0) |
 
 ## C1 — verified by running the attack, not by reading the policy
@@ -74,12 +74,19 @@ attempt and an inconsistency between two routes doing the same job.
 
 Carried into Pass 11 as gaps, not passes:
 
+> **Update 2026-08-21.** Both migrations have now been applied to
+> production, and gap 2 below is answered: the tables are not there. The
+> revoke and archive are permanent no-ops on that database, which is the
+> correct end state rather than a wasted change — they still protect any
+> environment rebuilt from migration 001.
+
 1. **Live RLS testing against a real non-owner Supabase session.** C1 was
    proven on a local Postgres reproduction, which validates the migration
    and the exploit mechanics but is not the production database.
-2. **Whether the C1 tables hold rows in production.** Decides whether the
-   finding was a live data exposure or "only" an open write primitive. The
-   fix is identical either way, which is why this did not block closing it.
+2. ~~**Whether the C1 tables hold rows in production.**~~ **RESOLVED:** they
+   do not exist in production. Neither a data exposure nor an open write
+   primitive *there*; both remain true of any database built by replaying
+   migration 001.
 3. **Stripe webhook replay/idempotency end to end** — signature
    verification confirmed by reading; the live test-mode flow belongs to
    Pass 6.

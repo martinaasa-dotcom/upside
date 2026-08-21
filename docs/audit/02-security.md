@@ -7,6 +7,29 @@
 > source. Where a prior "Resolved" survived re-testing it is re-confirmed
 > with fresh evidence.
 
+> ## Corrected 2026-08-21, after the migrations were applied to production
+>
+> **C1 was not exploitable in production.** The three tables do not exist in
+> that database and never did — verified directly:
+> `select count(*) from information_schema.tables where table_name in
+> ('portfolios','holdings','covered_call_targets')` returns **0**, and the
+> archive migration's `to_regclass` guard found nothing to move.
+>
+> The finding was right about the **migration history** and wrong about this
+> database. Migration 001 genuinely does create all three with
+> `for all using (true) with check (true)`, so any environment built by
+> replaying migrations is exposed — a fresh branch, a local reproduction, a
+> restored-from-migrations recovery. Production was not built that way.
+>
+> **Severity: Critical → Low.** Low rather than nothing, because the open
+> policies are still sitting in migration 001 and would apply to anyone who
+> replays it. The revoke and archive migrations have now run and are
+> permanent no-ops on this database, which is the correct end state.
+>
+> This closes the Environment-Blocked item this pass carried from the start
+> — *"whether the C1 tables hold rows"* — with a fact instead of the
+> conservative assumption it was graded on.
+
 **Headline:** one real hole, and it is in the oldest migration in the repo.
 Three legacy tables have carried `for all using (true) with check (true)`
 since migration 001 and **no migration has ever dropped those policies** —
@@ -105,6 +128,12 @@ $ grep -rnE 'from\("(portfolios|holdings|covered_call_targets)"\)' src/
 Critical because it cannot be checked from here and the safe assumption is
 the worse one.
 
+> **Answered.** The tables do not exist in production, so neither branch of
+> that grade applied. Downgraded to **Low** — see the correction at the top
+> of this file. Grading on the worse assumption was the right call with the
+> information available; recording what turned out to be true matters more
+> than defending the original number.
+
 *Fix:* revoke access without destroying data — see the fix log. Dropping
 the tables would be the tidier end state but is destructive and is Martin's
 call, not something to do blind against production.
@@ -178,9 +207,7 @@ Carried into Pass 11 as gaps, not passes:
 1. **No live RLS testing against a real non-owner session.** The brief asks
    for attempted exploitation, not policy reading. Everything above is
    derived from migration history.
-2. **Whether the C1 tables hold rows** — determines whether that finding is
-   a data exposure or "only" an open write primitive. *Mechanism added:*
-   migration `20260821160000` raises each table's row count as a NOTICE when
-   it runs, so applying it answers this without anyone inspecting by hand.
+2. ~~**Whether the C1 tables hold rows**~~ — **RESOLVED 2026-08-21.** They
+   do not exist in production at all. See the correction at the top.
 3. **Stripe webhook replay/idempotency behaviour end to end** — signature
    verification is confirmed by reading; the live test-mode flow is Pass 6.
