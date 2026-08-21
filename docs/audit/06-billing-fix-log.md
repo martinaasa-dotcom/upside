@@ -1,36 +1,119 @@
-# Pass 6 — Billing & upgrading: fix log
+# Pass 6 — Billing fix log (Round 2)
 
-One row per finding in [`06-billing.md`](06-billing.md). Status is
-**Resolved**, **Deferred**, or **Stuck**. Nothing is marked Resolved
-without fresh re-verification evidence attached.
+Companion to `docs/audit/06-billing.md`. One row per finding.
+**No row is Resolved without fresh re-verification by the method that
+surfaced it** — here, by breaking each fix on purpose and watching the test
+fail.
 
-Checks run after the fixes in this log: `npx tsc --noEmit` clean,
-`npx eslint --max-warnings 0` clean on every touched file, `npm run test`
-111/111, `npm run test:invariants` at its 2 pre-existing failures.
+| # | Finding | Severity | Status | Evidence |
+|---|---|---|---|---|
+| H1 | Webhook acknowledges events it failed to apply | High | **Resolved** | 6 tests; mutation-tested |
+| H2 | Repair job can downgrade a paying customer | High | **Resolved** | 6 tests; mutation-tested |
+| H3 | Deletion cancels only what our own row remembers | High | **Resolved** | Cancels by customer, Stripe as the authority |
+| M1 | Nothing gates on `subscription_status` | Medium | **No change needed** | Product decision; recorded with the connection to H1/H2 |
 
-Standing context from the report, which every row below sits inside:
-**Upside Lab Pro gates zero product features** — it's a $12/month support
-tier — so none of these findings withhold or wrongly grant access to
-anything. The one that mattered financially (H1) was fixed when the pass
-first ran.
+---
 
-| # | Finding | Severity | Status | Evidence | Notes |
-|---|---|---|---|---|---|
-| H1 | Deleting your account never canceled your Stripe subscription — you'd keep being charged | High | **Resolved** (prior session) | Report §High 1 | Fixed when the pass was first run, merged to `main`. The only finding in this pass with real ongoing financial harm. |
-| H2 | Webhook trusted the embedded subscription snapshot; an out-of-order retry could resurrect a canceled subscription | High | **Resolved** (prior session) | Report §High 2 | Fixed when the pass was first run. |
-| H3 | Billing UI showed raw API error text in toasts | High | **Resolved** (prior session) | Report §High 3 — now routed through `plainError()` from Pass 5 | Fixed when the pass was first run. |
-| M1 | No reconciliation backstop between Stripe and the local mirror | Medium | **Resolved** | `src/lib/billing-reconcile.ts` + `src/app/api/cron/billing-reconcile/route.ts`, daily at 05:00 UTC (`vercel.json`). Walks every profile with a `stripe_customer_id`, re-derives status from `stripe.subscriptions.list()`, and corrects drift; documented in `docs/STRIPE_BILLING.md`. | Built once Pro started actually taking real payments — the point past which "nothing gates on `subscription_status` today" stops being true and drift stops being decorative. Same `CRON_SECRET` bearer auth as the rest of `vercel.json`, same `stripeSubscriptionFields`/`CLEARED_BILLING_PATCH` helpers the webhook itself uses, so the two paths can never disagree on what a given Stripe subscription maps to locally. |
-| M2 | `/api/billing/checkout` could create a duplicate, orphaned Stripe customer | Medium | **Resolved** | `src/app/api/billing/checkout/route.ts:59-68` — `stripe.customers.create()` now takes `{ idempotencyKey: \`customer:${auth.user.id}\` }`. | Exactly the fix the report proposed, keyed on the stable Supabase user id. A double-click, or a retry after the subsequent Supabase write failed, now reuses the customer Stripe already created instead of orphaning one per attempt. |
-| M3 | The "already subscribed?" guard only inspected a customer's 5 most recent subscriptions | Medium | **Resolved** | `src/app/api/billing/checkout/route.ts:80-95` and `src/lib/billing-status.ts:8-24`. The call now asks Stripe for exactly the blocking statuses instead of taking 5 of *any* status and filtering locally. | Went one step past the report: rather than hardcoding `["active","trialing","past_due"]` at the call site — a second copy of a list that already existed — `ACTIVE_STATUSES` is now exported from `billing-status.ts` and drives both the Stripe query and `isActiveSubscription()`. Verified the two matched exactly before making the change, so this closes the finding without narrowing what counts as active. |
-| L1 | `.env.example` pointed at a `README-STRIPE.md` that doesn't exist | Low | **Resolved** | `.env.example:121` — the dead reference is gone; the comment still names where the webhook secret comes from (`stripe listen` for dev, the Dashboard endpoint for prod), which was the useful half. | Took the "drop the reference" option rather than writing a doc, since the surrounding comment already carries the setup detail the missing file would have held. |
-| L2 | No dedicated per-route rate limit on `/api/billing/checkout` or `/api/billing/portal` | Low | **Deferred** | — | Not billing-specific: these sit under the same blanket IP cap as every mutating route, and Pass 2 already recorded that per-instance limiter as its own Medium (M1 there). Creating a Checkout or Portal session has no meaningful cost to abuse and Stripe's APIs have their own protections. Closing it properly means the shared durable-limiter work from Pass 2, not a billing-local patch. |
+## H1 — let Stripe retry
 
-## Deferred summary
+The webhook now returns **500** when a write does not land, so Stripe
+redelivers. Replay is safe by construction: every handler re-fetches the
+subscription by id and writes whatever Stripe says *now*, so a retry
+converges on the same state rather than compounding.
 
-One item left unfixed. **L2** is a symptom of Pass 2's systemic
-rate-limiting item rather than a billing defect, and belongs with that
-fix.
+The second half was quieter and mattered as much. PostgREST does not treat
+"matched no rows" as an error, so this:
 
-**M1** has since been built: the reconciliation cron went in once Pro
-started taking real payments, which is the point past which
-`subscription_status` stopped being a value nothing reads.
+```ts
+const { error } = await supabase.from(profiles).update(...).eq("stripe_customer_id", id);
+```
+
+could not tell a write from a no-op. It now asks for `{ count: "exact" }`
+and treats `count === 0` as a failure to be retried — checkout saves the
+customer id *before* it opens a session, so a row missing at this instant is
+usually a row that is about to exist, which is precisely the case a retry
+fixes and a 200 does not.
+
+## H2 — ask for live subscriptions first
+
+Reconcile now queries `ACTIVE_STATUSES` explicitly and only falls back to
+"newest of any status" when there is genuinely no live subscription — at
+which point that newest one *is* the right answer, because it describes how
+the customer's billing actually ended.
+
+This makes reconcile agree with the checkout route, which already queried
+this way. The two can no longer disagree about what counts as a live
+subscription.
+
+## H3 — cancel what Stripe has, not what we remember
+
+Deletion now lists the customer's live subscriptions from Stripe and cancels
+each, keeping the stored `stripe_subscription_id` as a fallback for a profile
+that has one but no customer id.
+
+The reasoning is worth stating because it is the theme of this whole pass:
+reading our own mirror meant that **the one case where our data is stale was
+also the case where someone gets deleted and billed forever.** Those are the
+worst two things to have coincide. Stripe is the only thing that knows what
+would produce a charge, so that is what gets asked.
+
+## Verified by breaking them on purpose
+
+A test that cannot fail is worth less than no test, so each fix was reverted
+in place and the suite re-run:
+
+**H1** — restored the unconditional 200:
+
+```
+× asks Stripe to retry when the database write fails
+× asks Stripe to retry when the update matched no profile
+  Tests  2 failed | 4 passed (6)
+```
+
+**H2** — restored `status: "all", limit: 1`:
+
+```
+× does not downgrade a paying customer because of a newer failed attempt
+× prefers the live subscription over a newer trailing one
+  Tests  2 failed | 4 passed (6)
+```
+
+Both back to green once restored.
+
+## Tests, where there were none
+
+This code handled money and had **no test file at all**. There are now 12,
+across two files, written against Stripe's documented behaviour rather than
+around the implementation:
+
+`src/lib/billing-reconcile.test.ts` — the fake Stripe returns **newest
+first** and treats `status: "all"` as including every state, exactly as the
+real list endpoint does, so the two-tab sequence from the report is
+reproduced rather than described. Covers: no downgrade from a newer failed
+attempt; a genuine cancellation still recorded; a missed upgrade repaired;
+`past_due` counted as live; local state cleared when Stripe has nothing; a
+never-subscribed customer left alone.
+
+`src/app/api/billing/webhook/webhook.test.ts` — covers: a 200 only when the
+write landed; **500 on a failed write**; **500 when the update matched no
+profile**; re-fetch by id rather than trusting the event body; bad signature
+rejected without touching the database; unhandled event types acknowledged
+cleanly, so Stripe does not retry them forever.
+
+## Verification
+
+`npm run typecheck` clean · `npm run lint` clean ·
+`npm test` **169 tests / 35 files** (157 before) ·
+`npm run test:invariants` green.
+
+## Unable to Verify (Environment-Blocked)
+
+Carried into Pass 11, unchanged in kind:
+
+1. **No Stripe keys and no live endpoint**, so no fix here has been
+   exercised against real Stripe. The behaviours they rest on —
+   retry-on-non-2xx, newest-first ordering, `status: "all"` including
+   incomplete states — are documented behaviour reproduced in test doubles.
+2. **The H2 sequence is derived, not reproduced against a real account.**
+3. **H3's cancellation path has not been run**, so "no further charges" is
+   argued from the API contract rather than observed.

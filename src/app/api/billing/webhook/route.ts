@@ -52,6 +52,12 @@ async function handlePOST(req: Request) {
     return NextResponse.json({ error: "Supabase not configured" }, { status: 500 });
   }
 
+  // Whether every write this event needed actually landed. Stripe retries a
+  // non-2xx for up to three days; acknowledging an event we failed to apply
+  // throws that safety net away and leaves the mismatch to be found later,
+  // by someone who has been charged and can see no sign of it.
+  let applied = true;
+
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session;
@@ -60,7 +66,7 @@ async function handlePOST(req: Request) {
         typeof session.subscription === "string" ? session.subscription : session.subscription?.id;
       if (customerId && subscriptionId) {
         const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-        await syncSubscription(customerId, subscription);
+        applied = await syncSubscription(customerId, subscription);
       }
       break;
     }
@@ -83,7 +89,7 @@ async function handlePOST(req: Request) {
           ? eventSubscription.customer
           : eventSubscription.customer.id;
       const subscription = await stripe.subscriptions.retrieve(eventSubscription.id);
-      await syncSubscription(customerId, subscription);
+      applied = await syncSubscription(customerId, subscription);
       break;
     }
 
@@ -92,12 +98,23 @@ async function handlePOST(req: Request) {
       break;
   }
 
+  if (!applied) {
+    // 500 so Stripe redelivers. The event is safe to replay: every handler
+    // re-fetches the subscription by id and writes whatever Stripe says now,
+    // so a retry converges on the same state rather than compounding.
+    return NextResponse.json({ error: "Could not record subscription" }, { status: 500 });
+  }
+
   return NextResponse.json({ received: true });
 
-  async function syncSubscription(customerId: string, subscription: Stripe.Subscription) {
-    const { error } = await supabase!
+  /** True only if the profile row was actually written. */
+  async function syncSubscription(
+    customerId: string,
+    subscription: Stripe.Subscription
+  ): Promise<boolean> {
+    const { error, count } = await supabase!
       .from(PORTFELL_TABLES.profiles)
-      .update(stripeSubscriptionFields(subscription))
+      .update(stripeSubscriptionFields(subscription), { count: "exact" })
       .eq("stripe_customer_id", customerId);
 
     if (error) {
@@ -106,7 +123,28 @@ async function handlePOST(req: Request) {
         { customerId, message: error.message },
         "error"
       );
+      return false;
     }
+
+    /*
+     * An update that matches nothing is not an error in PostgREST -- it
+     * succeeds having changed no rows. Without the count that is
+     * indistinguishable from a write, so a payment for a customer id no
+     * profile carries would look perfectly handled while the person stayed
+     * un-upgraded. Ask Stripe to send it again: checkout saves the customer
+     * id before it ever opens a session, so a row that is missing now is
+     * usually a row that is about to exist.
+     */
+    if (count === 0) {
+      logEvent(
+        "stripe_webhook_sync_no_profile",
+        { customerId, subscriptionId: subscription.id },
+        "error"
+      );
+      return false;
+    }
+
+    return true;
   }
 }
 

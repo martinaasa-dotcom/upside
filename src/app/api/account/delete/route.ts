@@ -6,6 +6,7 @@ import {
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { revokeAllUserSessions } from "@/lib/auth/revoke-sessions";
 import { getStripe } from "@/lib/stripe";
+import { ACTIVE_STATUSES } from "@/lib/billing-status";
 import { NextResponse } from "next/server";
 import { observeRoute } from "@/lib/observe-route";
 import { logEvent } from "@/lib/telemetry";
@@ -65,11 +66,53 @@ async function handlePOST() {
   if (stripe) {
     const { data: billingProfile } = await supabase
       .from(PORTFELL_TABLES.profiles)
-      .select("stripe_subscription_id")
+      .select("stripe_subscription_id, stripe_customer_id")
       .eq("id", auth.user.id)
       .maybeSingle();
-    const subscriptionId = billingProfile?.stripe_subscription_id;
-    if (subscriptionId) {
+
+    /*
+     * Cancel what Stripe says this customer has, not only what our own row
+     * remembers.
+     *
+     * `stripe_subscription_id` is a mirror maintained by the webhook, and a
+     * mirror can be wrong -- a webhook that never landed leaves it null
+     * while Stripe happily goes on charging. Reading it alone means the
+     * one case where our data is stale is also the case where someone is
+     * deleted and billed forever, which is the worst possible pairing.
+     *
+     * So ask Stripe directly for anything still live on this customer, and
+     * keep the stored id as a fallback for a profile that has one but no
+     * customer id. The aim is "no further charges", and only Stripe knows
+     * what would produce one.
+     */
+    const toCancel = new Set<string>();
+    const customerId = billingProfile?.stripe_customer_id;
+    if (customerId) {
+      try {
+        const live = await Promise.all(
+          ACTIVE_STATUSES.map((status) =>
+            stripe.subscriptions.list({ customer: customerId, status, limit: 100 })
+          )
+        );
+        for (const page of live) {
+          for (const s of page.data) toCancel.add(s.id);
+        }
+      } catch (err) {
+        logEvent(
+          "account_delete_stripe_list_failed",
+          {
+            userId: auth.user.id,
+            message: err instanceof Error ? err.message : String(err),
+          },
+          "error"
+        );
+      }
+    }
+    if (billingProfile?.stripe_subscription_id) {
+      toCancel.add(billingProfile.stripe_subscription_id);
+    }
+
+    for (const subscriptionId of toCancel) {
       try {
         await stripe.subscriptions.cancel(subscriptionId);
       } catch (err) {
