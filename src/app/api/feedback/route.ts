@@ -1,8 +1,8 @@
 import {
   FEEDBACK_TO,
-  formatWeeklyFeedbackText,
+  formatMonthlyFeedbackText,
   parseManualFeedback,
-  parseWeeklyFeedback,
+  parseMonthlyFeedback,
 } from "@/lib/feedback";
 import { takeDurableRateLimit } from "@/lib/rate-limit-durable";
 import { noteEmailConfigured, sendNoteEmail } from "@/lib/send-note";
@@ -47,20 +47,22 @@ async function handlePOST(req: NextRequest) {
       auth.user.user_metadata.full_name.trim()) ||
     who;
 
-  if (body.kind === "weekly") {
-    const parsed = parseWeeklyFeedback(body);
+  // "weekly" only reaches here from an offline draft queued before the
+  // prompt went monthly. Same answers, same email.
+  if (body.kind === "monthly" || body.kind === "weekly") {
+    const parsed = parseMonthlyFeedback(body);
     if (!parsed.ok) {
       return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
     const text = [
-      `${name} sent the weekly prompt.`,
+      `${name} sent the monthly prompt.`,
       `Email: ${who}`,
       "",
-      formatWeeklyFeedbackText(parsed.answers),
+      formatMonthlyFeedbackText(parsed.answers),
     ].join("\n");
     const ok = await sendNoteEmail({
       to: FEEDBACK_TO,
-      subject: `Week in Upside Lab: ${name}`,
+      subject: `Month in Upside Lab: ${name}`,
       text,
       replyTo: auth.user.email ?? undefined,
     });

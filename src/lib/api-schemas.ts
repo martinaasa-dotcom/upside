@@ -150,7 +150,12 @@ export const communitySheetsPostSchema = z.looseObject({
 });
 
 export const feedbackPostSchema = z.looseObject({
-  kind: z.enum(["weekly", "manual"]),
+  /**
+   * The scheduled prompt is monthly. "weekly" is the name the old build
+   * wrote, and an offline draft queued before the rename still replays
+   * with it — keep accepting it.
+   */
+  kind: z.enum(["monthly", "weekly", "manual"]),
   feel: z.unknown().optional(),
   helped: z.unknown().optional(),
   blocked: z.unknown().optional(),
