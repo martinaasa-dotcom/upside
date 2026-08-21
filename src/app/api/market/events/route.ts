@@ -1,5 +1,6 @@
-import { publicCdnHeaders } from "@/lib/cdn-cache";
+import { noStoreHeaders, publicCdnHeaders } from "@/lib/cdn-cache";
 import { fetchMarketEvents } from "@/lib/market/yahoo";
+import { MAX_TICKERS_PER_REQUEST } from "@/lib/market/quotes";
 import { NextRequest, NextResponse } from "next/server";
 import { observeRoute } from "@/lib/observe-route";
 
@@ -12,6 +13,17 @@ async function handleGET(req: NextRequest) {
     .split(",")
     .map((t) => t.trim().toUpperCase())
     .filter(Boolean);
+
+  // Same cost ceiling as /api/quotes: one request must not fan out without
+  // a bound, whatever the per-IP request limiter says.
+  if (tickers.length > MAX_TICKERS_PER_REQUEST) {
+    return NextResponse.json(
+      {
+        error: `Too many tickers in one request. Ask for at most ${MAX_TICKERS_PER_REQUEST}.`,
+      },
+      { status: 400, headers: noStoreHeaders() }
+    );
+  }
 
   if (tickers.length === 0) {
     return NextResponse.json(

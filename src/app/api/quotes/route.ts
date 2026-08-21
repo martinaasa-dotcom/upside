@@ -1,5 +1,9 @@
-import { publicCdnHeaders } from "@/lib/cdn-cache";
-import { fetchFxOnly, fetchQuotesWithFallback } from "@/lib/market/quotes";
+import { noStoreHeaders, publicCdnHeaders } from "@/lib/cdn-cache";
+import {
+  MAX_TICKERS_PER_REQUEST,
+  fetchFxOnly,
+  fetchQuotesWithFallback,
+} from "@/lib/market/quotes";
 import { marketSession } from "@/lib/market/session";
 import { NextRequest, NextResponse } from "next/server";
 import { observeRoute } from "@/lib/observe-route";
@@ -44,6 +48,18 @@ async function handleGET(req: NextRequest) {
         updatedAt: new Date().toISOString(),
       },
       { headers: publicCdnHeaders(Math.max(60, cacheSeconds())) }
+    );
+  }
+
+  // One request may not be turned into an unbounded upstream fan-out. See
+  // MAX_TICKERS_PER_REQUEST -- the per-IP limiter counts requests, not the
+  // provider calls a single request can cause.
+  if (tickers.length > MAX_TICKERS_PER_REQUEST) {
+    return NextResponse.json(
+      {
+        error: `Too many tickers in one request. Ask for at most ${MAX_TICKERS_PER_REQUEST}.`,
+      },
+      { status: 400, headers: noStoreHeaders() }
     );
   }
 

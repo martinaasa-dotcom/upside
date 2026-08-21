@@ -97,7 +97,23 @@ export async function scanCoveredCall(params: {
     return null;
   }
 
-  if (isMarketCircuitOpen("yahoo")) return null;
+  // The breaker being open means Yahoo has been failing -- which is exactly
+  // the condition the catch below already answers with a synthetic estimate.
+  // Returning null here instead made the protected path degrade *worse* than
+  // the unprotected one: a live failure showed the reader an estimate, and a
+  // repeated failure showed them an empty row.
+  if (isMarketCircuitOpen("yahoo")) {
+    return syntheticCandidate(
+      ticker,
+      spot,
+      contractCount,
+      callPct,
+      stockTarget,
+      nextStrike,
+      otmPct,
+      wantExpiry
+    );
+  }
 
   try {
     const yf = await getYahoo();
