@@ -68,6 +68,9 @@ async function handlePOST(req: NextRequest) {
               row.stock_target === null
                 ? null
                 : readFiniteNumber(row.stock_target),
+            // Hand-picked expiry from the covered-call table, if any. The
+            // model validates it (must be a real, future YYYY-MM-DD).
+            expiry: readString(row.expiry) || null,
             price_history: history,
           },
         ];
@@ -86,6 +89,7 @@ async function handlePOST(req: NextRequest) {
         shares: p.shares,
         targetCallPct: p.target_call_pct,
         stockTarget: p.stock_target,
+        expiry: p.expiry,
         priceHistory: p.price_history,
       });
       return [p.ticker.toUpperCase(), candidate] as const;

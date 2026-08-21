@@ -405,6 +405,18 @@ export function Dashboard() {
   const [options, setOptions] = useState<Record<string, OptionCandidate | null>>(
     {}
   );
+  /*
+   * Expiry the user picked per holding, for the covered-call table.
+   *
+   * Kept in component state rather than on the holding row: it is a
+   * "what would this be worth if I wrote it to *this* date" question, not
+   * a property of the position, and it should not follow the holding into
+   * a shared book or a snapshot. Empty means "let the scan choose", which
+   * is what it did before this was editable at all.
+   */
+  const [ccExpiry, setCcExpiry] = useState<Record<string, string | null>>({});
+  const ccExpiryRef = useRef(ccExpiry);
+  ccExpiryRef.current = ccExpiry;
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [quotesUpdatedAt, setQuotesUpdatedAt] = useState<number | null>(null);
@@ -1372,6 +1384,9 @@ export function Dashboard() {
             spot,
             target_call_pct: h.target_call_pct,
             stock_target: h.stock_target_override,
+            // Read through a ref so picking a date doesn't have to
+            // invalidate the whole quote-refresh callback.
+            expiry: ccExpiryRef.current[h.id] ?? null,
             price_history: history,
           };
         });
@@ -3367,6 +3382,28 @@ export function Dashboard() {
     (id: string, stockTarget: number) =>
       handlePatch({ id, stock_target_override: stockTarget })
   );
+  /**
+   * Pick the expiry the covered-call premium is quoted for.
+   *
+   * Re-scans immediately rather than waiting for the next poll: the whole
+   * point of editing the date is to see what that tenor pays, and a
+   * premium that lags the expiry beside it would be worse than not
+   * letting it be edited at all. `quotesOnly: false` so the options leg
+   * actually runs.
+   */
+  const onPatchExpiry = useStableCallback(
+    (id: string, expiry: string | null) => {
+      setCcExpiry((prev) => {
+        if ((prev[id] ?? null) === expiry) return prev;
+        const next = { ...prev };
+        if (expiry) next[id] = expiry;
+        else delete next[id];
+        ccExpiryRef.current = next;
+        return next;
+      });
+      void refreshFx();
+    }
+  );
   const onShowForecast = useStableCallback(() => toggleForecastVisible());
 
   const tradeLock = useMemo(
@@ -3583,7 +3620,7 @@ export function Dashboard() {
             {!isMetaTab && source === "supabase" && activePortfolio && (
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 onClick={() => setInviteOpen(true)}
                 className="hidden md:inline-flex"
               >
@@ -3750,6 +3787,7 @@ export function Dashboard() {
                 premiumTotal={snapshot!.totals.premiumTotal}
                 onPatchTargetCall={onPatchTargetCall}
                 onPatchStockTarget={onPatchStockTarget}
+                onPatchExpiry={onPatchExpiry}
                 onAddHolding={canClassBuy ? onAddHolding : undefined}
               />
               </WidgetErrorBoundary>

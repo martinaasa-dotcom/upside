@@ -310,7 +310,7 @@ export function Card({
         NESTED_PAD,
         CARD_TONES[tone],
         interactive &&
-          "transition hover:scale-[1.01] hover:bg-accent active:scale-[0.995]",
+          "transition hover:scale-[1.01] hover:bg-hover active:scale-[0.995]",
         className
       )}
       {...rest}
@@ -872,7 +872,7 @@ export function Stat(props: ScoreProps) {
  * pill (background, input border, shadow), same as TabsTrigger.
  */
 const SEGMENTED_ITEM =
-  "rounded-md border border-transparent text-muted-foreground shadow-none group-data-[spacing=0]/toggle-group:rounded-md group-data-horizontal/toggle-group:data-[spacing=0]:first:rounded-md group-data-horizontal/toggle-group:data-[spacing=0]:last:rounded-md hover:bg-foreground/10 hover:text-foreground data-[state=on]:bg-background data-[state=on]:text-primary data-[state=on]:shadow-sm data-[state=on]:ring-1 data-[state=on]:ring-primary/40 data-[state=on]:hover:bg-background dark:data-[state=on]:border-input dark:data-[state=on]:bg-input/30 dark:data-[state=on]:text-primary dark:data-[state=on]:hover:bg-input/30";
+  "rounded-md border border-transparent text-muted-foreground shadow-none group-data-[spacing=0]/toggle-group:rounded-md group-data-horizontal/toggle-group:data-[spacing=0]:first:rounded-md group-data-horizontal/toggle-group:data-[spacing=0]:last:rounded-md hover:bg-hover hover:text-foreground data-[state=on]:card-sheen data-[state=on]:bg-secondary data-[state=on]:text-primary data-[state=on]:shadow-sm data-[state=on]:hover:bg-secondary";
 
 /**
  * The one segmented toggle. Overview's today/lifetime, the drawer's 3y/5y,
@@ -966,13 +966,22 @@ export function Segmented<T extends string>({
               buttons
                 ? "touch-target min-h-9 rounded-lg border"
                 : "touch-target py-2.5 md:min-h-0 md:min-w-0",
+              /*
+               * Selected reads as *raised into the light*, never as a hole.
+               * The grid's selected cell used to be `bg-background` — pure
+               * black — sitting between grey cells, so on a black page the
+               * chosen option looked like a gap punched through the
+               * control. Selected is now the lighter surface with a top
+               * specular edge, unselected the darker one, which is the
+               * same "lit surface" language the glass cards use.
+               */
               on
                 ? buttons
-                  ? "border-input bg-input/30 text-primary shadow-sm"
-                  : "bg-background text-primary ring-1 ring-primary/40"
+                  ? "border-input bg-secondary text-primary shadow-sm"
+                  : "card-sheen bg-secondary text-primary"
                 : buttons
-                  ? "border-input bg-transparent text-muted-foreground hover:bg-foreground/10 hover:text-foreground"
-                  : "bg-muted text-muted-foreground hover:bg-foreground/10 hover:text-foreground"
+                  ? "border-input bg-transparent text-muted-foreground hover:bg-hover hover:text-foreground"
+                  : "veil-hover bg-card text-muted-foreground hover:text-foreground"
             )}
           >
             <span className="block max-w-full text-center leading-snug break-words">

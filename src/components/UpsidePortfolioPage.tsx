@@ -78,6 +78,8 @@ import {
   NativeSelect,
   NativeSelectOption,
 } from "@/components/ui/native-select";
+import { useAuth } from "@/components/AuthProvider";
+import { isSuperadminEmail } from "@/lib/auth/superadmin";
 import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 const BENCHMARK_STORAGE_KEY = "portfell-upside-portfolio-benchmark";
@@ -255,6 +257,9 @@ type ReportRow = {
   day_change_pct: number | null;
   total_return_pct: number | null;
   spy_price: number | null;
+  /** Composed X post for this day. Saved whether or not it was sent, so
+   * the update can be posted by hand while auto-posting is off. */
+  x_post: string | null;
 };
 
 /** Exactly what /api/upside-portfolio returns, and what gets cached. */
@@ -339,7 +344,50 @@ function ReportDetail({ r }: { r: ReportRow }) {
         </div>
       )}
       <RecapBody text={r.body} muted />
+      <ManualPostBlock text={r.x_post} />
     </>
+  );
+}
+
+/**
+ * The day's ready-to-send X post, for whoever runs the account.
+ *
+ * Only rendered for a superadmin: it is an operating tool, not something
+ * a reader of the fund needs to see. It exists because auto-posting is
+ * off by default now (`X_POSTING_ENABLED`), and an update you cannot
+ * copy is an update you cannot post.
+ */
+function ManualPostBlock({ text }: { text: string | null }) {
+  const { user } = useAuth();
+  const [copied, setCopied] = useState(false);
+  if (!text || !isSuperadminEmail(user?.email)) return null;
+  return (
+    <div className="glass-well mt-3 rounded-lg p-3">
+      <div className="flex items-center justify-between gap-3">
+        <MicroLabel>Post for X</MicroLabel>
+        <Button
+          type="button"
+          variant="ghost"
+          size="xs"
+          onClick={() => {
+            void navigator.clipboard
+              ?.writeText(text)
+              .then(() => {
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1800);
+              })
+              .catch(() => {
+                /* clipboard blocked — the text is selectable below */
+              });
+          }}
+        >
+          {copied ? "Copied" : "Copy"}
+        </Button>
+      </div>
+      <pre className="mt-2 whitespace-pre-wrap break-words font-sans text-sm text-muted-foreground">
+        {text}
+      </pre>
+    </div>
   );
 }
 

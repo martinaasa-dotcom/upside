@@ -22,6 +22,9 @@ type Props = {
   premiumTotal: number;
   onPatchTargetCall: (holdingId: string, targetCallPct: number) => void;
   onPatchStockTarget: (holdingId: string, stockTarget: number) => void;
+  /** Pick the expiry to price against. Passing null hands the choice back
+   * to the scan, which picks the listed date nearest the target tenor. */
+  onPatchExpiry: (holdingId: string, expiry: string | null) => void;
   onAddHolding?: () => void;
 };
 
@@ -67,7 +70,7 @@ function InlineTargetCall({
             (e.target as HTMLInputElement).blur();
           }
         }}
-        className="inline-edit no-spinner w-8 rounded-t py-0.5 text-center tabular-nums text-foreground outline-none hover:bg-accent focus:bg-muted focus:ring-1 focus:ring-ring/50"
+        className="inline-edit no-spinner w-8 rounded-t py-0.5 text-center tabular-nums text-foreground outline-none hover:bg-hover focus:bg-muted focus:ring-1 focus:ring-ring/50"
       />
       <span className="text-sm text-muted-foreground">%</span>
     </div>
@@ -119,9 +122,76 @@ function InlineStockTarget({
             (e.target as HTMLInputElement).blur();
           }
         }}
-        className="inline-edit no-spinner w-[4.5rem] rounded-t py-0.5 text-center tabular-nums text-foreground outline-none hover:bg-accent focus:bg-muted focus:ring-1 focus:ring-ring/50"
+        className="inline-edit no-spinner w-[4.5rem] rounded-t py-0.5 text-center tabular-nums text-foreground outline-none hover:bg-hover focus:bg-muted focus:ring-1 focus:ring-ring/50"
       />
     </div>
+  );
+}
+
+/**
+ * The expiry the premium is quoted for.
+ *
+ * A native date input rather than a bespoke picker: it is a date, every
+ * platform already has a good one, and it gets keyboard and locale
+ * handling for free. Clearing the field hands the choice back to the
+ * scan, which is why the empty value commits null rather than being
+ * rejected like the numeric editors do.
+ */
+function InlineExpiry({
+  value,
+  onCommit,
+}: {
+  value: string | null;
+  onCommit: (expiry: string | null) => void;
+}) {
+  const display = value ?? "";
+  const [draft, setDraft] = useState(display);
+  const focused = useRef(false);
+
+  useEffect(() => {
+    if (!focused.current) setDraft(display);
+  }, [display]);
+
+  const commit = (next: string) => {
+    const cleaned = next.trim();
+    if (cleaned === display) return;
+    if (!cleaned) {
+      onCommit(null);
+      return;
+    }
+    // Only forward a real future date; the model rejects anything else
+    // anyway, and silently reverting is clearer than showing a premium
+    // that belongs to a different day.
+    const when = new Date(`${cleaned}T00:00:00Z`);
+    if (Number.isNaN(when.getTime()) || when.getTime() <= Date.now()) {
+      setDraft(display);
+      return;
+    }
+    onCommit(cleaned);
+  };
+
+  return (
+    <input
+      type="date"
+      value={draft}
+      aria-label="Expiry"
+      onChange={(e) => setDraft(e.target.value)}
+      onFocus={() => {
+        focused.current = true;
+      }}
+      onBlur={(e) => {
+        focused.current = false;
+        commit(e.target.value);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+        if (e.key === "Escape") {
+          setDraft(display);
+          (e.target as HTMLInputElement).blur();
+        }
+      }}
+      className="inline-edit w-[7.5rem] rounded-t bg-transparent py-0.5 text-center tabular-nums text-muted-foreground outline-none hover:bg-hover focus:bg-muted focus:text-foreground focus:ring-1 focus:ring-ring/50"
+    />
   );
 }
 
@@ -179,6 +249,7 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
   premiumTotal,
   onPatchTargetCall,
   onPatchStockTarget,
+  onPatchExpiry,
   onAddHolding,
 }: Props) {
   const mixedListings = listingCurrenciesAreMixed(
@@ -398,9 +469,10 @@ export const CoveredCallPanel = memo(function CoveredCallPanel({
                 {r.nextStrike != null ? currency(r.nextStrike) : "—"}
               </div>
               <div className={cn(cellBase, "text-muted-foreground")}>
-                {r.expiration
-                  ? format(parseISO(r.expiration), "MMM d, yyyy")
-                  : "—"}
+                <InlineExpiry
+                  value={r.expiration}
+                  onCommit={(expiry) => onPatchExpiry(r.holding.id, expiry)}
+                />
               </div>
               <div className={cn(cellBase, "tabular-nums text-muted-foreground")}>
                 {Math.round(r.contracts)}

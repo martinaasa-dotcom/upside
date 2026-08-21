@@ -106,7 +106,22 @@
   --app: var(--background);
   --well: var(--muted);
   --raised: var(--secondary);
-  --hover: var(--accent);
+  /*
+   * The one hover/highlight surface. A translucent white veil, NOT an
+   * opaque grey.
+   *
+   * Every hover used to land on `--accent` (opaque oklch 0.269). On a
+   * translucent `.glass` card or a nested well that swapped the surface
+   * out from under the content — the card's own tone vanished the moment
+   * you pointed at it, and it stopped reading as glass. A veil brightens
+   * whatever is already underneath instead, which is how a lit surface
+   * behaves, and it composes with any base rather than replacing it.
+   *
+   * `--accent` stays an opaque grey because ~25 call sites use it as a
+   * real static fill (Seasonality's heatmap cells, Panel wells). Those
+   * are backgrounds, not highlights, and must not turn translucent.
+   */
+  --hover: oklch(1 0 0 / 14%);
   --brand: var(--primary);
   --brand-bright: var(--primary);
   --brand-mid: var(--primary);
@@ -346,6 +361,33 @@ body {
       inset 0 0 0 1px var(--border),
       0 14px 36px -18px color-mix(in oklch, black, transparent 12%);
   }
+  /*
+   * Hover veil for anything that already has a surface — a glass card, a
+   * well, a filled row.
+   *
+   * It has to be `background-image`, not `background-color`. Painting a
+   * highlight into `background-color` *replaces* whatever the element
+   * already had, which is the whole bug this is fixing: a `.glass` card
+   * hovered to an opaque grey lost its translucency, and hovering it to a
+   * translucent grey lost its base tone instead (measured +1.7/255 — you
+   * could not see it at all). `background-image` composites over
+   * `background-color`, so the card keeps its own fill and simply catches
+   * more light.
+   *
+   * Surfaceless controls — ghost buttons, menu rows — have no base to
+   * preserve and keep using `hover:bg-hover`, where a background-color is
+   * exactly right.
+   */
+  .veil-hover {
+    transition: background-image 150ms ease-out;
+  }
+  .veil-hover:hover {
+    background-image: linear-gradient(
+      oklch(1 0 0 / 7%),
+      oklch(1 0 0 / 7%)
+    );
+  }
+
   .glass-well {
     background-color: color-mix(in oklch, var(--muted), transparent 50%);
     /* Prefixed first, standard last — see the note on `.glass` above. */

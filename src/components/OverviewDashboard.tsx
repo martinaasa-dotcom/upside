@@ -349,9 +349,9 @@ function DriverTile({
       : cn("card-sheen glass", isUp ? "ring-gain/20" : "ring-loss/20"),
     onOpen &&
       (nested
-        ? "hover:scale-[1.01] hover:bg-accent/70 active:scale-[0.995]"
+        ? "veil-hover hover:scale-[1.01] active:scale-[0.995]"
         : cn(
-            "hover:scale-[1.01] hover:bg-accent active:scale-[0.995]",
+            "veil-hover hover:scale-[1.01] active:scale-[0.995]",
             isUp ? "hover:ring-gain/40" : "hover:ring-loss/40"
           ))
   );
@@ -496,7 +496,7 @@ function MoverTile({
       onClick={onOpen}
       title={sheets || undefined}
       className={cn(
-        "card-sheen glass group relative flex h-full w-full min-w-0 items-center justify-between gap-2 overflow-hidden rounded-lg p-6 text-left ring-1 transition hover:scale-[1.01] hover:bg-accent sm:gap-3",
+        "veil-hover card-sheen glass group relative flex h-full w-full min-w-0 items-center justify-between gap-2 overflow-hidden rounded-lg p-6 text-left ring-1 transition hover:scale-[1.01] sm:gap-3",
         isUp ? "ring-gain/20 hover:ring-gain/40" : "ring-loss/20 hover:ring-loss/40"
       )}
     >
@@ -555,7 +555,7 @@ function PortfolioLane({
     <button
       type="button"
       onClick={onOpen}
-      className="card-sheen glass-well group flex w-full flex-col gap-4 rounded-lg p-6 text-left ring-1 ring-foreground/20 transition hover:scale-[1.01] hover:bg-accent hover:ring-primary/25"
+      className="card-sheen glass-well group flex w-full flex-col gap-4 rounded-lg p-6 text-left ring-1 ring-foreground/20 transition hover:scale-[1.01] hover:bg-hover hover:ring-primary/25"
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">

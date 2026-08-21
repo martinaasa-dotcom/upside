@@ -1136,7 +1136,7 @@ export const PulsePage = memo(function PulsePage({
                       <li key={row.symbol}>
                         <button
                           type="button"
-                          className="flex w-full items-baseline justify-between gap-3 px-3 py-2 text-left text-sm text-foreground hover:bg-accent hover:text-accent-foreground"
+                          className="flex w-full items-baseline justify-between gap-3 px-3 py-2 text-left text-sm text-foreground hover:bg-hover hover:text-accent-foreground"
                           onClick={() => void checkTicker(row.symbol)}
                         >
                           <span className="font-medium">{cashtag(row.symbol)}</span>

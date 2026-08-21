@@ -375,7 +375,7 @@ export function HoldingModal({
                   disabled={busy}
                   onClick={() => void expandRow(row)}
                   aria-label={`Edit ${cashtag(row.ticker)}`}
-                  className="grid h-10 w-full items-center whitespace-nowrap border-t border-border px-3 text-sm text-foreground hover:bg-accent disabled:opacity-50"
+                  className="grid h-10 w-full items-center whitespace-nowrap border-t border-border px-3 text-sm text-foreground hover:bg-hover disabled:opacity-50"
                   style={rowStyle}
                 >
                   <span
@@ -438,7 +438,7 @@ export function HoldingModal({
                     <li key={row.symbol}>
                       <button
                         type="button"
-                        className="flex w-full items-baseline justify-between gap-3 px-3 py-2 text-left text-sm text-foreground hover:bg-accent"
+                        className="flex w-full items-baseline justify-between gap-3 px-3 py-2 text-left text-sm text-foreground hover:bg-hover"
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={() => {
                           setTicker(row.symbol);

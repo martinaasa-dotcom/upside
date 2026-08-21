@@ -1000,7 +1000,7 @@ export function CcAdvisorChat({
                 setSilentPhase("idle");
                 setSilentSummary(null);
               }}
-              className="shrink-0 rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
+              className="shrink-0 rounded p-1 text-muted-foreground hover:bg-hover hover:text-foreground"
               aria-label="Dismiss"
             >
               <X className="h-3.5 w-3.5" />
@@ -1042,7 +1042,7 @@ export function CcAdvisorChat({
             <button
               type="button"
               onClick={toggleWide}
-              className="touch-target inline-flex items-center justify-center rounded-lg p-1.5 text-muted-foreground transition hover:bg-accent hover:text-foreground"
+              className="touch-target inline-flex items-center justify-center rounded-lg p-1.5 text-muted-foreground transition hover:bg-hover hover:text-foreground"
               aria-label={wide ? "Shrink Margus" : "Widen Margus"}
               title={wide ? "Shrink panel" : "Widen panel: more room for tables"}
             >
@@ -1065,7 +1065,7 @@ export function CcAdvisorChat({
                     className={`touch-target inline-flex items-center justify-center rounded-lg p-1.5 transition ${
                       rulesOpen
                         ? "bg-muted text-primary"
-                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                        : "text-muted-foreground hover:bg-hover hover:text-foreground"
                     }`}
                     aria-label="Strategy rules"
                     aria-expanded={rulesOpen}
@@ -1117,7 +1117,7 @@ export function CcAdvisorChat({
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+              className="rounded-lg p-1.5 text-muted-foreground hover:bg-hover hover:text-foreground"
               aria-label="Close Margus"
             >
               <X className="h-4 w-4" />

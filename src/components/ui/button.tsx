@@ -11,12 +11,23 @@ const buttonVariants = cva(
       variant: {
         default:
           "bg-primary text-primary-foreground shadow-xs hover:bg-[color-mix(in_oklch,var(--primary),white_10%)]",
+        /*
+         * Hover *lifts* the surface it is on; it never replaces it.
+         *
+         * These used to hover to `bg-muted`, an opaque grey. On anything
+         * translucent — every `.glass` card, every well — that swapped the
+         * surface out from under the content, so the base tone vanished
+         * the moment you pointed at it and the card stopped reading as
+         * glass. A translucent white overlay brightens whatever is
+         * already there instead, which is how a lit surface behaves and
+         * is the one hover vocabulary the whole app now shares.
+         */
         outline:
-          "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+          "border-border bg-background hover:bg-foreground/[0.06] hover:text-foreground aria-expanded:bg-foreground/[0.06] aria-expanded:text-foreground dark:border-input dark:bg-input/30",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
         ghost:
-          "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
+          "hover:bg-foreground/[0.08] hover:text-foreground aria-expanded:bg-foreground/[0.08] aria-expanded:text-foreground",
         destructive:
           "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
         link: "text-primary underline-offset-4 hover:underline",

@@ -359,7 +359,7 @@ export function DailyDuelCard({
               className={cn(
                 "touch-target flex h-full flex-col items-center justify-center rounded-xl border px-4 py-4 text-center transition",
                 myPick == null
-                  ? "border-border bg-muted hover:scale-[1.02] hover:border-ring/40 hover:bg-accent active:scale-[0.98]"
+                  ? "veil-hover border-border bg-muted hover:scale-[1.02] hover:border-ring/40 active:scale-[0.98]"
                   : win
                     ? "border-gain/50 bg-gain/10"
                     : waitingOnClose && isPick

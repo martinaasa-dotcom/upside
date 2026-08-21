@@ -40,7 +40,7 @@ export function StartingCashField({
               "bg-muted px-2 py-2.5 text-sm tabular-nums transition disabled:opacity-50",
               value === n
                 ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                : "text-muted-foreground hover:bg-hover hover:text-foreground"
             )}
           >
             ${formatCashDigits(n)}

@@ -553,7 +553,7 @@ export function AccountPage() {
                   onClick={() => void handleTierChange(t.id)}
                   className={cn(
                     CARD,
-                    "flex w-full items-center justify-between gap-3 px-3.5 py-3 text-left text-sm text-foreground transition hover:bg-accent",
+                    "flex w-full items-center justify-between gap-3 px-3.5 py-3 text-left text-sm text-foreground transition hover:bg-hover",
                     tier === t.id && "ring-1 ring-primary/40"
                   )}
                 >
@@ -581,7 +581,7 @@ export function AccountPage() {
                   onClick={() => void handleKnowsOptionsChange(true)}
                   className={cn(
                     CARD,
-                    "px-3 py-2.5 text-left text-sm text-foreground transition hover:bg-accent",
+                    "px-3 py-2.5 text-left text-sm text-foreground transition hover:bg-hover",
                     knowsOptions === true && "ring-1 ring-primary/40"
                   )}
                 >
@@ -597,7 +597,7 @@ export function AccountPage() {
                   onClick={() => void handleKnowsOptionsChange(false)}
                   className={cn(
                     CARD,
-                    "px-3 py-2.5 text-left text-sm text-foreground transition hover:bg-accent",
+                    "px-3 py-2.5 text-left text-sm text-foreground transition hover:bg-hover",
                     knowsOptions === false && "ring-1 ring-primary/40"
                   )}
                 >
