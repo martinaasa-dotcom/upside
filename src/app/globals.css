@@ -148,6 +148,27 @@
   --select: var(--primary);
   --select-ink: var(--primary-foreground);
   --caution: var(--warning);
+  /*
+   * The ambient page glow's cool counter-lobe, and nothing else. See
+   * DESIGN_TOKENS.md "Ambient counter-lobe".
+   *
+   * Deliberately not `--gain`. The glow used to be one warm colour on the
+   * stated grounds that "gain-green is a financial signal, not
+   * decoration" -- which is right, and is exactly why this is a teal at
+   * hue 200 rather than emerald at 162. Thirty-eight degrees of
+   * separation, blue channel at or above green, so a corner wash cannot
+   * be misread as the app saying something about money.
+   *
+   * Chroma 0.10 and lightness 0.78 put it in the same restrained family
+   * as `--primary` (0.09 / 0.80), so it reads as the cool side of one
+   * room's light rather than a second brand colour. Verified in-gamut by
+   * rasterising to a canvas: rgb(93,203,209), no channel pinned at 0 or
+   * 255 -- 0.13 chroma clipped red to 0 and was rejected for it.
+   *
+   * Not exported through `@theme inline` on purpose: there is no
+   * `bg-ambient-cool` utility, because there is no second call site.
+   */
+  --ambient-cool: oklch(0.78 0.1 200);
   --surface: var(--card);
   --panel: var(--card);
   --inset-panel: 1.5rem;
@@ -244,18 +265,23 @@ body {
 }
 
 /*
- * Ambient glow shared by every signed-in page — one soft warm-yellow wash,
- * off the top-left corner, tall enough to sit behind the fixed header too
- * (so the header's own glass fill has something to refract instead of the
- * glow visibly stopping at its edge). `.page-frame` (PAGE_FRAME_CLASS)
- * wraps every screen and paints its own opaque bg-background, which would
- * otherwise hide a glow set on body. `isolation: isolate` gives it a
- * stacking context so the negative z-index pseudo below sits above that
- * fill but under the page's real content. Fixed position so it reads as
- * the room's light while scrolling, not a decoration tied to page length.
- * One color only, deliberately: gain-green is a financial signal
- * (DESIGN_TOKENS.md's Accent Palette), not decoration, so it doesn't
- * belong in ambient chrome that has nothing to do with performance.
+ * Ambient glow shared by every signed-in page — a warm-yellow key light off
+ * the top-left corner and a cool teal counter-lobe off the bottom-right,
+ * tall enough to sit behind the fixed header too (so the header's own glass
+ * fill has something to refract instead of the glow visibly stopping at its
+ * edge). `.page-frame` (PAGE_FRAME_CLASS) wraps every screen and paints its
+ * own opaque bg-background, which would otherwise hide a glow set on body.
+ * `isolation: isolate` gives it a stacking context so the negative z-index
+ * pseudo below sits above that fill but under the page's real content. Fixed
+ * position so it reads as the room's light while scrolling, not a decoration
+ * tied to page length.
+ *
+ * This used to be one colour, on the grounds that "gain-green is a financial
+ * signal, not decoration". That reasoning stands and is why the second hue
+ * is `--ambient-cool` (teal, hue 200) rather than `--gain` (emerald, 162):
+ * far enough away that a corner wash cannot read as the app commenting on
+ * performance. See DESIGN_TOKENS.md "Ambient counter-lobe" for the
+ * measurements behind both lobes.
  */
 .page-frame {
   position: relative;
@@ -275,26 +301,37 @@ body {
    * 11 levels out of 255 in a perfectly smooth ramp. Blurring that is
    * arithmetically indistinguishable from not blurring it.
    *
-   * So the fix is the room, not the glass. A smaller, brighter,
-   * faster-falling lobe roughly doubles the field's dynamic range across
-   * a page (measured spread 33 -> 68 of 255) and makes it actually ramp
+   * So the fix is the room, not the glass. A lobe that actually ramps
    * across a row of cards, so each pane picks up the part of the light it
-   * sits in — which is the thing that reads as glass on a black field.
+   * sits in, is the thing that reads as glass on a black field.
    *
-   * Deliberately still one warm light plus a faint counter-lobe. A second
-   * strong lobe was tried and measured worse: it lit both sides evenly and
-   * flattened the left-to-right difference between cards from 13 to 5.
+   * Both lobes then grew, and the counter-lobe became a different hue.
+   * The old warning here -- that a second strong lobe "lit both sides
+   * evenly and flattened the left-to-right difference between cards from
+   * 13 to 5" -- was measured with *two warm lobes*, where the second one
+   * only adds luminance the first already supplied. Two different hues do
+   * not have that failure mode, and the measurement says so: strengthening
+   * the counter-lobe from 14% to 34% and recolouring it teal moved the
+   * left-to-right difference across a card row from 67.2 to 76.7 levels,
+   * i.e. up, while the page-wide spread held at 161. Lit field area
+   * (>= 4/255) went from 58.6% to 98.9%, which is the point -- an unlit
+   * corner gives the glass nothing to refract.
+   *
+   * There is still a ceiling. Pushing further (1800x1400, 42%, chroma
+   * 0.13) started flattening the field, spread 161 -> 154, and clipped the
+   * teal's red channel to 0. Treat these numbers as the top of the range,
+   * and re-measure rather than eyeball if they change.
    */
   background-image:
     radial-gradient(
-      1250px 1000px at -4% -8%,
-      oklch(from var(--primary) l c h / 52%),
-      transparent 66%
+      1700px 1350px at -6% -10%,
+      oklch(from var(--primary) l c h / 60%),
+      transparent 72%
     ),
     radial-gradient(
-      1300px 1000px at 100% 100%,
-      oklch(from var(--primary) l c h / 14%),
-      transparent 72%
+      1700px 1300px at 102% 102%,
+      oklch(from var(--ambient-cool) l c h / 34%),
+      transparent 78%
     );
 }
 

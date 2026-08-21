@@ -65,9 +65,12 @@ New: `--warning` / `--chart-3`: `oklch(0.63 0.22 45)`.
 | Orange | `--warning`, `--chart-3` | Caution/warning states only (e.g. Pulse alert badges). Not a general-purpose accent — don't reach for it decoratively. |
 | Emerald | `--gain` | Gains only. Semantic, not brand. |
 | Rose | `--loss` / `--destructive` | Losses and destructive actions only. Semantic, not brand. |
+| Teal | `--ambient-cool` | The ambient page glow's bottom-right counter-lobe, and nothing else — see "Ambient counter-lobe" below. Deliberately not exported as a Tailwind utility, so there is no `bg-ambient-cool` to reach for. |
 
 Four colors total, three of them semantic single-purpose (warning/gain/loss)
-and one general brand accent (warm yellow). Nothing else gets a new color
+and one general brand accent (warm yellow) — plus one chrome-only value
+(`--ambient-cool`) that lights a corner of the room and never touches a
+component. Nothing else gets a new color
 without adding a row here first.
 
 ### `--loss` chroma (corrected in Round 2)
@@ -371,3 +374,58 @@ now one accent stepping down in strength — `text-primary`,
 borrowing a semantic colour. (Rank 2's medal was previously
 `text-muted-foreground`, so it was also a casualty of the selector bug
 above and rendered near-black.)
+
+
+## Ambient counter-lobe (`--ambient-cool`, 2026-08-21)
+
+The `.page-frame` glow was one warm colour: a `--primary` key light off the
+top-left at 52%, and a `--primary` counter-lobe off the bottom-right at 14%.
+Martin asked for the bottom-right to carry a different, complementary hue,
+and for both lobes to cover more of the page so the glass has something to
+refract.
+
+**The hue.** `--ambient-cool: oklch(0.78 0.1 200)` — teal.
+
+The true complement of `--primary`'s hue 90 is hue 270, which is inside the
+violet arc this app bans, so the choice is a cool hue short of it. Teal at
+200 also settles the objection the old one-colour comment raised: it argued
+green does not belong in ambient chrome because "gain-green is a financial
+signal, not decoration." That is correct, and it rules out `--gain`
+specifically, not every cool hue. Hue 200 clears `--gain`'s 162 by 38° and
+resolves with its blue channel at or above its green, so a corner wash reads
+as cool light rather than as the app saying something about money.
+
+Lightness 0.78 and chroma 0.10 put it in the same restrained family as
+`--primary` (0.80 / 0.09), so the two read as one room lit from two sides
+rather than as two brand colours. Verified in-gamut by rasterising to a
+canvas: `rgb(93,203,209)`, no channel pinned at 0 or 255. Chroma 0.13 at the
+same hue clipped red to 0 and was rejected for exactly the reason `--loss`
+came down from 0.246 to 0.21.
+
+**The geometry.** Key light `1700px 1350px at -6% -10%` at 60%, counter-lobe
+`1700px 1300px at 102% 102%` at 34%.
+
+The old comment warned that a second strong lobe had been tried and measured
+worse — "it lit both sides evenly and flattened the left-to-right difference
+between cards from 13 to 5." Worth reading precisely: that was measured with
+*two warm lobes*, where the second only adds luminance the first already
+supplied. Two different hues do not share that failure mode, and the numbers
+confirm it. Measured in headless Chromium at 1440×900 over a three-card row,
+sampling the compiled stylesheet:
+
+| | Before | After |
+|---|---|---|
+| Lit field area (≥ 4/255) | 58.6% | **98.9%** |
+| Page-wide spread | 161 | 161 |
+| Left-vs-right across a card row | 67.2 | **76.7** |
+| Bottom-right corner | `rgb(28,25,16)` | `rgb(30,64,66)` |
+
+Coverage is the thing that changed, which is the point — an unlit corner
+gives a translucent card nothing to refract. The left-to-right ramp went
+*up*, not down, and the spread held.
+
+**Treat these as the top of the range.** Pushing further — 1800×1400 at 42%
+with chroma 0.13 — dropped the spread from 161 to 154 and clipped the teal.
+If any of these numbers change, re-measure the three rows above rather than
+eyeballing it; a corner wash this faint is exactly the kind of thing that
+looks fine and measures flat.
