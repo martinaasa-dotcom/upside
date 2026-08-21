@@ -75,7 +75,7 @@ export function AppHeader({
     <>
       <header
         className={cn(
-          "fixed top-0 right-0 left-0 z-40 hidden bg-background/75 backdrop-blur-xl md:block",
+          "fixed top-0 right-0 left-0 z-40 hidden bg-background/55 backdrop-blur-xl md:block",
           className
         )}
       >
@@ -126,8 +126,22 @@ export function AppHeader({
        * the chrome — which read as the glow being "clipped by the header."
        * The glow itself is `position: fixed` and always did sit behind the
        * chrome; it was this slab painting over it.
+       *
+       * `/55`, not `/75`. `--background` is pure black, so this fill is a
+       * black veil and its alpha is exactly how much of the glow it eats —
+       * at 75% the top band showed a quarter of the light under it and the
+       * page still read as two lit corners with a dark bar ruled across the
+       * top. The bottom dock was worse at `/95`, i.e. effectively opaque.
+       * Both are the brightest parts of the field, so this is where the
+       * clipping was most visible.
+       *
+       * The blur does the legibility work, not the opacity: `backdrop-blur-xl`
+       * turns anything scrolling under into a soft wash, and the glow it
+       * sits on peaks at 40/255, so header text still measures far above
+       * AAA against it. Do not raise these back toward opaque to "fix"
+       * contrast without measuring it first.
        */}
-      <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-30 bg-background/75 backdrop-blur-xl md:fixed md:top-14 md:right-0 md:left-0 md:z-40">
+      <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-30 bg-background/55 backdrop-blur-xl md:fixed md:top-14 md:right-0 md:left-0 md:z-40">
         <AppStatusStrip {...status} />
       </div>
       <div className={PAGE_CHROME_SPACER_CLASS} aria-hidden />

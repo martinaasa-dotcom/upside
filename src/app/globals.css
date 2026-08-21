@@ -333,13 +333,19 @@ body {
    * Anchored exactly on the corner instead, the hottest pixel sits in the
    * frame and reads as a lamp rather than as spill.
    *
-   * Three stops each, not two. A single colour-to-transparent ramp drops
+   * Four stops each, not two. A single colour-to-transparent ramp drops
    * off in a way you can see the edge of — the lobe reads as a shape
-   * sitting on the page rather than as light. Falling 28 → 12 → 4 → 0
+   * sitting on the page rather than as light. Falling 28 → 13 → 5.5 → 2 → 0
    * spends most of the distance in the very dim end, so it thins out into
-   * the black with no boundary anywhere. Peaks and black area measure the
-   * same either way, so this buys nothing but the look, which is the
-   * point.
+   * the black with no boundary anywhere.
+   *
+   * Reach is what those tail stops buy. Each lobe covers 130vw × 82vh —
+   * far wider than the frame — but the peak alpha never moved, so the
+   * corners are exactly as bright as they were and only the *area* grew:
+   * lit field (≥ 4/255) 27% → 48%, while a third of the page still
+   * measures under 2/255 and the diagonal still reads (the two opposite
+   * corners sit at 1–3 against the lit pair's 43 and 55).
+   * Brightness and coverage are separate dials; this is the coverage one.
    *
    * Deliberately dim: peaks land near 40/255 warm and 35/255 blue, below
    * the 94/255 this had before it was ever touched. Warm stays the
@@ -354,26 +360,31 @@ body {
    * alpha — the old teal at hue 200 sat at 25% for the same result.
    *
    * Every number above is measurable, so re-measure rather than eyeball if
-   * these change: corner peaks, the two *opposite* corners staying at 0
-   * (which is what makes it diagonal), and the share of the field under
-   * 2/255 (which is what keeps the black). Brightening this is the easy
-   * mistake — an earlier pass at 60%/34% with 1700px lobes lit 99% of the
-   * field and left no black at all.
+   * these change: corner peaks, the two *opposite* corners staying far
+   * below the lit pair (which is what makes it diagonal), and the share of
+   * the field under 2/255 (which is what keeps the black). Brightening
+   * this is the easy mistake — an earlier pass at 60%/34% with 1700px
+   * lobes lit 99% of the field and left no black at all. Note which dial
+   * that was: alpha, not size. Growing the lobes one step further
+   * (145vw × 92vh) takes the black share from 33% to 1.8% — the same
+   * failure by the other route.
    */
   background-image:
     radial-gradient(
-      95vw 58vh at -6% -8%,
+      130vw 82vh at -6% -8%,
       oklch(from var(--primary) l c h / 28%) 0%,
-      oklch(from var(--primary) l c h / 12%) 30%,
-      oklch(from var(--primary) l c h / 4%) 52%,
-      transparent 76%
+      oklch(from var(--primary) l c h / 13%) 24%,
+      oklch(from var(--primary) l c h / 5.5%) 44%,
+      oklch(from var(--primary) l c h / 2%) 64%,
+      transparent 92%
     ),
     radial-gradient(
-      95vw 58vh at 106% 108%,
+      130vw 82vh at 106% 108%,
       oklch(from var(--ambient-cool) l c h / 31%) 0%,
-      oklch(from var(--ambient-cool) l c h / 13.5%) 30%,
-      oklch(from var(--ambient-cool) l c h / 5%) 52%,
-      transparent 78%
+      oklch(from var(--ambient-cool) l c h / 14.5%) 24%,
+      oklch(from var(--ambient-cool) l c h / 6%) 44%,
+      oklch(from var(--ambient-cool) l c h / 2.2%) 64%,
+      transparent 94%
     );
 }
 

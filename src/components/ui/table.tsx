@@ -65,12 +65,25 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
   )
 }
 
+/**
+ * Column headers are micro-labels, not a bold first row.
+ *
+ * They were `text-foreground` at the same size and weight as the data
+ * under them, so the header row read as the loudest row in the table —
+ * the one place a reader never needs to look twice. Mono caps at 11px in
+ * muted grey inverts that: the header names the column when you go
+ * looking for it and gets out of the way when you are reading down it.
+ *
+ * Same voice as `MicroLabel`, deliberately. A column header and a label
+ * over a figure are the same thing doing the same job, and the app should
+ * not have two ways of drawing it.
+ */
 function TableHead({ className, ...props }: React.ComponentProps<"th">) {
   return (
     <th
       data-slot="table-head"
       className={cn(
-        "h-10 px-2 text-left align-middle font-medium whitespace-nowrap text-foreground [&:has([role=checkbox])]:pr-0",
+        "h-10 px-2 text-left align-middle font-mono text-[11px] font-medium uppercase tracking-[0.1em] whitespace-nowrap text-muted-foreground [&:has([role=checkbox])]:pr-0",
         className
       )}
       {...props}

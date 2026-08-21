@@ -543,3 +543,101 @@ Compound results sit beside a panel titled "Growth calculator". Structure
 should encode something true about the content; this encoded nothing, so it
 was decoration. Worth revisiting only if a surface appears where a reader
 landing mid-page genuinely cannot tell what section they are in.
+
+
+## Reach, and the chrome that was eating it (2026-08-21)
+
+Two separate complaints, one symptom: the glow felt boxed into a band in the
+middle of the page.
+
+### The chrome was clipping the field
+
+`.page-frame::before` is `position: fixed; inset: 0`, so it always spanned the
+whole viewport. What cut it was the chrome painted on top:
+
+| Surface | Was | Now |
+|---|---|---|
+| Desktop header | `bg-background/75` | `bg-background/55` |
+| Status strip | `bg-background/75` | `bg-background/55` |
+| **Desktop dock** (`PortfolioTabs`) | **`bg-background/95`** | `bg-background/60` |
+| Mobile top bar | `bg-background/75` | `bg-background/55` |
+| Mobile tab bar | `bg-background/75` | `bg-background/60` |
+
+`--background` is pure black, so each of these is a black veil and its alpha
+is *exactly* how much of the light underneath it eats. At `/95` the dock was
+effectively opaque. Both bands sit over the brightest parts of the field —
+the warm corner at the top, the blue at the bottom — so that is precisely
+where the clipping showed. Measured on the running app, the luminance step
+across the header edge went from a hard bar to **7.1**, and across the dock
+edge to **2.9**.
+
+The blur carries legibility here, not the opacity: `backdrop-blur-xl` turns
+anything scrolling under into a soft wash, and the field it sits on peaks at
+40/255. Header text measures **18.5** contrast against it. Don't raise these
+back toward opaque to "fix" contrast without measuring first.
+
+### The lobes got reach, not brightness
+
+Peak alpha did not move — 28% warm, 31% cool, same as before. Only the radii
+and the tail did: `95vw 58vh` → `130vw 82vh`, with a fourth stop added to
+each lobe (28 → 13 → 5.5 → 2 → 0) so the extra distance is spent almost
+entirely in the very dim end.
+
+| | Before | After |
+|---|---|---|
+| Lit field (≥ 4/255) | 27.2% | **48.1%** |
+| Field under 2/255 | 68.1% | **32.6%** |
+| Top-left / bottom-right peak | 40 / 52 | 43 / 55 |
+| The two opposite corners | 0 / 0 | 1 / 2 |
+| Muted text on glass | 8.19 | 7.84 |
+
+Lit area nearly doubles, the corners are within a couple of levels of where
+they were, a third of the page is still true black, and the diagonal still
+reads — the dark corners sit at 1–2 against the lit pair's 43 and 55.
+
+**Brightness and coverage are separate dials, and they fail the same way.**
+The earlier overshoot pushed *alpha* (60%/34%) and lit 99% of the field. One
+more size step here — `145vw × 92vh` — takes the black share from 33% to
+1.8%. Same failure, other route. Whichever dial moves, the number that
+catches it is the share of field under 2/255.
+
+
+## Label voice: mono caps, two tiers (2026-08-21)
+
+Taken from the counter-lobe study page, which Martin asked to have applied to
+the app. Two label tiers there, and the app already had surfaces for both.
+
+**Tier one — scaffolding.** `MicroLabel`, and now every table column header.
+Mono, uppercase, 11–12px, `tracking-[0.1em]`, `--muted-foreground`.
+
+These were sentence-case sans at the same size and weight as the muted prose
+beside them, so a label read as another line of copy rather than as the
+structure it is. Column headers were worse: `text-foreground`, which made the
+header row the loudest row in the table — the one row a reader never needs to
+look at twice. Mono caps inverts that. The eye skips it when reading down a
+column and finds it when scanning for one.
+
+Tracking is `0.1em` because caps set at a face's normal tracking close up:
+letterfit is drawn for mixed case, and caps have no descenders or ascenders to
+open the rhythm.
+
+Deliberately muted, not accent. This lands on eight-plus components including
+four abreast in the dashboard figure row and every table header in the app;
+an accent on all of them would spend the one brand colour on scaffolding.
+
+**Tier two — annotation.** `NoteRows`, in `--primary`.
+
+A short label in the gutter and the prose it introduces, in a
+`7rem / 1fr` grid that collapses to one column on a phone. This is the tier
+that gets the accent, because here the label does real work: it tells one
+paragraph from another.
+
+The first call site is the Pulse card, which stacked four paragraphs that mean
+different things — Margus's reasoning, the reader's own note, an earnings
+date, and the condition that would change the verdict — as four identical
+grey blocks. One of them, `thesisBreak`, was already trying to label itself by
+opening with the words "Breaks if". That is now the label.
+
+`NoteRows` refuses to render as a list below two rows, and falls back to a
+plain paragraph: a single labelled row is a label with nothing to distinguish
+itself from. Labels are plain language — "BREAKS IF", never "INVALIDATION".
