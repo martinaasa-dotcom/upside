@@ -63,11 +63,23 @@ export async function scanCoveredCall(params: {
   /** Manual stock target from the CC table — must match UI Next Strike. */
   stockTarget?: number | null;
   priceHistory?: number[];
+  /**
+   * Expiry the user picked in the covered-call table (YYYY-MM-DD).
+   *
+   * Omitted, the scan keeps choosing the listed expiry nearest the
+   * strategy's target tenor. Given, that date wins: the chain is searched
+   * for it, and if the chain has no such date the synthetic estimate
+   * prices that tenor instead. Either way the premium returned is for the
+   * date asked for, so the table's Premium column always answers for the
+   * expiry shown next to it.
+   */
+  expiry?: string | null;
 }): Promise<OptionCandidate | null> {
   const { ticker, spot, shares } = params;
   if (!spot) return null;
 
   const callPct = params.targetCallPct ?? STRATEGY.defaultCallPct;
+  const wantExpiry = normalizeExpiry(params.expiry);
   const history = params.priceHistory?.length
     ? params.priceHistory
     : [spot * 0.92, spot * 0.97, spot, spot * 1.05, spot * 1.1];
@@ -94,23 +106,31 @@ export async function scanCoveredCall(params: {
       (d: Date | string) => (typeof d === "string" ? new Date(d) : d)
     );
 
-    const nearby = expirations
-      .map((exp) => ({
-        exp,
-        days: daysUntilInTz(exp),
-        key: toDateKey(exp),
-      }))
-      .filter(
-        (e) =>
-          e.days >= STRATEGY.minDaysPreferred - 3 &&
-          e.days <= STRATEGY.maxDaysPreferred + 7
-      )
-      .sort(
-        (a, b) =>
-          Math.abs(a.days - STRATEGY.targetDays) -
-          Math.abs(b.days - STRATEGY.targetDays)
-      )
-      .slice(0, 3);
+    const dated = expirations.map((exp) => ({
+      exp,
+      days: daysUntilInTz(exp),
+      key: toDateKey(exp),
+    }));
+
+    // A hand-picked expiry is an instruction, not a preference: price that
+    // date even when it sits outside the tenor window the strategy would
+    // normally shop in, and don't let a nearer listing win on tie-break.
+    const picked = wantExpiry ? dated.find((e) => e.key === wantExpiry) : null;
+
+    const nearby = picked
+      ? [picked]
+      : dated
+          .filter(
+            (e) =>
+              e.days >= STRATEGY.minDaysPreferred - 3 &&
+              e.days <= STRATEGY.maxDaysPreferred + 7
+          )
+          .sort(
+            (a, b) =>
+              Math.abs(a.days - STRATEGY.targetDays) -
+              Math.abs(b.days - STRATEGY.targetDays)
+          )
+          .slice(0, 3);
 
     type Quoted = {
       expiration: string;
@@ -180,7 +200,8 @@ export async function scanCoveredCall(params: {
         callPct,
         stockTarget,
         nextStrike,
-        otmPct
+        otmPct,
+        wantExpiry
       );
     }
 
@@ -220,9 +241,25 @@ export async function scanCoveredCall(params: {
       callPct,
       stockTarget,
       nextStrike,
-      otmPct
+      otmPct,
+      wantExpiry
     );
   }
+}
+
+/**
+ * A date key that is a real, future YYYY-MM-DD, or null.
+ *
+ * A past expiry would price at a negative tenor and hand back a negative
+ * premium, so it is rejected here rather than propagating a nonsense
+ * number into the table.
+ */
+function normalizeExpiry(raw: string | null | undefined): string | null {
+  const key = raw?.trim();
+  if (!key || !/^\d{4}-\d{2}-\d{2}$/.test(key)) return null;
+  const when = new Date(`${key}T00:00:00Z`);
+  if (Number.isNaN(when.getTime())) return null;
+  return daysUntilInTz(when) > 0 ? key : null;
 }
 
 function syntheticCandidate(
@@ -232,17 +269,29 @@ function syntheticCandidate(
   callPct: number,
   stockTarget: number,
   nextStrike: number,
-  otmPct: number
+  otmPct: number,
+  wantExpiry: string | null = null
 ): OptionCandidate {
   const strike = nextStrike || roundToStrike(stockTarget * (1 + callPct));
-  const days = STRATEGY.targetDays;
+  let exp: Date;
+  let days: number;
+  if (wantExpiry) {
+    // Price the tenor the user actually asked for. `estimateYield` scales
+    // with days, so a later expiry earns a proportionally larger premium
+    // and an earlier one a smaller — which is the whole point of letting
+    // the date be edited.
+    exp = new Date(`${wantExpiry}T00:00:00Z`);
+    days = daysUntilInTz(exp);
+  } else {
+    days = STRATEGY.targetDays;
+    exp = new Date();
+    exp.setDate(exp.getDate() + days);
+    const day = exp.getDay();
+    const diff = (5 - day + 7) % 7;
+    exp.setDate(exp.getDate() + diff);
+  }
   const yield2w = estimateYield(otmPct || (strike - spot) / spot, days);
   const midPx = spot * yield2w;
-  const exp = new Date();
-  exp.setDate(exp.getDate() + days);
-  const day = exp.getDay();
-  const diff = (5 - day + 7) % 7;
-  exp.setDate(exp.getDate() + diff);
 
   return {
     ticker: ticker.toUpperCase(),
