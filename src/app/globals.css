@@ -387,6 +387,46 @@ body {
       oklch(1 0 0 / 7%)
     );
   }
+  /*
+   * When a surface lifts, everything sitting ON it lifts by the same
+   * amount. Nothing may lose contrast against its own container.
+   *
+   * Lifting only the container inverts the tonal ladder: a Movers card
+   * measured 28.2 at rest against a ticker badge at 38.0 (a +9.8 step),
+   * and on hover the card rose to 43.0 while the badge stayed put -- a
+   * -5.0 step, so the badge went darker than the card it sat on and
+   * visually disappeared. Same trap for any nested well.
+   *
+   * Raising both by one veil keeps the step exactly where it was, so a
+   * hover reads as "this whole card caught the light" rather than "the
+   * card ate its own contents". `background-image` again, so each nested
+   * surface keeps its own `background-color`.
+   */
+  /*
+   * Dim text keeps its *relationship* to whatever it sits on.
+   *
+   * `text-muted-foreground` is a grey tuned for the dark field. Drop it
+   * inside a filled `--primary` pill -- a selected tab, an active chip --
+   * and it becomes mid-grey on light yellow, which is roughly invisible.
+   * That is what happened to the count in "All portfolios 3".
+   *
+   * Rather than trusting every future call site to notice, secondary text
+   * on a primary fill resolves against `--primary-foreground` instead, so
+   * it stays a step quieter than the label beside it without vanishing.
+   */
+  .bg-primary .text-muted-foreground,
+  [data-variant="default"] .text-muted-foreground {
+    color: color-mix(in oklch, var(--primary-foreground), transparent 35%);
+  }
+
+  .veil-hover:hover [data-slot="badge"],
+  .veil-hover:hover .glass-well,
+  .veil-hover:hover .card-sheen {
+    background-image: linear-gradient(
+      oklch(1 0 0 / 7%),
+      oklch(1 0 0 / 7%)
+    );
+  }
 
   .glass-well {
     background-color: color-mix(in oklch, var(--muted), transparent 50%);

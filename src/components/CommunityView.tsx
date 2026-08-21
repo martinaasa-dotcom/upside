@@ -330,9 +330,6 @@ export function CommunityView({ communityId }: Props) {
   const [duelCache, setDuelCache] = useState<CommunityDuelCache | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedOwnerId, setSelectedOwnerId] = useState<string | null>(null);
-  const [selectedPortfolioId, setSelectedPortfolioId] = useState<string | null>(
-    null
-  );
   const [view, setView] = useState<"overview" | "play" | "members">("overview");
   const hasDataRef = useRef(false);
   const loadAbortRef = useRef<AbortController | null>(null);
@@ -368,7 +365,6 @@ export function CommunityView({ communityId }: Props) {
 
     const params = new URLSearchParams(window.location.search);
     setSelectedOwnerId(params.get("member"));
-    setSelectedPortfolioId(params.get("portfolio"));
     const rawView = params.get("view");
     if (rawView === "members") setView("members");
     else if (rawView === "play" || rawView === "league") setView("play");
@@ -521,7 +517,6 @@ export function CommunityView({ communityId }: Props) {
       fromPopRef.current = true;
       const params = new URLSearchParams(window.location.search);
       setSelectedOwnerId(params.get("member"));
-      setSelectedPortfolioId(params.get("portfolio"));
       const raw = params.get("view");
       setView(
         raw === "members"
@@ -543,8 +538,9 @@ export function CommunityView({ communityId }: Props) {
     const url = new URL(window.location.href);
     if (selectedOwnerId) url.searchParams.set("member", selectedOwnerId);
     else url.searchParams.delete("member");
-    if (selectedPortfolioId) url.searchParams.set("portfolio", selectedPortfolioId);
-    else url.searchParams.delete("portfolio");
+    // No per-sheet view any more, so a stale ?portfolio= from an old link
+    // must not linger in the URL.
+    url.searchParams.delete("portfolio");
     if (view === "members") url.searchParams.set("view", view);
     else if (view === "play") url.searchParams.set("view", "league");
     else url.searchParams.delete("view");
@@ -566,7 +562,7 @@ export function CommunityView({ communityId }: Props) {
       return;
     }
     window.history.pushState(window.history.state, "", href);
-  }, [communityId, selectedOwnerId, selectedPortfolioId, view]);
+  }, [communityId, selectedOwnerId, view]);
 
   // A ?member=/?portfolio= link can go stale (member left, sheet deleted) or
   // just be wrong — once real data is in, drop selections that don't
@@ -582,17 +578,8 @@ export function CommunityView({ communityId }: Props) {
     if (!valid) {
       correctingRef.current = true;
       setSelectedOwnerId(null);
-      setSelectedPortfolioId(null);
     }
   }, [loading, selectedOwnerId, members, pendingMembers]);
-
-  useEffect(() => {
-    if (loading || !selectedPortfolioId) return;
-    if (!portfolios.some((p) => p.id === selectedPortfolioId)) {
-      correctingRef.current = true;
-      setSelectedPortfolioId(null);
-    }
-  }, [loading, selectedPortfolioId, portfolios]);
 
   const holdingsTickerKey = useMemo(
     () =>
@@ -1116,10 +1103,6 @@ export function CommunityView({ communityId }: Props) {
     [membersWithBooks, funFactsShuffle]
   );
 
-  const selectedPortfolio = selectedPortfolioId
-    ? portfolios.find((p) => p.id === selectedPortfolioId)
-    : null;
-
   /** Every book the drilled-into member owns. */
   const ownerPortfolios = useMemo(() => {
     if (!selectedOwnerId) return [];
@@ -1131,14 +1114,16 @@ export function CommunityView({ communityId }: Props) {
   }, [portfolios, ownership, selectedOwnerId]);
 
   /**
-   * Holdings for the current drill-down. Opening a member shows every book
-   * pooled, so a ticker held in two of them collapses into one row.
-   * Picking a single book skips the merge. Cost is never shown here.
+   * Holdings for the current drill-down: every book the member owns,
+   * pooled, so a ticker held in two of them collapses into one row. Cost
+   * is never shown here.
+   *
+   * There is deliberately no per-sheet picker. Which sheets someone happens
+   * to split their positions across is their own filing system, not
+   * something a Circle member needs to page through -- what you came to see
+   * is what they hold, once.
    */
   const selectedHoldings = useMemo(() => {
-    if (selectedPortfolioId) {
-      return holdings.filter((h) => h.portfolio_id === selectedPortfolioId);
-    }
     const ids = new Set(ownerPortfolios.map((p) => p.id));
     const mine = holdings.filter((h) => ids.has(h.portfolio_id));
     const byTicker = new Map<string, Holding>();
@@ -1155,11 +1140,12 @@ export function CommunityView({ communityId }: Props) {
       });
     }
     return [...byTicker.values()];
-  }, [selectedPortfolioId, ownerPortfolios, holdings]);
+  }, [ownerPortfolios, holdings]);
 
-  const selectedCash = selectedPortfolio
-    ? sheetCashBalance(selectedPortfolio)
-    : ownerPortfolios.reduce((s, p) => s + sheetCashBalance(p), 0);
+  const selectedCash = ownerPortfolios.reduce(
+    (s, p) => s + sheetCashBalance(p),
+    0
+  );
 
   const loadInvites = useCallback(async () => {
     try {
@@ -1745,7 +1731,6 @@ export function CommunityView({ communityId }: Props) {
                       thesisCoverage={thesisCoverage}
                       onOpen={(id) => {
                         setSelectedOwnerId(id);
-                        setSelectedPortfolioId(null);
                       }}
                     />
                     </WidgetErrorBoundary>
@@ -1832,7 +1817,6 @@ export function CommunityView({ communityId }: Props) {
                             milestone={m.milestone}
                             onOpen={() => {
                               setSelectedOwnerId(m.id);
-                              setSelectedPortfolioId(null);
                             }}
                           />
                         ))}
@@ -1862,7 +1846,6 @@ export function CommunityView({ communityId }: Props) {
                             type="button"
                             onClick={() => {
                               setSelectedOwnerId(a.winnerId);
-                              setSelectedPortfolioId(null);
                             }}
                             className="veil-hover card-sheen glass-well flex w-full flex-col gap-1.5 rounded-lg p-3 text-left ring-1 ring-foreground/20 transition hover:scale-[1.01] hover:ring-primary/25"
                           >
@@ -1933,7 +1916,6 @@ export function CommunityView({ communityId }: Props) {
                                     type="button"
                                     onClick={() => {
                                       setSelectedOwnerId(m.id);
-                                      setSelectedPortfolioId(null);
                                     }}
                                     className="cursor-pointer text-left"
                                   >
@@ -2206,7 +2188,6 @@ export function CommunityView({ communityId }: Props) {
                               type="button"
                               onClick={() => {
                                 setSelectedOwnerId(m.user_id);
-                                setSelectedPortfolioId(null);
                               }}
                               className="text-left"
                             >
@@ -2344,7 +2325,6 @@ export function CommunityView({ communityId }: Props) {
                               type="button"
                               onClick={() => {
                                 setSelectedOwnerId(ownerKey);
-                                setSelectedPortfolioId(null);
                               }}
                               className="text-left"
                             >
@@ -2628,7 +2608,6 @@ export function CommunityView({ communityId }: Props) {
                 size="sm"
                 className="self-start"
                 onClick={() => {
-                  setSelectedPortfolioId(null);
                   setSelectedOwnerId(null);
                 }}
               >
@@ -2643,45 +2622,11 @@ export function CommunityView({ communityId }: Props) {
                 </p>
                 <p className="text-sm leading-relaxed text-muted-foreground">
                   This is their portfolio. You can look, you cannot edit. Nothing
-                  you tap here changes their holdings.
-                  {selectedPortfolio ? ` Viewing ${selectedPortfolio.name}.` : ""}
+                  you tap here changes their holdings. Every sheet they own is
+                  pooled into one book here, so a name held in two of them shows
+                  as a single line.
                 </p>
               </div>
-
-              {ownerPortfolios.length > 1 && (
-                <div className="scrollbar-none flex gap-1.5 overflow-x-auto">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedPortfolioId(null)}
-                    className={cn(
-                      "touch-target shrink-0 rounded-lg border px-3 py-1.5 text-sm font-medium transition",
-                      selectedPortfolioId === null
-                        ? "bg-primary text-primary-foreground border-transparent"
-                        : "border-border text-muted-foreground hover:border-border hover:text-foreground"
-                    )}
-                  >
-                    All portfolios
-                    <span className="ml-1.5 text-muted-foreground">
-                      {ownerPortfolios.length}
-                    </span>
-                  </button>
-                  {ownerPortfolios.map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => setSelectedPortfolioId(p.id)}
-                      className={cn(
-                        "touch-target shrink-0 rounded-lg border px-3 py-1.5 text-sm font-medium transition",
-                        selectedPortfolioId === p.id
-                          ? "bg-primary text-primary-foreground border-transparent"
-                          : "border-border text-muted-foreground hover:border-border hover:text-foreground"
-                      )}
-                    >
-                      {p.name}
-                    </button>
-                  ))}
-                </div>
-              )}
 
               <WidgetErrorBoundary
                 name="Member portfolio"
