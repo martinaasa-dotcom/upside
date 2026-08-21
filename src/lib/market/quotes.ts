@@ -111,6 +111,14 @@ export type QuotesResultWithSource = QuotesResult & {
   sources: Record<string, "yahoo" | "twelvedata" | "finnhub" | "cache">;
   /** Tickers no provider could price. Client should keep last known mark. */
   missing: string[];
+  /**
+   * Of `missing`, the names this request actually paid to discover -- ones
+   * not already in the negative cache, so each walked the full suffix chain
+   * at roughly 52 upstream calls apiece. This is the real cost of the
+   * request, and what a cost-proportional limiter should be charged for.
+   * A repeat ask for the same dead ticker is 0 here, because it was free.
+   */
+  newlyUnresolvable: string[];
   /** Epoch ms of the oldest print in this payload (live or cached). */
   updatedAt: number;
 };
@@ -147,6 +155,7 @@ export async function fetchQuotesWithFallback(
       delayed: false,
       sources,
       missing: [],
+      newlyUnresolvable: [],
       updatedAt: now,
     };
   }
@@ -158,6 +167,7 @@ export async function fetchQuotesWithFallback(
   // to learn what we already know. They still fall through to the cached
   // and missing paths below exactly as before.
   const { worthAsking, recentlyMissed } = partitionUnresolvable(unique);
+  let newlyUnresolvable: string[] = [];
   const yahoo = await fetchQuotesYahoo(worthAsking);
   const quotes: Record<string, Quote> = {};
   ingestLive(yahoo.quotes, lastKnown, quotes, sources, "yahoo");
@@ -192,7 +202,8 @@ export async function fetchQuotesWithFallback(
   // Anything that walked the whole provider chain and came back with
   // nothing is remembered, so the next attempt is free.
   if (stillMissing.length > 0) {
-    markUnresolvable(stillMissing.filter((t) => !recentlyMissed.includes(t)));
+    newlyUnresolvable = stillMissing.filter((t) => !recentlyMissed.includes(t));
+    markUnresolvable(newlyUnresolvable);
   }
 
   const liveQuotes: Record<string, Quote> = {};
@@ -239,6 +250,7 @@ export async function fetchQuotesWithFallback(
     delayed,
     sources,
     missing: unique.filter((t) => !quotes[t]),
+    newlyUnresolvable,
     updatedAt,
   };
 }

@@ -33,16 +33,38 @@ export type RateLimitResult = {
 
 /**
  * @param key Unique identifier for the caller + endpoint, e.g. `chat:${userId}`.
- * @param limit Max requests allowed within the window.
+ * @param limit Max units allowed within the window.
  * @param windowMs Window length in milliseconds.
+ * @param cost How many units this call consumes. Defaults to 1, which is
+ *   plain request counting. Pass a real weight when one request can cost
+ *   far more than another -- a quote request's true cost is per ticker, not
+ *   per request. Pass 0 to peek: report whether the bucket is already over
+ *   its limit without consuming anything or creating a bucket.
  */
 export function checkRateLimit(
   key: string,
   limit: number,
-  windowMs: number
+  windowMs: number,
+  cost = 1
 ): RateLimitResult {
   const now = Date.now();
   sweep(now);
+
+  const charge = Math.max(0, Math.floor(cost));
+
+  // Peek. Deliberately does not create a bucket, so checking cannot itself
+  // fill the Map, and an unknown key always reads as allowed.
+  if (charge === 0) {
+    const existing = buckets.get(key);
+    if (!existing || now >= existing.resetAt || existing.count < limit) {
+      return { ok: true };
+    }
+    return {
+      ok: false,
+      retryAfterSec: Math.ceil((existing.resetAt - now) / 1000),
+    };
+  }
+
   if (buckets.size >= MAX_BUCKETS && !buckets.has(key)) {
     sweep(now);
     if (buckets.size >= MAX_BUCKETS) {
@@ -53,14 +75,32 @@ export function checkRateLimit(
 
   const bucket = buckets.get(key);
   if (!bucket || now >= bucket.resetAt) {
-    buckets.set(key, { count: 1, resetAt: now + windowMs });
+    buckets.set(key, { count: charge, resetAt: now + windowMs });
     return { ok: true };
   }
   if (bucket.count >= limit) {
     return { ok: false, retryAfterSec: Math.ceil((bucket.resetAt - now) / 1000) };
   }
-  bucket.count += 1;
+  bucket.count += charge;
   return { ok: true };
+}
+
+/**
+ * Record that a shared limiter has already refused this key, so this
+ * instance stops asking.
+ *
+ * The durable limiter is the source of truth across instances, but reaching
+ * it costs a round trip. When it says no, writing that verdict into local
+ * memory means every later request from the same caller to this instance is
+ * refused for free until the window expires.
+ */
+export function markRateLimited(key: string, retryAfterSec: number) {
+  const seconds = Math.max(1, Math.ceil(retryAfterSec));
+  buckets.set(key, {
+    // Above any limit this key could be checked against.
+    count: Number.MAX_SAFE_INTEGER,
+    resetAt: Date.now() + seconds * 1000,
+  });
 }
 
 /** Client IP as Vercel sets it. First hop is the platform, so this is trustworthy on Vercel. */

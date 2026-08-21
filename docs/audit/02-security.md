@@ -153,6 +153,14 @@ Recorded so a future round does not have to re-derive it from nothing.
 
 ## Deliberately not changed
 
+> **Corrected in Pass 4 — this bullet's premise is wrong.** These endpoints
+> *are* throttled: `limitPublicMarketRequest` runs in `src/proxy.ts:47`.
+> This pass looked in the route files and in `middleware.ts`, which Next 16
+> renamed to `proxy.ts`. The genuine weakness — that the limiter counts
+> requests while cost is per ticker, and counts in memory — is recorded and
+> fixed in `deferred-items-fix-log.md` (D2). Left in place rather than
+> deleted, because a withdrawn finding is worth more than a silent edit.
+
 - **Public market endpoints are unthrottled** (`quotes`, `market/search`,
   `market/events`, `market/fear-greed`, `market/seasonality`,
   `popular-tickers`). A stranger can drive upstream provider calls without
@@ -171,6 +179,8 @@ Carried into Pass 11 as gaps, not passes:
    for attempted exploitation, not policy reading. Everything above is
    derived from migration history.
 2. **Whether the C1 tables hold rows** — determines whether that finding is
-   a data exposure or "only" an open write primitive.
+   a data exposure or "only" an open write primitive. *Mechanism added:*
+   migration `20260821160000` raises each table's row count as a NOTICE when
+   it runs, so applying it answers this without anyone inspecting by hand.
 3. **Stripe webhook replay/idempotency behaviour end to end** — signature
    verification is confirmed by reading; the live test-mode flow is Pass 6.

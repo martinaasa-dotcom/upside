@@ -55,6 +55,13 @@ nobody has inspected, and the exposure is fully closed without it. Each
 table now carries a `comment` saying it is legacy, unused, revoked, and safe
 to drop once its contents are confirmed unneeded.
 
+> **Settled — see `deferred-items-fix-log.md` (D1).** Decision: archive
+> rather than drop. Migration `20260821160000` moves all three into a
+> `legacy_archive` schema, which PostgREST does not serve at all, so they
+> are unreachable regardless of what happens to grants later. Nothing is
+> destroyed, `service_role` keeps SELECT for inspection, and the migration
+> raises each table's row count as a NOTICE — which also closes gap 2 below.
+
 ## M1 — closed for the right reason
 
 A limiter keyed by user id, matching `communities/join`'s shape (30 per 5
@@ -78,6 +85,13 @@ Carried into Pass 11 as gaps, not passes:
    Pass 6.
 
 ## Handed to Pass 4, not fixed here
+
+> **Correction (Pass 4).** "Unthrottled" is wrong. `limitPublicMarketRequest`
+> is wired up in `src/proxy.ts:47`; this pass checked the route files and
+> `middleware.ts`, and Next 16 renamed middleware to `proxy.ts`. The real
+> weakness was different and is recorded in `deferred-items-fix-log.md`
+> (D2): the limiter counts *requests* while the cost is per *ticker*, and it
+> keeps its counts in memory. Both are now addressed.
 
 Public market endpoints (`quotes`, `market/*`, `popular-tickers`) are
 unauthenticated and unthrottled, so a stranger can drive upstream provider
