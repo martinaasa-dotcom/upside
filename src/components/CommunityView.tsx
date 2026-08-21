@@ -2099,17 +2099,38 @@ export function CommunityView({ communityId }: Props) {
                             {i > 0 ? (
                               <ItemSeparator className="my-0" />
                             ) : null}
+                            {/* The number and the sentence sit on one
+                              * baseline, which takes both halves of this.
+                              *
+                              * A plain `<p>`, not `ItemDescription`: that
+                              * primitive is a two-line clamp in muted grey
+                              * at `leading-normal`, and this call site was
+                              * already overriding all three. Keeping it
+                              * only bought `ItemMedia`'s
+                              * `group-has-data-[slot=item-description]`
+                              * rules -- a `translate-y-0.5` nudge and a
+                              * `self-start` -- which exist to drop an
+                              * *icon* level with a title above a
+                              * description. There is no title here, so the
+                              * nudge just pushed the numeral off the
+                              * sentence's baseline.
+                              *
+                              * `leading-relaxed` on the media then matches
+                              * the two line boxes exactly, so the numeral
+                              * and the first line share a half-leading and
+                              * land on the same baseline by construction
+                              * rather than by a hand-tuned offset. */}
                             <Item className="items-start px-0">
                               <ItemMedia
-                                className="w-4 justify-start text-sm tabular-nums text-muted-foreground"
+                                className="w-4 justify-start self-start text-sm leading-relaxed tabular-nums text-muted-foreground"
                                 aria-hidden
                               >
                                 {i + 1}
                               </ItemMedia>
                               <ItemContent>
-                                <ItemDescription className="line-clamp-none text-foreground leading-relaxed">
+                                <p className="text-sm leading-relaxed text-foreground">
                                   {fact}
-                                </ItemDescription>
+                                </p>
                               </ItemContent>
                             </Item>
                           </Fragment>

@@ -1,35 +1,25 @@
 /**
  * Single source of truth for "not financial advice" framing shown across
  * every AI-generated surface (Margus chat, Thesis Pulse, Forecast) and
- * every surface that projects money forward (the growth calculator, the
- * bad-day simulator). Keep this consistent — if the wording needs to change
- * for legal reasons, it should only need to change here.
+ * every surface that models money forward (the bad-day simulator). Keep
+ * this consistent — if the wording needs to change for legal reasons, it
+ * should only need to change here.
  *
  * **Everything defined here is displayed somewhere.** An unused variant in
  * a file like this is a hazard rather than spare capacity: the next person
  * reading it reasonably assumes each constant means some surface is
  * covered. `ADVICE_DISCLAIMER_LONG` sat here unused and was removed for
  * exactly that reason — it is one line to bring back the moment a surface
- * needs it.
+ * needs it. `PROJECTION_DISCLAIMER` went the same way on 2026-08-21 when
+ * Martin asked for it off the growth calculator header, which was its only
+ * call site. If the calculator ever needs the framing back, the wording
+ * was: "This is arithmetic on the numbers you typed, not a prediction.
+ * Real investments go up and down, and no rate of return is guaranteed."
  */
 
 /** Compact, always-visible line for tight spaces (chat panel, cards). */
 export const ADVICE_DISCLAIMER_SHORT =
   "Educational, not personalized investment advice. Always your call.";
-
-/**
- * Arithmetic on numbers a person typed in, rather than a model of their
- * actual holdings -- the growth calculator, and anything else that projects
- * a balance forward from an assumed rate.
- *
- * Deliberately different from the others. The risk on those surfaces is
- * being read as advice; the risk here is being read as a **prediction**,
- * which no amount of "not advice" language addresses. So this says the one
- * thing that matters: the rate is an assumption, and assumptions are not
- * guarantees.
- */
-export const PROJECTION_DISCLAIMER =
-  "This is arithmetic on the numbers you typed, not a prediction. Real investments go up and down, and no rate of return is guaranteed.";
 
 /** For forecast/scenario-modeling surfaces specifically. */
 export const FORECAST_DISCLAIMER =

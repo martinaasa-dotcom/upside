@@ -910,10 +910,38 @@ export function verdictRepeatsTrim(
 /**
  * Deterministic fallback so every visible card gets a colored action/status
  * even if the model misses a ticker in its response.
+ *
+ * **No percentage belongs in a `moveReason` written here.** Two reasons,
+ * and they compound:
+ *
+ * 1. It is not a reason. `moveReason` answers "why did this move", and it
+ *    is what the "What to do today" table prints in its *Why* column --
+ *    right beside a *Today* column already showing that same number. Two of
+ *    these three branches used to return `${moveLabel} move is ${movePct}.`,
+ *    so a reader asking why $AVGO was flagged got "Today move is -5.8%"
+ *    next to a cell reading -5.8%: the question restated, not answered.
+ * 2. It goes stale and then contradicts the column. A check is cached per
+ *    ticker for `PULSE_REFRESH_MS` (an hour), while the table's percentage
+ *    is recomputed live from the quote. Bake a number into the cached
+ *    sentence and the two disagree within the hour -- the case that
+ *    surfaced this read "Today move is -5.8%" beside a live +0.4%.
+ *
+ * Prose with no figure in it cannot go stale and cannot contradict the
+ * number next to it, so these say the plain-language *why* instead and
+ * leave the arithmetic to the column that owns it.
+ *
+ * No cashtag either, though the euphoric branch used to open with one.
+ * `scanLineFingerprint` strips every `$XXXX` before comparing, so a ticker
+ * name buys no uniqueness here -- it only doubled the tag, since
+ * `taggedScanLine` prepends one of its own. Two names falling back to the
+ * same branch now collide on purpose: the first prints this sentence and
+ * the second drops through to `composeDistinctScanLine`, which builds a
+ * distinct line from the live percentage. Which is the right outcome --
+ * the ticker is already its own column in the table and its own heading on
+ * the card.
  */
 export function buildFallbackPulseCheck(candidate: PulseCandidate): PulseCheck {
   const move = candidate.effectivePct ?? 0;
-  const movePct = formatMovePct(candidate.effectivePct);
   const euphoric =
     move >= 0.12 || (move >= 0.08 && candidate.roiPct >= 0.5);
   if (euphoric) {
@@ -924,7 +952,8 @@ export function buildFallbackPulseCheck(candidate: PulseCandidate): PulseCheck {
         "The story is working.",
         "Price ran ahead of a normal day.",
       ],
-      moveReason: `${cashtag(candidate.ticker)} ran ${movePct} ${candidate.moveLabel.toLowerCase()}. A strong day, not a new worry.`,
+      moveReason:
+        "A strong day, well ahead of an ordinary one. Good news rather than a new worry.",
       thesisStatus: "intact",
       earningsNote: "",
       action: "trim",
@@ -943,7 +972,8 @@ export function buildFallbackPulseCheck(candidate: PulseCandidate): PulseCheck {
         "Down hard enough to check why you own it.",
         "Price alone doesn't mean the story broke.",
       ],
-      moveReason: `${candidate.moveLabel} move is ${movePct}.`,
+      moveReason:
+        "It fell far enough to be worth a second look, and nothing about why you own it has changed.",
       thesisStatus: "intact",
       earningsNote: "",
       action: "add",
@@ -964,7 +994,8 @@ export function buildFallbackPulseCheck(candidate: PulseCandidate): PulseCheck {
       "Nothing unusual today.",
       "No reason to change the position.",
     ],
-    moveReason: `${candidate.moveLabel} move is ${movePct}.`,
+    moveReason:
+      "Nothing out of the ordinary happened, so there is nothing to do about it.",
     thesisStatus: "intact",
     earningsNote: "",
     action: "hold",
