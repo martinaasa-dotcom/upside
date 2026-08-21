@@ -2,11 +2,13 @@
  * IndexedDB + localStorage; this file only keeps the JS/CSS/icons around
  * so a refresh while offline still hydrates the last painted page. */
 
-const CACHE = "upside-shell-v8";
+/* v9: dropped /upside-mark.png from the precache. The header mark is inline
+ * SVG now (UpsideLogo.tsx), so precaching a 260 KB PNG nothing requests
+ * just cost every install a quarter-megabyte. */
+const CACHE = "upside-shell-v9";
 const PRECACHE = [
   "/manifest.webmanifest",
   "/upside-icon.png",
-  "/upside-mark.png",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
   "/icons/icon-512-maskable.png",
