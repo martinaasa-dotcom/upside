@@ -339,18 +339,19 @@ body {
    * spends most of the distance in the very dim end, so it thins out into
    * the black with no boundary anywhere.
    *
-   * Reach is what those tail stops buy. Each lobe covers 150vw × 96vh —
-   * far wider than the frame — but the peak alpha never moved across three
-   * separate widenings, so the corners are as bright as they ever were and
-   * only the *area* grew: lit field (≥ 4/255) 27% → 44% → 60%.
+   * Reach is what those tail stops buy. Each lobe covers 170vw × 112vh —
+   * far wider than the frame — but the peak alpha has never moved across
+   * four separate widenings, so the corners are as bright as they ever
+   * were and only the *area* grew: lit field (≥ 4/255) 27% → 44% → 60% →
+   * 97%.
    *
-   * Brightness and coverage are separate dials. Keep them separate. The
-   * page middle here measures about 6/255 — spread, not lit; it still
-   * reads black against the 40 and 51 in the corners, and the two opposite
-   * corners sit at 3 so the diagonal survives. What went wrong the one
-   * time this was got badly wrong was *alpha*: 60%/34% put the middle at
-   * 32/255 and the corners at 111, and the page stopped being a dark room
-   * with two lights in it.
+   * Brightness and coverage are separate dials. Keep them separate. Almost
+   * the whole frame now carries some light, but the page middle measures
+   * about 8/255 against 42 and 54 in the lit corners and 4–5 in the two
+   * opposite ones, so it still reads as a dark room lit from two corners
+   * rather than a tinted page. What went wrong the one time this was got
+   * badly wrong was *alpha*: 60%/34% put the middle at 32/255 and the
+   * corners at 111.
    *
    * Deliberately dim: peaks land near 40/255 warm and 35/255 blue, below
    * the 94/255 this had before it was ever touched. Warm stays the
@@ -369,29 +370,32 @@ body {
    * below the lit pair (which is what makes it diagonal), and the share of
    * the field under 2/255 (which is what keeps the black). Brightening
    * this is the easy mistake — an earlier pass at 60%/34% with 1700px
-   * lobes lit 99% of the field and left no black at all. Note which dial
-   * that was: alpha, not size. Growing the lobes one step further
-   * (145vw × 92vh) takes the black share from 33% to 1.8% — the same
-   * failure by the other route.
+   * lobes lit 99% of the field *and* put the middle at 32/255, which is
+   * the failure. Coverage alone is not: at this reach the share of field
+   * under 2/255 is near zero and the page still reads dark, because the
+   * middle sits at 8. Judge it on the middle and the corner spread, not on
+   * the black share, once the lobes are this wide. One more size step
+   * (190vw × 126vh) gains 3 points of coverage and lifts the middle to
+   * 9.8 — nothing left to win.
    */
   background-image:
     radial-gradient(
-      150vw 96vh at -8% -10%,
+      170vw 112vh at -8% -10%,
       oklch(from var(--primary) l c h / 28%) 0%,
-      oklch(from var(--primary) l c h / 14%) 20%,
-      oklch(from var(--primary) l c h / 6.5%) 38%,
-      oklch(from var(--primary) l c h / 2.6%) 58%,
-      oklch(from var(--primary) l c h / 1%) 76%,
-      transparent 96%
+      oklch(from var(--primary) l c h / 15%) 18%,
+      oklch(from var(--primary) l c h / 7.5%) 34%,
+      oklch(from var(--primary) l c h / 3.2%) 52%,
+      oklch(from var(--primary) l c h / 1.4%) 72%,
+      transparent 98%
     ),
     radial-gradient(
-      150vw 96vh at 108% 110%,
+      170vw 112vh at 108% 110%,
       oklch(from var(--ambient-cool) l c h / 31%) 0%,
-      oklch(from var(--ambient-cool) l c h / 15.5%) 20%,
-      oklch(from var(--ambient-cool) l c h / 7%) 38%,
-      oklch(from var(--ambient-cool) l c h / 2.8%) 58%,
-      oklch(from var(--ambient-cool) l c h / 1.1%) 76%,
-      transparent 98%
+      oklch(from var(--ambient-cool) l c h / 16.5%) 18%,
+      oklch(from var(--ambient-cool) l c h / 8%) 34%,
+      oklch(from var(--ambient-cool) l c h / 3.4%) 52%,
+      oklch(from var(--ambient-cool) l c h / 1.5%) 72%,
+      transparent 100%
     );
 }
 

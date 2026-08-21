@@ -61,7 +61,9 @@ function DefaultAccountEnd() {
  * The one header every signed-in page uses.
  *
  * Fixed on desktop so Book → Fund → Communities does not move the bar.
- * Header row is 3.5rem. Status row is 2.5rem. Spacer matches both.
+ * Header row is 3rem. Status row is 2.25rem. Spacer matches both.
+ * Tightened from 3.5/2.5: at those heights the markets bar sat a clear
+ * step below the header row rather than reading as its second line.
  */
 export function AppHeader({
   title,
@@ -95,16 +97,25 @@ export function AppHeader({
        */}
       <div
         className={cn(
-          "sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-30 bg-background/50 backdrop-blur-2xl",
+          "sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-30 bg-background/35 backdrop-blur-2xl",
           "md:fixed md:inset-x-0 md:top-0 md:z-40",
           className
         )}
       >
-        <header className="hidden border-b border-border md:block">
+        {/*
+         * No `border-b` here. This wrapper is one sheet of glass, and a
+         * rule between the two rows inside it is exactly what made the
+         * chrome read as two stacked panes -- which was the original
+         * complaint, and merging the fills alone did not settle it because
+         * the line survived the merge. The only edge the chrome carries is
+         * the one at its bottom, where it meets the page; the strip below
+         * draws that.
+         */}
+        <header className="hidden md:block">
           <div
             className={cn(
               PAGE_COLUMN_CLASS,
-              "flex h-14 items-center justify-between gap-2 sm:gap-3"
+              "flex h-12 items-center justify-between gap-2 sm:gap-3"
             )}
           >
             <div className="flex min-w-0 items-center gap-2 text-sm leading-none sm:gap-3">

@@ -121,7 +121,7 @@ export function MobileTabBar({
       ref={dockRef}
       aria-label="App"
       className={cn(
-        "keyboard-chrome fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/50 pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl md:hidden",
+        "keyboard-chrome fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/35 pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl md:hidden",
         className
       )}
     >
