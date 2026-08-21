@@ -6,6 +6,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { observeRoute } from "@/lib/observe-route";
 import { portfolioJoinSchema } from "@/lib/api-schemas";
 import { parseJsonBody } from "@/lib/parse-json-body";
+import { rateLimitJson } from "@/lib/rate-limit";
+import { takeDurableRateLimit } from "@/lib/rate-limit-durable";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +28,27 @@ async function handlePOST(req: NextRequest) {
   if ("error" in auth) return auth.error;
 
   await ensureProfileAndClaims(auth.user);
+
+  /*
+   * Throttle redemption attempts, the way `communities/join` already
+   * throttles invite peeks.
+   *
+   * Not because the tokens are guessable — they are `randomBytes(18)`,
+   * 144 bits, so no realistic request rate gets anywhere near one. This is
+   * for the two things that are true regardless of entropy: an unmetered
+   * database round-trip per attempt is a cheap way to generate load, and
+   * the sibling route that does the same job already guards it. Keyed by
+   * user rather than IP because this route requires auth, so the account
+   * is the precise identity to limit.
+   */
+  const limit = await takeDurableRateLimit(
+    `portfolio-join:${auth.user.id}`,
+    30,
+    5 * 60_000
+  );
+  if (!limit.ok) {
+    return rateLimitJson(limit, "Too many invite attempts. Try again shortly.");
+  }
 
   const parsed = await parseJsonBody(req, portfolioJoinSchema);
   if (!parsed.ok) return parsed.response;
