@@ -1,4 +1,5 @@
 import { getStripe, stripeSubscriptionFields, CLEARED_BILLING_PATCH } from "@/lib/stripe";
+import { ACTIVE_STATUSES, isActiveSubscription } from "@/lib/billing-status";
 import { getSupabaseServer } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 import { logEvent } from "@/lib/telemetry";
@@ -52,12 +53,52 @@ export async function reconcileBillingSubscriptions(): Promise<BillingReconcileR
 
   for (const row of rows) {
     try {
-      const subscriptions = await stripe.subscriptions.list({
-        customer: row.stripe_customer_id,
-        status: "all",
-        limit: 1,
-      });
-      const subscription = subscriptions.data[0];
+      /*
+       * Ask for the statuses that mean "Stripe is still charging this
+       * person" first, and only fall back to the newest of any status when
+       * there is genuinely no live subscription.
+       *
+       * Taking the single newest subscription of *any* status -- which is
+       * what this did -- is wrong in a way that costs a real customer their
+       * plan. Stripe lists newest first and `status: "all"` includes
+       * `incomplete` and `incomplete_expired`. A first-time subscriber who
+       * opens Upgrade in two tabs completes one and abandons the other; the
+       * abandoned session leaves a subscription that expires unpaid, created
+       * *after* the one they actually paid for. This backstop would then
+       * find the failed one, decide the profile had drifted, and overwrite a
+       * genuinely active subscription with `incomplete_expired`.
+       *
+       * That is worse than the drift it exists to repair: the webhook had
+       * recorded the truth and the repair job replaced it with a lie.
+       *
+       * The checkout route already learned this lesson -- see its comment
+       * about not taking "the 5 most recent of any status" -- and queries
+       * ACTIVE_STATUSES explicitly. This now matches it, so the two cannot
+       * disagree about what counts as a live subscription.
+       */
+      const live = await Promise.all(
+        ACTIVE_STATUSES.map((status) =>
+          stripe.subscriptions.list({
+            customer: row.stripe_customer_id,
+            status,
+            limit: 1,
+          })
+        )
+      );
+      let subscription = live
+        .flatMap((page) => page.data)
+        .find((s) => isActiveSubscription(s.status));
+
+      if (!subscription) {
+        // No live subscription. Now the newest of any status is the right
+        // answer -- it describes how this customer's billing actually ended.
+        const recent = await stripe.subscriptions.list({
+          customer: row.stripe_customer_id,
+          status: "all",
+          limit: 1,
+        });
+        subscription = recent.data[0];
+      }
 
       if (!subscription) {
         // Customer exists in Stripe but has never had (or no longer has any
