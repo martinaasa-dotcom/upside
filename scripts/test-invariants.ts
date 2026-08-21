@@ -974,24 +974,25 @@ run("Upside Fund X posts put P&L, ending value, and S&P on the same stretch", ()
     movers: [
       { ticker: "NVDA", changePct: 0.03 },
       { ticker: "MSFT", changePct: -0.008 },
+      { ticker: "AMD", changePct: -0.02 },
     ],
     radar: [
-      { ticker: "NVDA", waitFor: "earnings" },
+      { ticker: "NVDA", waitFor: "earnings next week" },
       { ticker: "BTC", waitFor: "" },
-      { ticker: "RKLB", waitFor: "launches" },
+      { ticker: "RKLB", waitFor: "launches this month" },
     ],
   });
-  assert.equal(
+  assert.match(daily, /^Day 3: held\n\n/);
+  assert.match(daily, /🔴 Day \+\$181 \(\+0\.36%\) · \$SPY \+0\.45%/);
+  assert.match(daily, /🟢 Wk \+\$1,240 \(\+2\.53%\) · \$SPY \+1\.10%/);
+  assert.match(daily, /🔴 Tot \+\$194 \(\+0\.39%\) · \$SPY \+0\.85%/);
+  assert.match(daily, /\n\n💼 \$50,194\n/);
+  assert.match(daily, /\$NVDA \+3\.0% 🟢/);
+  assert.match(daily, /\$AMD -2\.0% 🔴/);
+  assert.match(daily, /\$MSFT -0\.8% 🔴/);
+  assert.match(
     daily,
-    [
-      "Day 3: held",
-      "🔴 Day +$181 (+0.36%) · SPY +0.45%",
-      "🟢 Wk +$1,240 (+2.53%) · SPY +1.10%",
-      "🔴 Tot +$194 (+0.39%) · SPY +0.85%",
-      "💼 $50,194",
-      "$NVDA +3.0% 🟢 $MSFT -0.8% 🔴",
-      "👀 $NVDA · $BTC · $RKLB",
-    ].join("\n")
+    /👀 \$NVDA earnings next week · \$BTC · \$RKLB launches this month/
   );
   assert.ok(daily.length <= 280);
   assert.doesNotMatch(daily, /\u2014/);
@@ -1007,7 +1008,7 @@ run("Upside Fund X posts put P&L, ending value, and S&P on the same stretch", ()
   });
   assert.match(firstDay, /^Day 1: bought nvda/);
   assert.match(firstDay, /🟢 Day \$0 \(0\.00%\)/);
-  assert.doesNotMatch(firstDay, /SPY/);
+  assert.doesNotMatch(firstDay, /\$SPY/);
   assert.ok(firstDay.length <= 280);
 
   const traded = composeDailyFundPost({
@@ -1024,7 +1025,6 @@ run("Upside Fund X posts put P&L, ending value, and S&P on the same stretch", ()
   });
   assert.match(traded, /^Day 7: sold msft, bought nvda/);
   assert.doesNotMatch(traded, /Thesis intact/);
-  assert.doesNotMatch(traded, /held/);
   assert.ok(traded.length <= 280);
 
   const weekly = composeWeeklyFundPost({
@@ -1036,7 +1036,7 @@ run("Upside Fund X posts put P&L, ending value, and S&P on the same stretch", ()
     actions: [],
   });
   assert.match(weekly, /^Week 1: held/);
-  assert.match(weekly, /🔴 Wk \+\$194 \(\+0\.39%\) · SPY \+0\.70%/);
+  assert.match(weekly, /🔴 Wk \+\$194 \(\+0\.39%\) · \$SPY \+0\.70%/);
   assert.ok(weekly.length <= 280);
 });
 

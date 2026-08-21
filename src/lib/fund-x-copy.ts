@@ -3,7 +3,7 @@ import type { FundAction } from "@/lib/margus-fund";
 import { FUND_X_HANDLE, FUND_X_URL } from "@/lib/product";
 
 export { FUND_X_HANDLE, FUND_X_URL };
-/** Free X cap. Keep the scoreboard card inside this. */
+/** Free X cap. X counts UTF-16 code units. */
 export const TWEET_MAX = 280;
 
 export type FundStretch = {
@@ -34,6 +34,11 @@ function finite(n: number | null | undefined): n is number {
   return n != null && Number.isFinite(n);
 }
 
+/** X's free-tier counter: UTF-16 code units (same as JS string.length). */
+export function tweetLength(text: string): number {
+  return text.length;
+}
+
 function pct2(n: number): string {
   return signedPercent(n, 2);
 }
@@ -62,11 +67,10 @@ function stretchLine(
   if (!stretch) return null;
   const move = moneyPct(stretch.dollar ?? null, stretch.pct ?? null);
   if (!move) return null;
-  const spy = finite(stretch.spyPct) ? ` · SPY ${pct2(stretch.spyPct)}` : "";
+  const spy = finite(stretch.spyPct) ? ` · $SPY ${pct2(stretch.spyPct)}` : "";
   return `${vsSpyMark(stretch.pct ?? null, stretch.spyPct ?? null)} ${label} ${move}${spy}`;
 }
 
-/** Plain ticker for the opener: msft, not $MSFT. */
 function plainTicker(ticker: string): string {
   return ticker.trim().toLowerCase();
 }
@@ -85,7 +89,6 @@ function actionHeadline(
   const trades = actions.filter((a) => a.type !== "hold" && a.ticker.trim());
   if (trades.length === 0) return `${label} ${serial}: held`;
 
-  // Group consecutive same verbs: "bought nvda, msft" / "sold msft, bought nvda"
   const parts: string[] = [];
   let lastVerb: string | null = null;
   let tickers: string[] = [];
@@ -110,20 +113,31 @@ function actionHeadline(
   return `${label} ${serial}: ${parts.join(", ")}`;
 }
 
-function moverBit(
+function formatMover(m: {
+  ticker: string;
+  changePct: number;
+}): string {
+  const n = m.changePct;
+  return `${cashtag(m.ticker)} ${pct1(n)} ${n >= 0 ? "🟢" : "🔴"}`;
+}
+
+function rankedMovers(
   movers: Array<{ ticker: string; changePct: number | null | undefined }>
-): string | null {
-  const ranked = movers
-    .filter((m) => m.ticker.trim() && finite(m.changePct))
-    .sort((a, b) => Math.abs(b.changePct!) - Math.abs(a.changePct!))
-    .slice(0, 2);
-  if (ranked.length === 0) return null;
-  return ranked
-    .map((m) => {
-      const n = m.changePct!;
-      return `${cashtag(m.ticker)} ${pct1(n)} ${n >= 0 ? "🟢" : "🔴"}`;
-    })
-    .join(" ");
+): Array<{ ticker: string; changePct: number }> {
+  return movers
+    .filter((m): m is { ticker: string; changePct: number } =>
+      Boolean(m.ticker.trim() && finite(m.changePct))
+    )
+    .sort((a, b) => Math.abs(b.changePct) - Math.abs(a.changePct));
+}
+
+function shortWait(waitFor: string): string {
+  const trimmed = waitFor
+    .replace(/^wait(?:ing)? for\s+/i, "")
+    .replace(/[\u2010\u2011\u2212\u2014]/g, "-")
+    .trim();
+  if (!trimmed) return "";
+  return trimmed.split(/\s+/).slice(0, 3).join(" ").replace(/[.,;:]+$/, "");
 }
 
 function thesisLine(
@@ -141,16 +155,8 @@ function thesisLine(
   return `Thesis broken on ${exits.join(" · ")}`;
 }
 
-function radarLine(
-  radar: Array<{ ticker: string; waitFor?: string | null }>
-): string | null {
-  const parts: string[] = [];
-  for (const item of radar) {
-    const tag = cashtag(item.ticker);
-    if (tag === "—") continue;
-    if (!parts.includes(tag)) parts.push(tag);
-  }
-  return parts.length > 0 ? parts.join(" · ") : null;
+function joinBody(parts: Array<string | null | undefined>): string {
+  return parts.filter((p): p is string => p != null).join("\n");
 }
 
 function composeFundXPost(
@@ -158,40 +164,97 @@ function composeFundXPost(
   input: FundXPostInput
 ): string {
   const actions = input.actions ?? [];
-  const lines: string[] = [actionHeadline(period, input.serial, actions)];
+  const headline = actionHeadline(period, input.serial, actions);
+  const stretches = joinBody([
+    stretchLine("Day", input.daily),
+    stretchLine("Wk", input.weekly),
+    stretchLine("Tot", input.total),
+  ]);
+  const balance = finite(input.balance)
+    ? `💼 ${currency(input.balance, 0)}`
+    : null;
+  const thesis = thesisLine(actions);
 
-  const daily = stretchLine("Day", input.daily);
-  const weekly = stretchLine("Wk", input.weekly);
-  const total = stretchLine("Tot", input.total);
-  if (daily) lines.push(daily);
-  if (weekly) lines.push(weekly);
-  if (total) lines.push(total);
+  const movers = rankedMovers(input.movers ?? []);
+  const radarItems = (input.radar ?? [])
+    .map((item) => {
+      const tag = cashtag(item.ticker);
+      if (tag === "—") return null;
+      const wait = shortWait(item.waitFor ?? "");
+      return { tag, wait, withWait: wait ? `${tag} ${wait}` : tag };
+    })
+    .filter((x): x is { tag: string; wait: string; withWait: string } =>
+      Boolean(x)
+    );
 
-  if (finite(input.balance)) {
-    lines.push(`💼 ${currency(input.balance, 0)}`);
+  // Pack movers (up to 4) and radar wait-fors until we sit near the free cap.
+  let moverCount = Math.min(2, movers.length);
+  let radarWithWait = false;
+
+  const build = (): string => {
+    const moverLine =
+      moverCount > 0
+        ? movers.slice(0, moverCount).map(formatMover).join(" ")
+        : null;
+    const radarBits = radarItems.map((r) =>
+      radarWithWait ? r.withWait : r.tag
+    );
+    const radarLine =
+      radarBits.length > 0 ? `👀 ${[...new Set(radarBits)].join(" · ")}` : null;
+
+    return joinBody([
+      headline,
+      "",
+      stretches || null,
+      "",
+      balance,
+      moverLine,
+      thesis,
+      radarLine,
+    ]);
+  };
+
+  let text = build();
+  // Prefer richer radar notes, then more movers, while staying under the cap.
+  if (tweetLength(text) <= TWEET_MAX && radarItems.some((r) => r.wait)) {
+    radarWithWait = true;
+    const richer = build();
+    if (tweetLength(richer) <= TWEET_MAX) text = richer;
+    else radarWithWait = false;
+  }
+  while (moverCount < Math.min(4, movers.length)) {
+    moverCount += 1;
+    const next = build();
+    if (tweetLength(next) > TWEET_MAX) {
+      moverCount -= 1;
+      break;
+    }
+    text = next;
   }
 
-  const movers = moverBit(input.movers ?? []);
-  if (movers) lines.push(movers);
+  if (tweetLength(text) <= TWEET_MAX) return text;
 
-  const thesis = thesisLine(actions);
-  if (thesis) lines.push(thesis);
+  // Trim in priority order if a heavy trade day still overflows.
+  radarWithWait = false;
+  text = build();
+  if (tweetLength(text) <= TWEET_MAX) return text;
 
-  const radar = radarLine(input.radar ?? []);
-  if (radar) lines.push(`👀 ${radar}`);
+  while (moverCount > 0 && tweetLength(text) > TWEET_MAX) {
+    moverCount -= 1;
+    text = build();
+  }
+  if (tweetLength(text) <= TWEET_MAX) return text;
 
-  const text = lines.join("\n");
-  if (text.length <= TWEET_MAX) return text;
-
-  const withoutRadar = lines.filter((l) => !l.startsWith("👀 ")).join("\n");
-  if (withoutRadar.length <= TWEET_MAX) return withoutRadar;
-
-  const withoutMovers = lines
-    .filter((l) => !l.startsWith("👀 ") && !/^\$[A-Z]/.test(l))
-    .join("\n");
-  return withoutMovers.length <= TWEET_MAX
-    ? withoutMovers
-    : withoutMovers.slice(0, TWEET_MAX);
+  // Last resort: drop radar entirely.
+  const bare = joinBody([
+    headline,
+    "",
+    stretches || null,
+    "",
+    balance,
+    thesis,
+  ]);
+  return tweetLength(bare) <= TWEET_MAX ? bare : bare.slice(0, TWEET_MAX);
 }
 
 export function composeDailyFundPost(input: FundXPostInput): string {
