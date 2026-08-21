@@ -323,6 +323,26 @@ export function Card({
 }
 
 /** Quiet label above a value. Sentence case. Chrome floor is text-sm. */
+/**
+ * The one micro-label voice: mono, caps, letter-spaced, muted.
+ *
+ * Every place this is already used had decided a label belonged there —
+ * over a figure in `Metric`, over a list in `ScanList`, "In the news",
+ * "Price now", "Watching". They were sentence-case sans at the same size
+ * and weight as the muted prose beside them, so they read as another line
+ * of copy rather than as the scaffolding they are.
+ *
+ * Mono caps at 12px does the separating: it is unmistakably not prose, so
+ * the eye skips it when reading and finds it when scanning. Tracking is
+ * `0.1em` because caps set at normal tracking close up — the letterfit of
+ * a face is drawn for mixed case.
+ *
+ * Deliberately `--muted-foreground`, not the accent. This lands on eight-plus
+ * surfaces including four abreast in the dashboard's figure row, and an
+ * accent on all of them would spend the app's one brand colour on
+ * scaffolding. `NoteRows` is the tier that gets the accent, because there
+ * the label is doing real work — telling two paragraphs apart.
+ */
 export function MicroLabel({
   children,
   className,
@@ -333,7 +353,7 @@ export function MicroLabel({
   return (
     <p
       className={cn(
-        "flex items-center gap-1 text-sm font-medium text-muted-foreground",
+        "flex items-center gap-1.5 font-mono text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground",
         className
       )}
     >
@@ -1065,5 +1085,67 @@ export function EmptyState({
       </EmptyHeader>
       {action ? <EmptyContent>{action}</EmptyContent> : null}
     </Empty>
+  );
+}
+
+/**
+ * A short label in mono caps, and the prose it introduces.
+ *
+ * For the case where a card stacks several paragraphs that mean different
+ * things. Left to themselves they render as a wall of identical grey text
+ * and the reader has to work out which sentence is the suggestion, which is
+ * their own note, and which is the condition that would change the answer.
+ * A label in the gutter answers that before the sentence is read.
+ *
+ * Rules that keep this from becoming decoration:
+ *
+ * - **Only where the label says something the prose does not.** If the
+ *   sentence already opens with "Breaks if", the label is the sentence
+ *   repeated and one of the two should go.
+ * - **Two or more rows, or none.** A single labelled paragraph on a card is
+ *   a label with nothing to distinguish itself from; the pattern earns its
+ *   place by letting a reader tell rows apart.
+ * - The label is `aria-hidden` and the row is a `<dt>`/`<dd>` pair, so a
+ *   screen reader gets the association from the markup rather than hearing
+ *   a stray fragment of caps.
+ *
+ * Labels are plain language, never market slang — "BREAKS IF", not "INVALIDATION".
+ */
+export function NoteRows({
+  rows,
+  className,
+}: {
+  rows: Array<{ label: string; body: ReactNode }>;
+  className?: string;
+}) {
+  const shown = rows.filter((r) => r.body != null && r.body !== "");
+  if (shown.length < 2) {
+    // One row is not a list. Render it as the plain paragraph it is.
+    const only = shown[0];
+    return only ? (
+      <p className={cn("text-sm leading-relaxed text-muted-foreground", className)}>
+        {only.body}
+      </p>
+    ) : null;
+  }
+  return (
+    <dl className={cn("flex flex-col gap-2.5", className)}>
+      {shown.map((r) => (
+        <div
+          key={r.label}
+          className="grid gap-x-6 gap-y-0.5 sm:grid-cols-[7rem_minmax(0,1fr)]"
+        >
+          <dt
+            className="font-mono text-[11px] font-medium uppercase leading-[1.7] tracking-[0.1em] text-primary"
+            aria-hidden
+          >
+            {r.label}
+          </dt>
+          <dd className="m-0 text-sm leading-relaxed text-muted-foreground">
+            {r.body}
+          </dd>
+        </div>
+      ))}
+    </dl>
   );
 }

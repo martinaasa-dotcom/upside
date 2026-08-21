@@ -35,6 +35,7 @@ import {
   EmptyState,
   Metric,
   MicroLabel,
+  NoteRows,
   Panel,
   PanelHeader,
   Pill,
@@ -350,6 +351,17 @@ function PulseCard({
         </p>
       )}
 
+      {/*
+        * The suggestion leads unlabelled -- it is the answer, and a label
+        * over it would only say "answer". Everything under it is a
+        * different *kind* of sentence, and as four identical grey
+        * paragraphs a reader could not tell which was Margus reasoning,
+        * which was their own note, and which was the condition that would
+        * change the verdict. `NoteRows` puts that in the gutter.
+        *
+        * "Breaks if" moves out of the sentence and into its own label,
+        * where it was always trying to be.
+        */}
       {hasBody ? (
         <div className="flex flex-col gap-3">
           {suggestion ? (
@@ -357,24 +369,17 @@ function PulseCard({
               {suggestion}
             </p>
           ) : null}
-          {extraVerdict ? (
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              {extraVerdict}
-            </p>
-          ) : null}
-          {writtenThesis.length > 0 ? (
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              {writtenThesis.join(" ")}
-            </p>
-          ) : null}
-          {shown?.earningsNote ? (
-            <p className="text-sm text-muted-foreground">{shown.earningsNote}</p>
-          ) : null}
-          {shown?.thesisBreak ? (
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              Breaks if {shown.thesisBreak}
-            </p>
-          ) : null}
+          <NoteRows
+            rows={[
+              { label: "Why", body: extraVerdict },
+              {
+                label: "Your thesis",
+                body: writtenThesis.length > 0 ? writtenThesis.join(" ") : "",
+              },
+              { label: "Earnings", body: shown?.earningsNote ?? "" },
+              { label: "Breaks if", body: shown?.thesisBreak ?? "" },
+            ]}
+          />
         </div>
       ) : null}
 

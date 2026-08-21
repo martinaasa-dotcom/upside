@@ -600,3 +600,44 @@ The earlier overshoot pushed *alpha* (60%/34%) and lit 99% of the field. One
 more size step here — `145vw × 92vh` — takes the black share from 33% to
 1.8%. Same failure, other route. Whichever dial moves, the number that
 catches it is the share of field under 2/255.
+
+
+## Label voice: mono caps, two tiers (2026-08-21)
+
+Taken from the counter-lobe study page, which Martin asked to have applied to
+the app. Two label tiers there, and the app already had surfaces for both.
+
+**Tier one — scaffolding.** `MicroLabel`, and now every table column header.
+Mono, uppercase, 11–12px, `tracking-[0.1em]`, `--muted-foreground`.
+
+These were sentence-case sans at the same size and weight as the muted prose
+beside them, so a label read as another line of copy rather than as the
+structure it is. Column headers were worse: `text-foreground`, which made the
+header row the loudest row in the table — the one row a reader never needs to
+look at twice. Mono caps inverts that. The eye skips it when reading down a
+column and finds it when scanning for one.
+
+Tracking is `0.1em` because caps set at a face's normal tracking close up:
+letterfit is drawn for mixed case, and caps have no descenders or ascenders to
+open the rhythm.
+
+Deliberately muted, not accent. This lands on eight-plus components including
+four abreast in the dashboard figure row and every table header in the app;
+an accent on all of them would spend the one brand colour on scaffolding.
+
+**Tier two — annotation.** `NoteRows`, in `--primary`.
+
+A short label in the gutter and the prose it introduces, in a
+`7rem / 1fr` grid that collapses to one column on a phone. This is the tier
+that gets the accent, because here the label does real work: it tells one
+paragraph from another.
+
+The first call site is the Pulse card, which stacked four paragraphs that mean
+different things — Margus's reasoning, the reader's own note, an earnings
+date, and the condition that would change the verdict — as four identical
+grey blocks. One of them, `thesisBreak`, was already trying to label itself by
+opening with the words "Breaks if". That is now the label.
+
+`NoteRows` refuses to render as a list below two rows, and falls back to a
+plain paragraph: a single labelled row is a label with nothing to distinguish
+itself from. Labels are plain language — "BREAKS IF", never "INVALIDATION".
