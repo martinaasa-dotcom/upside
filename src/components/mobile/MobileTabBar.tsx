@@ -1,6 +1,6 @@
 "use client";
 
-import { useCircleHref } from "@/components/CircleDockLink";
+import { useCircleHref } from "@/lib/use-circle-href";
 import { stashOpenTab } from "@/lib/active-sheet";
 import { cn } from "@/lib/format";
 import {
@@ -121,7 +121,7 @@ export function MobileTabBar({
       ref={dockRef}
       aria-label="App"
       className={cn(
-        "keyboard-chrome fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/50 pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl md:hidden",
+        "keyboard-chrome fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/35 pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl md:hidden",
         className
       )}
     >
@@ -129,7 +129,7 @@ export function MobileTabBar({
         <div
           role="tablist"
           className={cn(
-            "grid h-12 w-full overflow-hidden rounded-lg bg-muted ring-1 ring-inset ring-border",
+            "grid h-12 w-full overflow-hidden rounded-lg glass-well",
             cols === 3 && "grid-cols-3",
             cols === 4 && "grid-cols-4",
             cols === 5 && "grid-cols-5"

@@ -1,6 +1,14 @@
 "use client";
 
-import { CircleDockLink } from "@/components/CircleDockLink";
+import { dockFoldsSheets } from "@/lib/dock-cells";
+import { useCircleHref } from "@/lib/use-circle-href";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/format";
 import { stashOpenTab } from "@/lib/active-sheet";
 import {
@@ -10,16 +18,27 @@ import {
   PULSE_TAB_ID,
 } from "@/lib/overview";
 import type { Portfolio } from "@/lib/types";
-import { Activity, Calculator, FlaskConical, LayoutDashboard } from "lucide-react";
+import {
+  Activity,
+  Calculator,
+  Check,
+  ChevronDown,
+  Compass,
+  FlaskConical,
+  LayoutDashboard,
+  Plus,
+  Wallet,
+} from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useLayoutEffect, useRef, useState } from "react";
 
 const MODES = [
   {
     id: OVERVIEW_TAB_ID,
     href: "/?tab=overview",
     tab: "overview",
-    label: "Overview",
-    shortLabel: "Home",
+    label: "Home",
     title: "Today's briefing and your portfolios",
     Icon: LayoutDashboard,
   },
@@ -28,7 +47,6 @@ const MODES = [
     href: "/?tab=pulse",
     tab: "pulse",
     label: "Pulse",
-    shortLabel: "Pulse",
     title: "Pulse for names you hold",
     Icon: Activity,
   },
@@ -37,7 +55,6 @@ const MODES = [
     href: "/?tab=lab",
     tab: "lab",
     label: "Lab",
-    shortLabel: "Lab",
     title: "Allocation, risk, trends, seasonality",
     Icon: FlaskConical,
   },
@@ -45,8 +62,7 @@ const MODES = [
     id: COMPOUND_TAB_ID,
     href: "/?tab=compound",
     tab: "compound",
-    label: "Compound",
-    shortLabel: "Growth",
+    label: "Growth",
     title: "What your portfolio could become if you keep going",
     Icon: Calculator,
   },
@@ -69,8 +85,51 @@ export function stashDockTab(id: string) {
   if (mode) stashOpenTab(mode.tab);
 }
 
-const ITEM =
-  "flex h-full w-full min-h-0 min-w-0 appearance-none flex-col items-center justify-center gap-0.5 rounded-none px-1.5 text-sm font-medium transition-colors sm:flex-row sm:gap-1.5 sm:px-2";
+export type SheetTone = "up" | "down" | null;
+
+/**
+ * One cell. Wide enough for the longest section label with its glyph and
+ * padding (`Growth`, ~90px) plus air, so a section never truncates and a
+ * long portfolio name is the only thing that can.
+ *
+ * The labels are the phone bar's: Home, Pulse, Lab, Growth, Circle. The
+ * desktop dock used to spell out "Overview" and "Compound", which cost
+ * ~30px a cell for no added meaning — the page header already names where
+ * you are — and it is what pushed a four-sheet row into truncating on a
+ * small laptop.
+ */
+const CELL_W = "7.5rem";
+
+const CELL =
+  "flex h-full w-full min-h-0 min-w-0 appearance-none items-center justify-center gap-1.5 rounded-none px-2 text-sm font-medium transition-colors";
+
+const OFF = "text-muted-foreground hover:bg-hover hover:text-foreground";
+const ON = "bg-primary text-primary-foreground";
+
+/**
+ * Sheets carry a dot where the sections carry a glyph, so every cell has
+ * the same shape. A row of identical wallet icons would be noise; the dot
+ * is the same size and says whether that sheet is up or down today.
+ */
+function ToneDot({ tone }: { tone: SheetTone }) {
+  return (
+    <span
+      className="flex h-4 w-4 shrink-0 items-center justify-center"
+      aria-hidden
+    >
+      <span
+        className={cn(
+          "h-2 w-2 rounded-full",
+          tone === "up"
+            ? "bg-gain"
+            : tone === "down"
+              ? "bg-loss"
+              : "bg-current opacity-40"
+        )}
+      />
+    </span>
+  );
+}
 
 type Props = {
   /** Book tab that is on. Empty on Circle pages so only Circle lights up. */
@@ -79,8 +138,15 @@ type Props = {
   onSelectMode?: (id: string) => void;
   hiddenModeIds?: string[];
   guest?: boolean;
-  /** Hide Circle on the phone book dock. MobileTabBar already has it. */
-  hideCircleOnPhone?: boolean;
+  /** Your portfolios, as cells in the same well as the sections. */
+  sheets?: Portfolio[];
+  /** Today's direction per sheet id — the dot in that sheet's cell. */
+  sheetTodayTone?: Record<string, SheetTone>;
+  /** Opens the New portfolio dialog. Omit to hide the add cell. */
+  onAddSheet?: () => void;
+  /** Right-click or long-press on a sheet cell. */
+  onSheetMenu?: (x: number, y: number, id: string, name: string) => void;
+  onSheetRename?: (id: string, name: string) => void;
   className?: string;
 };
 
@@ -89,7 +155,11 @@ export function BookModeDock({
   onSelectMode,
   hiddenModeIds = [],
   guest = false,
-  hideCircleOnPhone = false,
+  sheets = [],
+  sheetTodayTone,
+  onAddSheet,
+  onSheetMenu,
+  onSheetRename,
   className,
 }: Props) {
   const modes = MODES.filter((m) => {
@@ -97,24 +167,71 @@ export function BookModeDock({
     if (hiddenModeIds.includes(m.id)) return false;
     return true;
   });
-  const deskCols = modes.length + 1;
-  const phoneCols = hideCircleOnPhone ? modes.length : deskCols;
+
+  /*
+   * The row measures itself rather than guessing from a breakpoint: what
+   * decides whether your portfolios fit is the page column's width, and
+   * that is the same number at 1024px with a wide gutter as at 900px with
+   * a narrow one.
+   */
+  const rowRef = useRef<HTMLDivElement>(null);
+  const [rowWidth, setRowWidth] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    const el = rowRef.current;
+    if (!el) return;
+    const apply = () => setRowWidth(el.clientWidth || null);
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Sections + Circle are fixed; the sheets are what can overrun the row.
+  const fixedCells = modes.length + 1;
+  const folded = dockFoldsSheets(
+    modes.length,
+    sheets.length,
+    rowWidth,
+    Boolean(onAddSheet)
+  );
+  const inlineSheets = folded ? [] : sheets;
+  const showAdd = Boolean(onAddSheet) && !folded;
+  const cellCount = fixedCells + inlineSheets.length + (folded ? 1 : 0);
+
+  const activeSheet = sheets.find((p) => p.id === activeId) ?? null;
+  const circleTo = useCircleHref();
+  const onCircle = usePathname().startsWith("/communities");
+
+  function goToSheet(id: string) {
+    onSelectMode?.(id);
+  }
 
   return (
+    <div ref={rowRef} className="w-full">
     <div
       role="tablist"
       aria-label="App"
       className={cn(
-        "grid h-12 w-full overflow-hidden rounded-lg bg-muted ring-1 ring-inset ring-border",
-        phoneCols === 3 && deskCols === 3 && "grid-cols-3 sm:w-[26rem]",
-        phoneCols === 3 && deskCols === 4 && "grid-cols-3 sm:grid-cols-4 sm:w-[34rem]",
-        phoneCols === 4 && deskCols === 4 && "grid-cols-4 sm:w-[34rem]",
-        phoneCols === 4 && deskCols === 5 && "grid-cols-4 sm:grid-cols-5 sm:w-[42rem]",
-        phoneCols === 5 && deskCols === 5 && "grid-cols-5 sm:w-[42rem]",
+        "mx-auto grid h-12 w-fit max-w-full overflow-hidden rounded-lg glass-well",
         className
       )}
+      style={{
+        /*
+         * Equal cells at a fixed width, and the well sized to however many
+         * there are — so the dock grows by exactly one cell when you add a
+         * portfolio and stays centred either way. Stretching the same five
+         * cells across the full page column instead left each label
+         * floating in the middle of a 230px chip, and turned the active
+         * one into a slab of accent the width of a paragraph.
+         */
+        gridTemplateColumns: showAdd
+          ? // The add cell sits with the sheets it makes, so its narrow
+            // track goes second to last -- Circle keeps the end.
+            `repeat(${cellCount - 1}, minmax(0, ${CELL_W})) 2.5rem minmax(0, ${CELL_W})`
+          : `repeat(${cellCount}, minmax(0, ${CELL_W}))`,
+      }}
     >
-      {modes.map(({ id, href, tab, label, shortLabel, title, Icon }) => {
+      {modes.map(({ id, href, tab, label, title, Icon }) => {
         const active = activeId === id;
         const inner = (
           <>
@@ -126,20 +243,10 @@ export function BookModeDock({
               strokeWidth={2}
               aria-hidden
             />
-            <span className="max-w-full text-sm leading-none sm:hidden">
-              {shortLabel}
-            </span>
-            <span className="hidden whitespace-nowrap text-sm sm:inline">
-              {label}
-            </span>
+            <span className="min-w-0 truncate">{label}</span>
           </>
         );
-        const look = cn(
-          ITEM,
-          active
-            ? "bg-primary text-primary-foreground"
-            : "text-muted-foreground hover:text-foreground"
-        );
+        const look = cn(CELL, active ? ON : OFF);
         if (onSelectMode) {
           return (
             <button
@@ -168,7 +275,126 @@ export function BookModeDock({
           </Link>
         );
       })}
-      <CircleDockLink hideOnPhone={hideCircleOnPhone} />
+
+      {inlineSheets.map((sheet) => {
+        const active = sheet.id === activeId;
+        const tone = sheetTodayTone?.[sheet.id] ?? null;
+        const inner = (
+          <>
+            <ToneDot tone={tone} />
+            <span className="min-w-0 truncate">{sheet.name}</span>
+          </>
+        );
+        const look = cn(CELL, active ? ON : OFF);
+        const menu = onSheetMenu
+          ? (e: React.MouseEvent) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onSheetMenu(e.clientX, e.clientY, sheet.id, sheet.name);
+            }
+          : undefined;
+        const title = guest
+          ? sheet.name
+          : `${sheet.name} - right-click to rename or delete`;
+        if (onSelectMode) {
+          return (
+            <button
+              key={sheet.id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              title={title}
+              onClick={() => goToSheet(sheet.id)}
+              onContextMenu={menu}
+              onDoubleClick={() => onSheetRename?.(sheet.id, sheet.name)}
+              className={look}
+            >
+              {inner}
+            </button>
+          );
+        }
+        return (
+          <Link
+            key={sheet.id}
+            href={hrefForDockTarget(sheet.id, sheets)}
+            prefetch
+            title={title}
+            className={look}
+          >
+            {inner}
+          </Link>
+        );
+      })}
+
+      {folded && sheets.length > 0 ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              aria-label="Sheets"
+              title="Your portfolios"
+              className={cn(CELL, activeSheet ? ON : OFF)}
+            >
+              <Wallet className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+              <span className="min-w-0 truncate">
+                {activeSheet?.name ?? "Sheets"}
+              </span>
+              <ChevronDown className="h-3.5 w-3.5 shrink-0" aria-hidden />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="center"
+            side="top"
+            className="max-h-[min(24rem,60vh)] min-w-52 overflow-y-auto"
+          >
+            {sheets.map((sheet) => (
+              <DropdownMenuItem
+                key={sheet.id}
+                onSelect={() => goToSheet(sheet.id)}
+              >
+                <ToneDot tone={sheetTodayTone?.[sheet.id] ?? null} />
+                <span className="min-w-0 flex-1 truncate">{sheet.name}</span>
+                {sheet.id === activeId ? (
+                  <Check className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden />
+                ) : null}
+              </DropdownMenuItem>
+            ))}
+            {onAddSheet ? (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => onAddSheet()}>
+                  <Plus className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                  <span>New portfolio</span>
+                </DropdownMenuItem>
+              </>
+            ) : null}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : null}
+
+      {showAdd ? (
+        <button
+          type="button"
+          onClick={() => onAddSheet?.()}
+          aria-label="New portfolio"
+          title="New portfolio"
+          className={cn(CELL, OFF, "px-0")}
+        >
+          <Plus className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+        </button>
+      ) : null}
+
+      <Link
+        href={circleTo}
+        prefetch
+        title="Upside Circle"
+        aria-current={onCircle ? "page" : undefined}
+        className={cn(CELL, onCircle ? ON : OFF)}
+      >
+        <Compass className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+        <span className="min-w-0 truncate">Circle</span>
+      </Link>
+    </div>
     </div>
   );
 }

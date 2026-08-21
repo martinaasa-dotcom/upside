@@ -10,9 +10,15 @@ export const PAGE_COLUMN_CLASS = `mx-auto w-full min-w-0 ${PAGE_MAX_CLASS} ${PAG
 export const PAGE_FRAME_CLASS =
   "page-frame flex min-h-dvh flex-col bg-background text-foreground [--dock-pad:10.5rem] md:[--dock-pad:11.5rem]";
 
-/** Desktop chrome is fixed: header 3.5rem + status 2.5rem. */
-export const PAGE_CHROME_SPACER_CLASS = "hidden h-24 shrink-0 md:block";
-export const PAGE_CHROME_STICKY_CLASS = "lg:top-24";
+/**
+ * Desktop chrome is fixed: header 3rem + status 2.25rem = 5.25rem.
+ *
+ * These three move together. The spacer reserves the chrome's height in the
+ * document, and the sticky offset parks anything below it at the same line;
+ * change one row's height and all three numbers here are wrong at once.
+ */
+export const PAGE_CHROME_SPACER_CLASS = "hidden h-21 shrink-0 md:block";
+export const PAGE_CHROME_STICKY_CLASS = "lg:top-21";
 
 /** Top pad only. Bottom pad is the live dock height. A shorthand
  * vertical pad would wipe that clearance and hide the last section. */

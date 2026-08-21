@@ -725,3 +725,97 @@ story at this reach; read it together with the middle and the corner spread.
 
 One further step (`165vw × 108vh`) puts the middle at 7.6 and lit at 91.5%, and
 that is the wall.
+
+## The dock: one well, one cell per place (2026-08-21)
+
+> *"in a way that doesnt assume that someone could have 6 sheets, usually
+> they have 1, what if the whole bottom bar wasnt built around adding new
+> sheets and became more uniform?"*
+
+The desktop dock was two controls sharing a bar. On the left, a fixed
+`42rem` well of app sections — icon-and-label chips in a rounded group. On
+the right, taking every remaining pixel, a heading reading **Sheets** over a
+scrolling text rail of portfolio tabs, each with a 2px underline indicator,
+an inline name field for creating one, and a `+ New` button.
+
+Nothing about the two halves matched: different heights (48 vs 44), different
+shapes (filled group vs bare rail), different active indicators (a filled
+chip vs an underline), and a section label printed into the chrome that no
+other control needed. And the split was sized for a case that almost never
+happens. Measured on the running app at 1440px with an empty book:
+
+| | Before | After |
+|---|---|---|
+| Dock height | 95px | **73px** |
+| `--dock-pad` (page bottom clearance) | 127px | **105px** |
+| Wells in the bar | 2 (672px + 464px) | **1 (640px)** |
+| Width reserved for sheets, with zero sheets | **464px** (41% of the column) | **0** |
+
+Now every destination is the same cell in the same well: the sections, then
+one cell per portfolio, then Circle. One portfolio costs one cell. No
+portfolios cost nothing.
+
+### What each piece is doing
+
+**Cells are `7.5rem`, and the well is `w-fit`, centred.** Sizing the row to
+the full page column instead stretched five cells across 1152px, which left
+each label floating in the middle of a 230px chip and turned the active one
+into a slab of accent the width of a paragraph. Content-sized and centred,
+the dock grows by exactly one cell when you add a portfolio.
+
+**Sheets carry a dot where sections carry a glyph.** Same 16px slot, so the
+cells stay structurally identical, but a row of five identical wallet icons
+would have been noise. The dot is the sheet's direction today — emerald
+`--gain`, rose `--loss`, `currentColor` at 40% when there is no quote yet —
+so the slot pays for itself.
+
+**Section labels are the phone's, not the desktop's.** Home, Pulse, Lab,
+Growth, Circle. Spelling out "Overview" and "Compound" cost ~30px a cell for
+no added meaning — the page header already names where you are — and it is
+what pushed a four-sheet row into truncating on a small laptop.
+
+**`+` is a 2.5rem glyph cell, sitting with the sheets it makes**, second to
+last so Circle keeps the end. That replaces a labelled button *and* the
+"Sheets" heading *and* the inline name field: it now opens the same New
+portfolio dialog the phone has always opened.
+
+**The well is `.glass-well`, not `bg-muted`.** The dock sits over the
+brightest part of the ambient field, and an opaque fill there was a hole
+punched in the glow. Measured on the running app the well surface reads
+`rgb(18,21,25)` — the blue lobe showing through — with foreground text at
+**17.54** and muted at **7.09**, both above AAA. The mobile bar's well moved
+to `.glass-well` with it, so both docks are the same material.
+
+### Folding, and why it is measured rather than guessed
+
+Two different things run out, and not at the same width:
+
+- **Count.** Past `MAX_DOCK_CELLS` (9) the row outgrows the page column.
+- **Width.** A row can fit the count and still squeeze every cell too narrow
+  to read — 10 cells inside a 768px column is 74px each, and `Growth`
+  truncates to `Grow…`.
+
+So `dockFoldsSheets` (`src/lib/dock-cells.ts`) takes both, and the row
+measures its own container with a `ResizeObserver` rather than reading a
+breakpoint — what decides the fit is the column's width, which is the same
+number at 1024px with a wide gutter as at 900px with a narrow one. Past
+either limit the portfolios fold into one cell that opens a list, with
+**New portfolio** at its foot.
+
+Verified across viewports, with truncation checked per cell rather than by
+eye (`scrollWidth > clientWidth`):
+
+| Viewport | 1 sheet | 4 sheets | 6 sheets |
+|---|---|---|---|
+| 768 | inline, 111px | **folded** | folded |
+| 900 | inline, 120px | **folded** | folded |
+| 1024 | inline, 120px | inline, 102px | folded |
+| 1280+ | inline, 120px | inline, 120px | folded |
+
+No section label truncates at any width in that table. `MIN_CELL_PX` (96) is
+what guarantees it: `Growth` is the longest section label and measures ~90px
+with its glyph, the 6px gap, and `px-2` either side.
+
+**Before lowering `MAX_DOCK_CELLS` to make something fit, check it against a
+real book.** The seed household has four portfolios, so a cap of 8 would
+fold the dock for the person who asked for this.

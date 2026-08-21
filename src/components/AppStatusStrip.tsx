@@ -59,7 +59,7 @@ export function AppStatusStrip({
       <div
         className={cn(
           PAGE_COLUMN_CLASS,
-          "flex h-10 min-h-10 items-center gap-3 sm:gap-4"
+          "flex h-9 min-h-9 items-center gap-3 sm:gap-4"
         )}
       >
         <span className="flex shrink-0 items-center gap-2 whitespace-nowrap text-xs font-medium tabular-nums text-muted-foreground">
