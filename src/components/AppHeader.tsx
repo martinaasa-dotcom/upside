@@ -73,13 +73,34 @@ export function AppHeader({
 }: Props) {
   return (
     <>
-      <header
+      {/*
+       * One pane, not two.
+       *
+       * The header row and the status strip used to be two sibling fixed
+       * elements, each with its own `bg-background/*` fill and its own
+       * `backdrop-blur`. Two blurs stacked on two backdrops do not read as
+       * one sheet of glass: each samples a different slice of what is
+       * behind it, so the two bands came out at visibly different tones
+       * with a seam between them. The fix is structural rather than
+       * tonal — one fill, one blur, both rows inside it, and a hairline
+       * where the rows meet.
+       *
+       * Still one `<AppStatusStrip>` instance, deliberately: it holds a
+       * one-second interval and a visibilitychange listener, so rendering
+       * it once per breakpoint would run two of each. Instead this single
+       * wrapper changes behaviour at `md` — below it the header row is
+       * hidden and the wrapper is just the strip sticking under the mobile
+       * top bar; at and above it the wrapper pins to the top and carries
+       * both rows.
+       */}
+      <div
         className={cn(
-          "fixed top-0 right-0 left-0 z-40 hidden bg-background/55 backdrop-blur-xl md:block",
+          "sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-30 bg-background/50 backdrop-blur-2xl",
+          "md:fixed md:inset-x-0 md:top-0 md:z-40",
           className
         )}
       >
-        <div className="border-b border-border">
+        <header className="hidden border-b border-border md:block">
           <div
             className={cn(
               PAGE_COLUMN_CLASS,
@@ -117,31 +138,22 @@ export function AppHeader({
               {end ?? <DefaultAccountEnd />}
             </div>
           </div>
-        </div>
-      </header>
-      {/*
-       * Same translucent glass as the header above it, not `bg-background`.
-       * An opaque strip here ended the page's ambient glow at a razor edge
-       * — measured as a 0 -> 45 luminance step across ~2 CSS px right under
-       * the chrome — which read as the glow being "clipped by the header."
-       * The glow itself is `position: fixed` and always did sit behind the
-       * chrome; it was this slab painting over it.
-       *
-       * `/55`, not `/75`. `--background` is pure black, so this fill is a
-       * black veil and its alpha is exactly how much of the glow it eats —
-       * at 75% the top band showed a quarter of the light under it and the
-       * page still read as two lit corners with a dark bar ruled across the
-       * top. The bottom dock was worse at `/95`, i.e. effectively opaque.
-       * Both are the brightest parts of the field, so this is where the
-       * clipping was most visible.
-       *
-       * The blur does the legibility work, not the opacity: `backdrop-blur-xl`
-       * turns anything scrolling under into a soft wash, and the glow it
-       * sits on peaks at 40/255, so header text still measures far above
-       * AAA against it. Do not raise these back toward opaque to "fix"
-       * contrast without measuring it first.
-       */}
-      <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-30 bg-background/55 backdrop-blur-xl md:fixed md:top-14 md:right-0 md:left-0 md:z-40">
+        </header>
+        {/*
+         * `--background` is pure black, so this fill is a black veil and
+         * its alpha is exactly how much of the ambient glow it eats. It
+         * started opaque, which ended the glow at a razor edge right under
+         * the chrome — measured as a 0 -> 45 luminance step across ~2 CSS
+         * px — and read as the glow being "clipped by the header". The
+         * glow is `position: fixed` and always did sit behind the chrome;
+         * it was this slab painting over it.
+         *
+         * The blur does the legibility work, not the opacity: anything
+         * scrolling under becomes a soft wash, and the field it sits on
+         * peaks around 40/255, so header text measures far above AAA
+         * against it. Do not raise this back toward opaque to "fix"
+         * contrast without measuring it first.
+         */}
         <AppStatusStrip {...status} />
       </div>
       <div className={PAGE_CHROME_SPACER_CLASS} aria-hidden />

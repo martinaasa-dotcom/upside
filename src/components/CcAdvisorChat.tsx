@@ -892,7 +892,20 @@ export function CcAdvisorChat({
       className={
         open
           ? "pointer-events-none fixed z-40 flex flex-col items-end justify-end gap-3 p-3"
-          : "keyboard-chrome pointer-events-none fixed bottom-[max(1rem,calc(var(--dock-pad,1rem)+0.75rem))] right-[max(1rem,env(safe-area-inset-right))] z-40 flex flex-col items-end gap-3 lg:bottom-8 lg:right-8"
+          : // `lg:bottom-8` is gone on purpose. The bottom dock is
+            // `fixed inset-x-0 bottom-0` at every width, so a flat 2rem
+            // offset put this button *underneath* it on desktop: the dock
+            // painted over it, and because the dock is translucent with a
+            // 24px backdrop blur, the button's warm fill bled through as a
+            // soft yellow haze in the corner. It also meant clicks in that
+            // corner hit the dock, so Margus was unreachable on desktop.
+            // Both were hidden while the dock was near-opaque.
+            //
+            // `--dock-pad` is the live measured dock height (`useDockPad`),
+            // which is exactly the clearance this needs, and the non-`lg`
+            // value was already using it. Dropping the override lets every
+            // width clear the dock the same way.
+            "keyboard-chrome pointer-events-none fixed bottom-[max(1rem,calc(var(--dock-pad,1rem)+0.75rem))] right-[max(1rem,env(safe-area-inset-right))] z-40 flex flex-col items-end gap-3 lg:right-8"
       }
       style={
         open

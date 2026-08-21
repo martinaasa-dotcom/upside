@@ -22,6 +22,7 @@ import {
   SIGNIN_POINTS,
   SIGNIN_WHO,
 } from "@/lib/product";
+import { PAGE_FRAME_CLASS } from "@/lib/page-shell";
 import { supabaseIsConfigured } from "@/lib/supabase/env";
 import { useLoadingMessage } from "@/lib/use-loading-message";
 import Link from "next/link";
@@ -130,28 +131,34 @@ export function SignInGate({ children }: Props) {
   }
 
   return (
-    <div className="relative flex min-h-dvh flex-col overflow-x-clip overflow-y-auto bg-background text-foreground">
-      {/*
-       * Sign-in's ambient light. Two warm lobes, same as the signed-in
-       * `.page-frame::before` — deliberately not gain-green.
-       *
-       * The second lobe used to be `bg-gain/10`, and it was the
-       * "unexplained green glow" the design review kept asking about:
-       * measured rgb(0,11,7) on the right against rgb(37,34,21) warm on
-       * the left. globals.css already states the rule this broke —
-       * gain-green is a financial signal, so it means "this went up," and
-       * nothing on a signed-out page has gone up. It was decoration
-       * borrowing a semantic colour, on the first screen a stranger sees.
-       */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-        <div className="absolute -left-40 -top-48 h-[34rem] w-[34rem] rounded-full bg-primary/20 blur-[130px]" />
-        <div className="absolute -right-32 top-1/4 h-[26rem] w-[26rem] rounded-full bg-primary/10 blur-[130px]" />
-      </div>
+    /*
+     * `page-frame`, the same class every signed-in page uses, so this gets
+     * the app's real ambient field: warm `--primary` off the top-left, blue
+     * `--ambient-cool` off the bottom-right, sized in viewport units.
+     *
+     * It used to paint its own — two `rounded-full bg-primary/20
+     * blur-[130px]` circles, one of them warm on the *right*, where the
+     * field is supposed to be cool. That is why this page kept looking a
+     * generation behind the rest of the app: every pass that improved the
+     * glow improved `.page-frame::before`, and this screen was not using
+     * it. Nothing here should hand-roll ambient light again.
+     */
+    <div className={cn(PAGE_FRAME_CLASS, "overflow-x-clip overflow-y-auto")}>
       <main
         id="main"
-        className="relative z-10 mx-auto flex w-full min-w-0 max-w-6xl flex-1 flex-col justify-start px-6 py-[max(2.5rem,env(safe-area-inset-top))] pb-[max(3.5rem,env(safe-area-inset-bottom))] md:justify-center"
+        className="relative z-10 mx-auto flex w-full min-w-0 max-w-5xl flex-1 flex-col justify-start px-6 py-[max(2.5rem,env(safe-area-inset-top))] pb-[max(3.5rem,env(safe-area-inset-bottom))] md:justify-center"
       >
-        <div className="signin-rise grid items-center gap-8 md:grid-cols-[minmax(0,1fr)_20rem] md:gap-14 lg:gap-20">
+        {/*
+         * Both columns are sized to their content, and the pair is centred.
+         *
+         * The left column was `minmax(0,1fr)` while everything inside it is
+         * capped at `max-w-lg` / `max-w-md`. On a wide screen the column
+         * kept growing and the text did not, so the copy hugged the left
+         * edge and left a hole the width of the difference before the card
+         * started. Giving the column the same cap its content already has
+         * removes the hole without moving either side's own measure.
+         */}
+        <div className="signin-rise grid items-center justify-center gap-10 md:grid-cols-[minmax(0,32rem)_minmax(0,21rem)] md:gap-12 lg:gap-16">
           <div className="flex flex-col items-center text-center md:items-start md:text-left">
             <UpsideLogo variant="icon" className="signin-rise-1 text-lg" />
 
@@ -325,30 +332,58 @@ function BookStill() {
           </div>
         </div>
 
-        <div className="divide-y divide-border/60 overflow-hidden rounded-lg bg-muted">
+        {/*
+         * Three columns, not two, and the figures line up.
+         *
+         * The percent and the dollar used to sit in one span separated by a
+         * space, both in the same weight and colour, so `+6.8% +$3,640` read
+         * as one run of characters and nothing lined up down the rows. They
+         * are separate fixed-width `tabular-nums` columns now — the percent
+         * carries the gain/loss colour because that is the figure a person
+         * scans, and the money sits beside it in a quieter tone rather than
+         * competing with it.
+         *
+         * `glass-well` rather than the opaque `bg-muted` this had, so the
+         * ambient field reads through the sample the way it does through
+         * every real well in the app.
+         */}
+        <div className="divide-y divide-border/60 overflow-hidden rounded-lg glass-well">
           {SAMPLE_MOVERS.map((row) => (
             <div
               key={row.ticker}
-              className="flex items-center justify-between gap-3 px-3 py-2.5"
+              className="flex h-10 items-center gap-3 px-3"
             >
-              <span className="text-sm font-semibold text-foreground">
+              <span className="flex-1 font-heading text-sm font-semibold text-foreground">
                 ${row.ticker}
               </span>
               <span
                 className={cn(
-                  "text-sm font-semibold tabular-nums",
+                  "w-14 text-right font-mono text-sm font-medium tabular-nums",
                   row.up ? "text-gain" : "text-loss"
                 )}
               >
-                {row.pct}{" "}
-                <span className="font-normal">{row.dollar}</span>
+                {row.pct}
+              </span>
+              <span className="w-16 text-right font-mono text-sm tabular-nums text-muted-foreground">
+                {row.dollar}
               </span>
             </div>
           ))}
         </div>
 
         <Reading nested label="Worth noticing">
-          <InsightText text="$RKLB is up 6.8% today. Amazon and Microsoft barely moved. Check whether cheaper launches still hold, or this is just a bounce." />
+          {/*
+           * Rewritten. The old line read "Check whether cheaper launches
+           * still hold, or this is just a bounce" — "cheaper launches" was
+           * a thesis nobody outside this example knows, and "a bounce" is
+           * exactly the market slang AGENTS.md bans on anything a person
+           * reads. It also asked the reader to check something without
+           * saying why it mattered.
+           *
+           * This says the observation, then the reason it is worth a
+           * second look, in words a grandmother gets.
+           */}
+          <InsightText text="$RKLB rose 6.8% today while Amazon and Microsoft barely moved. When one name climbs on its own, the question is whether something changed at the company, or whether the price just ran ahead of itself." />
         </Reading>
 
         <div className="rounded-lg bg-muted p-3">

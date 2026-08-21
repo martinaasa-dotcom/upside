@@ -28,7 +28,14 @@ export function AnalyticsConsentBanner() {
     <div
       role="dialog"
       aria-label="Performance measurement"
-      className="fixed z-50 left-[max(0.75rem,env(safe-area-inset-left))] right-[max(0.75rem,env(safe-area-inset-right))] bottom-[max(0.75rem,calc(var(--dock-pad,5.5rem)+0.5rem))] md:left-auto md:w-[22rem]"
+      /*
+       * Bottom offset clears the dock *and* the Margus button above it.
+       * Both this and the button anchor to `--dock-pad`, so with the same
+       * offset they land on the same spot in the bottom-right corner and
+       * this one — being `z-50` — sits on the button and blurs it into a
+       * smear. `5rem` is the button (4rem at `lg`) plus a gap.
+       */
+      className="fixed z-50 left-[max(0.75rem,env(safe-area-inset-left))] right-[max(0.75rem,env(safe-area-inset-right))] bottom-[max(5.75rem,calc(var(--dock-pad,5.5rem)+5.5rem))] md:left-auto md:w-[22rem]"
     >
       <div className="flex flex-col gap-3 rounded-xl glass ring-1 ring-foreground/20 p-4">
         <p className="text-sm leading-relaxed text-foreground">

@@ -641,3 +641,87 @@ opening with the words "Breaks if". That is now the label.
 `NoteRows` refuses to render as a list below two rows, and falls back to a
 plain paragraph: a single labelled row is a label with nothing to distinguish
 itself from. Labels are plain language — "BREAKS IF", never "INVALIDATION".
+
+
+## Glass pass: one pane, deeper refraction, wider field (2026-08-21)
+
+Four reports, from a signed-in screenshot.
+
+### "Two weird layers of glass, it's not one smooth unit"
+
+The header row and the status strip were two sibling `fixed` elements, each
+with its own `bg-background/*` fill and its own `backdrop-blur`. Two blurs on
+two backdrops do not read as one sheet: each samples a different slice of what
+is behind it, so the bands came out at visibly different tones with a seam
+between them.
+
+Fixed structurally rather than tonally — one wrapper, one fill, one blur, both
+rows inside it, a hairline where they meet. Verified on the running app: the
+top chrome is now a single `div top=0 h=98 backdrop-filter: blur(40px)`.
+
+Still **one** `<AppStatusStrip>` instance. It holds a one-second interval and a
+visibilitychange listener, so rendering it once per breakpoint would run two of
+each; the single wrapper changes behaviour at `md` instead.
+
+### "The yellow glow on the footer is terrible"
+
+Not a glow. It was the Margus button.
+
+`CcAdvisorChat`'s FAB carried `lg:bottom-8`, a flat 2rem offset, while the dock
+is `fixed inset-x-0 bottom-0` at every width. So on desktop the button sat
+*underneath* the dock. Two consequences, both hidden while the dock was
+near-opaque and both exposed the moment it became translucent:
+
+1. The dock's 24px backdrop blur sampled the button's warm fill and smeared it
+   across the corner as a soft yellow haze.
+2. Clicks in that corner hit the dock. **Margus was unreachable on desktop.**
+
+`--dock-pad` is the live measured dock height and the non-`lg` branch was
+already using it, so the fix is to drop the override. The consent banner needed
+the same clearance — it anchors to `--dock-pad` too and was landing on the
+button once the button moved up.
+
+### "Increase the glassiness … refract like Apple's new glass"
+
+| | Was | Now |
+|---|---|---|
+| `.glass` fill | `transparent 38%` | `transparent 55%` |
+| `.glass` blur / saturate | `28px` / `1.6` | `40px` / `1.9` |
+| `.glass` top rim | white @ 24% | white @ 30% |
+| `.glass-well` fill | `transparent 50%` | `transparent 64%` |
+| `.glass-well` blur / saturate | `16px` / `1.4` | `24px` / `1.7` |
+| Chrome veils | `/55`–`/60`, `blur-xl` | `/50`, `blur-2xl` |
+
+More of the field passes through, and the heavier blur plus saturation lift is
+what makes it refract rather than just tint.
+
+Contrast re-measured on the running app afterwards, because a more transparent
+card means text sits closer to the light: muted on card **7.3–8.39**, foreground
+on card **16.8**, foreground on the header **18.6**. On a phone the bar's own
+glass over the brightest part of the field measures `rgb(19,17,11)` — foreground
+**18.2**, muted **9.1**. All far above AAA.
+
+*(Measuring that last one needs the bar's own children hidden first. Every point
+in the mobile bar is covered by some child's box, so a naive pixel scan returns
+the gold logo mark — a deliberate brand element, not a background — and reports
+a false 3.66.)*
+
+### "The background glow could cover an even bigger area"
+
+`130vw 82vh` → `150vw 96vh`, with a fifth tail stop. Peak alpha unchanged for
+the third widening running: 28% warm, 31% cool.
+
+| | Before | After |
+|---|---|---|
+| Lit field (≥ 4/255) | 43.9% | **60.1%** |
+| Corner peaks | 40 / 51 | 40 / 51 |
+| The two opposite corners | 1 / 2 | 3 / 3 |
+| Page middle | 2.1 | 5.7 |
+
+The middle at ~6/255 is *spread*, not lit — it still reads black against 40 and
+51 in the corners, and the opposite corners at 3 keep the diagonal. The share
+under 2/255 drops to 6.7%, which is why that metric alone stops being the whole
+story at this reach; read it together with the middle and the corner spread.
+
+One further step (`165vw × 108vh`) puts the middle at 7.6 and lit at 91.5%, and
+that is the wall.
