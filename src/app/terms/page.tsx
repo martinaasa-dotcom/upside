@@ -82,8 +82,15 @@ export default function TermsPage() {
 
         <Section title="4. Paid subscription">
           {PRODUCT_NAME} Pro is an optional paid subscription, billed monthly
-          and renewing automatically until you cancel. Card payments are
-          handled by Stripe; we never see or store your card number.
+          and renewing automatically until you cancel.{" "}
+          <strong className="text-foreground">
+            Pro does not unlock any features.
+          </strong>{" "}
+          Every part of {PRODUCT_NAME} works the same whether you subscribe or
+          not; Pro is a way to support the work, nothing more. The checkout
+          screen says the same thing, and this section exists so the contract
+          says it too. Card payments are handled by Stripe; we never see or
+          store your card number.
           Cancel anytime from{" "}
           <Link href="/account" className="underline hover:text-foreground">
             My account
@@ -92,10 +99,11 @@ export default function TermsPage() {
           active through the end of the period you already paid for; it does
           not refund the current period. If you are an EU consumer starting
           a new subscription, you have a 14-day right of withdrawal under EU
-          law, but by subscribing and getting immediate access you agree
-          that right ends once the paid period starts, consistent with the
-          exception EU law makes for digital services delivered immediately
-          with your consent. If we ever get something visibly wrong on a
+          law, and we do not ask you to waive it. The waiver EU law allows
+          is for digital content delivered to you immediately; since Pro
+          delivers no feature, that exception is not one we are willing to
+          lean on. Change your mind within 14 days and email us for a refund
+          of that first charge. If we ever get something visibly wrong on a
           charge, email us and we will sort it out. Prices shown at checkout
           include VAT for EU consumers where applicable under the OSS
           scheme; the amount you see at checkout is the amount charged.

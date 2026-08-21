@@ -132,9 +132,11 @@ export default function PrivacyPage() {
             </li>
             <li>
               <strong className="text-foreground">Market data providers</strong>{" "}
-              (Yahoo Finance and fallback quote providers). We send ticker
-              symbols to fetch prices. We don&apos;t send your holdings or
-              identity to these.
+              (Yahoo Finance, with Twelve Data and Finnhub as fallbacks). We
+              send ticker symbols to fetch prices &mdash; so a provider sees
+              which companies someone looked up, but never how many shares
+              you own, what you paid, or who you are. The request carries no
+              account, no name, and no session.
             </li>
             <li>
               <strong className="text-foreground">Vercel</strong>: hosting,
