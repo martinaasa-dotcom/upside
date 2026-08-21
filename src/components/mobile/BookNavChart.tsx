@@ -849,13 +849,15 @@ export function BookNavChart({
       )}
       {!assumed && onRestoreAssumed && (
         <div className="mt-4 flex justify-end">
-          <button
-            type="button"
-            onClick={onRestoreAssumed}
-            className="text-sm font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-          >
+          {/*
+            * A real Button, not a bare underlined link. Every other action
+            * on this page is a pill; this one was the only thing styled
+            * like body text with an underline on hover, which is what made
+            * it read as broken rather than quiet.
+            */}
+          <Button variant="ghost" size="sm" onClick={onRestoreAssumed}>
             Fill in an assumed year
-          </button>
+          </Button>
         </div>
       )}
       {onApplyAnchor && (

@@ -122,6 +122,24 @@
    * are backgrounds, not highlights, and must not turn translucent.
    */
   --hover: oklch(1 0 0 / 14%);
+
+  /*
+   * The one selected-surface. A stronger version of the same white veil.
+   *
+   * The selected segment used to paint `--secondary`, which is byte-for-byte
+   * `--muted` -- and `--muted` is what the segmented control's own container
+   * is filled with. So the selected pill painted itself exactly the colour
+   * it sat on and disappeared, while the hover veil above it stayed visible.
+   * The control ended up advertising the thing under your cursor more
+   * loudly than the thing you had chosen.
+   *
+   * A veil rather than a fill, for the same reason `--hover` is one: it is
+   * defined relative to whatever it sits on, so it cannot collide with its
+   * container the way a fixed colour did. It sits above `--hover` so the
+   * selected item still reads as the strongest surface when a neighbour is
+   * hovered.
+   */
+  --selected: oklch(1 0 0 / 26%);
   --brand: var(--primary);
   --brand-bright: var(--primary);
   --brand-mid: var(--primary);
@@ -146,6 +164,7 @@
   --color-card: var(--card);
   --color-raised: var(--raised);
   --color-hover: var(--hover);
+  --color-selected: var(--selected);
   --color-well: var(--well);
   --color-select: var(--select);
   --color-select-ink: var(--select-ink);
