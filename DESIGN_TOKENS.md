@@ -496,3 +496,50 @@ sizing in viewport units.
 Contrast was re-checked after dimming, since ambient light sits behind text:
 muted text on glass in the hottest corner measures 8.19-8.81 across those
 sizes -- better than the 7.92 this had originally, and well clear of AAA.
+
+
+## Two typefaces, split by job (2026-08-21)
+
+`--font-sans`, `--font-heading` and `--font-logo` all pointed at Geist, which
+made the three tokens decorative — the `font-heading` utility was on about
+twenty call sites and did nothing. They now divide real work:
+
+| Token | Face | Carries |
+|---|---|---|
+| `--font-sans` | Geist | Every sentence. Unchanged. |
+| `--font-mono` | Geist Mono | Every figure, percentage and share count. Unchanged. |
+| `--font-heading` | **Archivo** | Headings, panel titles, ticker cells. |
+| `--font-logo` | **Archivo** | The wordmark. |
+
+**Why Archivo.** `font-heading` lands anywhere from a 14px ticker cell to a
+24px hero, so a face with display-only proportions would fall apart at the
+small end; Archivo is a grotesque built to hold across sizes. Against Geist's
+rounder, wider neo-grotesque it reads tighter and more set — enough
+separation to be a pair, not enough to look like two unrelated fonts on one
+page. Loaded through `next/font`, which registers it under its real family
+name and generates `Archivo Fallback` with metric overrides, so the swap
+costs no layout shift. Verified against `document.fonts` in the running app
+rather than assumed.
+
+**One latent bug fixed with it.** The `h1…h4` element rule named
+`--font-sans` while every deliberate heading call site used the
+`font-heading` utility. With both tokens on Geist nothing gave the mismatch
+away; a bare `<h2>` and a `<h2 class="font-heading">` would have rendered in
+different faces the moment they diverged. The element rule now names
+`--font-heading`.
+
+**Tracking is a scale, not a constant.** It was a flat `-0.025em` at every
+level. Letterfit is optical — the spacing that reads right at 14px reads
+loose at 24px, because tracking is a fraction of the em and the gaps grow
+with the type. Now `-0.035em` at h1, `-0.028em` at h2, `-0.02em` below, with
+`PanelHeader` matching at its two sizes. `text-wrap: balance` on headings
+stops a two-line title leaving one orphan word on the second line.
+
+**What was tried and dropped.** A mono uppercase eyebrow label above panel
+titles (`TODAY · CIRCLE`) was built and then removed. It looked good, but
+every candidate placement repeated what the heading or the dock already
+said — the Pulse panel sits on a page the dock labels "Pulse", and the
+Compound results sit beside a panel titled "Growth calculator". Structure
+should encode something true about the content; this encoded nothing, so it
+was decoration. Worth revisiting only if a surface appears where a reader
+landing mid-page genuinely cannot tell what section they are in.

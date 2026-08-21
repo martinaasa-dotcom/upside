@@ -260,8 +260,10 @@ export function PanelHeader({
         <div className="min-w-0 flex-1">
           <h2
             className={cn(
-              "font-heading font-semibold tracking-tight text-foreground",
-              hero ? "text-2xl" : "text-lg"
+              /* Tracking is optical, so it tightens as the size grows —
+               * the fit that reads right at 18px reads loose at 24px. */
+              "font-heading font-semibold text-balance text-foreground",
+              hero ? "text-2xl tracking-[-0.035em]" : "text-lg tracking-[-0.028em]"
             )}
           >
             {title}

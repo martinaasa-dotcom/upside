@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Archivo, Geist, Geist_Mono } from "next/font/google";
 import { ConsentedAnalytics } from "@/components/ConsentedAnalytics";
 import { Providers } from "@/components/Providers";
 import { WebVitals } from "@/components/WebVitals";
@@ -22,6 +22,29 @@ const geist = Geist({
 
 const geistMono = Geist_Mono({
   variable: "--font-mono",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+/**
+ * The display face — headings and the wordmark only. Body copy and every
+ * figure stay on Geist/Geist Mono, so the two faces divide by job rather
+ * than competing.
+ *
+ * Archivo is a grotesque built to hold up across sizes, which is what this
+ * app needs: `font-heading` lands anywhere from a 14px ticker cell to a
+ * 24px hero, and a face with real display-only proportions would fall apart
+ * at the small end. Against Geist's rounder, wider neo-grotesque it reads
+ * as tighter and more set — enough separation to be a pair, not enough to
+ * look like two unrelated fonts on one page.
+ *
+ * `--font-display` rather than `--font-heading`: the latter is a Tailwind
+ * theme key in globals.css that generates the `font-heading` utility, and
+ * pointing next/font at the same name would have the two definitions
+ * fight.
+ */
+const archivo = Archivo({
+  variable: "--font-display",
   subsets: ["latin"],
   display: "swap",
 });
@@ -98,7 +121,12 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn("dark font-sans", geist.variable, geistMono.variable)}
+      className={cn(
+        "dark font-sans",
+        geist.variable,
+        geistMono.variable,
+        archivo.variable
+      )}
       data-timezone="Europe/Tallinn"
     >
       <body className="antialiased">

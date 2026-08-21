@@ -207,9 +207,19 @@
   --color-surface: var(--surface);
   --color-panel: var(--panel);
   --color-border: var(--border);
+  /*
+   * Two faces, split by job. Geist carries every sentence and every
+   * figure; Archivo carries headings and the wordmark. The families are
+   * named literally rather than through next/font's CSS variable because
+   * that is how this theme block already resolves them — `next/font`
+   * registers each face under its real family name, so "Archivo" matches
+   * the loaded webfont (verified against `document.fonts`, not assumed).
+   * Keep the `Fallback` entry second: next/font generates it with metric
+   * overrides, so the swap costs no layout shift.
+   */
   --font-sans: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
-  --font-heading: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
-  --font-logo: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Archivo", "Archivo Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-logo: "Archivo", "Archivo Fallback", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, monospace;
   --color-warning: var(--warning);
   --spacing-panel: var(--inset-panel);
@@ -549,23 +559,39 @@ body {
   }
 }
 
+/*
+ * Headings are `--font-heading`, not `--font-sans`. They always were in
+ * intent -- the `font-heading` utility is on ~20 call sites -- but this
+ * element rule named `--font-sans`, and while both tokens pointed at Geist
+ * nothing gave the mismatch away. A bare `<h2>` and a `<h2 class="font-heading">`
+ * now resolve to the same face, which is what the two tokens were for.
+ *
+ * Tracking tightens as size grows rather than sitting flat at -0.025em.
+ * Letterfit is optical: the spacing that looks right at 14px looks loose at
+ * 24px, because tracking is a fraction of the em and the gaps grow with it.
+ * `text-wrap: balance` keeps a two-line heading from leaving one orphan word
+ * on the second line -- the browser evens the lines instead.
+ */
 h1,
 h2,
 h3,
 h4 {
-  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  letter-spacing: -0.025em;
+  font-family: var(--font-heading), ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.02em;
   font-weight: 600;
+  text-wrap: balance;
 }
 
 h1 {
   font-size: 1.5rem;
   line-height: 2rem;
+  letter-spacing: -0.035em;
 }
 
 h2 {
   font-size: 1.125rem;
   line-height: 1.75rem;
+  letter-spacing: -0.028em;
 }
 
 h3 {
