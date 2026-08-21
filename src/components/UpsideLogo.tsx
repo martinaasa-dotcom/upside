@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import { cn } from "@/lib/format";
 import { PRODUCT_NAME } from "@/lib/product";
 
@@ -37,6 +38,28 @@ export const UPSIDE_HEADER_WORDMARK_CLASS =
  * on the page.
  */
 function UpsideMark({ className }: { className?: string }) {
+  /*
+   * Unique gradient ids per instance, and this is load-bearing rather than
+   * tidiness.
+   *
+   * The lockup renders more than once per page -- the mobile top bar and
+   * the desktop header both mount, with one hidden by a breakpoint. Both
+   * emitted `upside-mark-g0..9`, so `url(#upside-mark-g0)` resolved to the
+   * FIRST match in document order, which is the copy inside the hidden
+   * header. A paint server in a `display:none` subtree does not paint, so
+   * the visible mark filled with nothing: it held its 24x20 box and drew
+   * absolutely nothing, which is exactly what "the logo is missing" looks
+   * like.
+   *
+   * The old comment here said the prefix avoided colliding "with any other
+   * inline SVG on the page" -- true, and beside the point. It collided with
+   * a second copy of itself.
+   *
+   * `useId` is stable across server and client render, so this does not
+   * cause a hydration mismatch. The punctuation React puts in the value is
+   * legal in an id but awkward in a URL fragment, so it is stripped.
+   */
+  const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const facets: [string, string, string][] = [
     ["62.61,20.27 62.72,56.43 40.43,56.53", "#dfc59a", "#a6875d"],
     ["65.71,20.27 87.89,56.53 65.60,56.43", "#ead6ab", "#b29a6f"],
@@ -73,7 +96,7 @@ function UpsideMark({ className }: { className?: string }) {
         {facets.map(([, from, to], i) => (
           <linearGradient
             key={i}
-            id={`upside-mark-g${i}`}
+            id={`upside-mark-${uid}-g${i}`}
             x1="78"
             y1="18"
             x2="28"
@@ -91,7 +114,7 @@ function UpsideMark({ className }: { className?: string }) {
         * dropping the group leaves the bevel exactly where it was.
         */}
       {facets.map(([points], i) => (
-        <polygon key={i} points={points} fill={`url(#upside-mark-g${i})`} />
+        <polygon key={i} points={points} fill={`url(#upside-mark-${uid}-g${i})`} />
       ))}
     </svg>
   );

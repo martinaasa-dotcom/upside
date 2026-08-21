@@ -7005,6 +7005,60 @@ run("the Terms' description of Pro stays true", () => {
   );
 });
 
+run("SVG paint servers get per-instance ids, never literals", () => {
+  /*
+   * The logo vanished from the app bar because of this, and nothing caught
+   * it -- not types, not lint, not any test.
+   *
+   * The lockup mounts twice per page (the mobile top bar and the desktop
+   * header, one hidden by a breakpoint). Both emitted gradients with the
+   * same literal ids, so `url(#upside-mark-g0)` resolved to the FIRST match
+   * in document order -- the copy inside the hidden header. A paint server
+   * inside a `display:none` subtree does not paint, so the visible mark
+   * held its 24x20 box and drew nothing at all.
+   *
+   * The codebase already knew this: ForecastPanel and BookNavChart both
+   * derive their gradient id from `useId()`. The inline logo was the one
+   * place that used a literal, and it was introduced by this audit.
+   *
+   * A duplicate id is legal HTML, renders without complaint, and only
+   * misbehaves when two copies are on screen at once -- so the only
+   * defence is refusing the literal.
+   */
+  const PAINT_SERVERS = /<(linearGradient|radialGradient|pattern|filter|mask|clipPath)\b[^>]*\bid=(?!\{)/;
+
+  const offenders: string[] = [];
+  const walk = (dir: string) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(full);
+        continue;
+      }
+      if (!entry.name.endsWith(".tsx") || entry.name.includes(".test.")) continue;
+      const src = readFileSync(full, "utf8");
+      const rel = full.slice(full.indexOf("src/")).split(sep).join("/");
+      // A literal id (id="...") rather than an interpolated one (id={...}).
+      if (PAINT_SERVERS.test(src)) offenders.push(rel);
+    }
+  };
+  walk(join(process.cwd(), "src"));
+
+  assert.deepEqual(
+    offenders,
+    [],
+    `these give an SVG paint server a fixed id, which collides when the component mounts twice and leaves the visible copy painting nothing: ${offenders.join(", ")}`
+  );
+
+  // And the logo specifically must keep deriving its ids per instance.
+  const logo = readFileSync(
+    join(process.cwd(), "src/components/UpsideLogo.tsx"),
+    "utf8"
+  );
+  assert.match(logo, /useId\(\)/, "the logo mark must derive its gradient ids from useId");
+  assert.match(logo, /id=\{`upside-mark-\$\{uid\}/);
+});
+
 if (failed > 0) {
   console.error(`\n${failed} invariant(s) failed`);
   process.exit(1);
