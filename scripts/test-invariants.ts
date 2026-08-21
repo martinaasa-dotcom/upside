@@ -6937,6 +6937,74 @@ run("the logo mark fills its box, and its lockups keep its aspect", () => {
   }
 });
 
+run("the Terms' description of Pro stays true", () => {
+  /*
+   * Terms section 4 states, in bold, that Pro unlocks no features. That is
+   * accurate today: `subscription_status` drives the Account display, the
+   * Upgrade button and the nudge, and gates nothing.
+   *
+   * It is also a sentence in a consumer contract, which makes it exactly
+   * the kind of claim that goes quietly false. The day somebody puts a
+   * feature behind the plan, the contract is wrong and the checkout copy
+   * ("gets you nothing new, literally, not a single feature") is wrong with
+   * it -- and nobody editing a component would think to reopen the Terms.
+   *
+   * So this fails when a subscription check appears anywhere outside
+   * billing itself. The fix at that point is not to delete this test; it is
+   * to update section 4 and the checkout dialog, then add the new call site
+   * to the list below.
+   */
+  const terms = readFileSync(join(process.cwd(), "src/app/terms/page.tsx"), "utf8");
+  assert.match(terms, /Pro does not unlock any features/);
+  // The withdrawal right is not waived. Reinstating a waiver premised on
+  // "immediate access" needs Pro to actually deliver something first.
+  assert.match(terms, /we do not ask you to waive it/);
+
+  const nudge = readFileSync(
+    join(process.cwd(), "src/components/billing/UpgradeNudge.tsx"),
+    "utf8"
+  );
+  assert.match(nudge, /not a single\s*\n?\s*\*?\s*feature/);
+
+  /** Where knowing whether someone pays is legitimately part of the job. */
+  const BILLING_OWN = [
+    "src/lib/billing-status.ts",
+    "src/lib/billing-reconcile.ts",
+    "src/components/billing/UpgradeButton.tsx",
+    "src/components/billing/UpgradeNudge.tsx",
+    "src/components/AccountPage.tsx",
+    "src/app/api/billing/checkout/route.ts",
+    "src/app/api/billing/status/route.ts",
+    "src/app/api/billing/webhook/route.ts",
+    "src/app/api/cron/billing-reconcile/route.ts",
+  ];
+
+  const offenders: string[] = [];
+  const walk = (dir: string) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(full);
+        continue;
+      }
+      if (!/\.tsx?$/.test(entry.name) || entry.name.includes(".test.")) continue;
+      const rel = full.slice(full.indexOf("src/")).split(sep).join("/");
+      if (BILLING_OWN.includes(rel)) continue;
+      const src = readFileSync(full, "utf8");
+      if (/isActiveSubscription|subscriptionNeedsAttention/.test(src)) {
+        offenders.push(rel);
+      }
+    }
+  };
+  walk(join(process.cwd(), "src"));
+
+  assert.deepEqual(
+    offenders,
+    [],
+    `a subscription check outside billing means Pro now gates something, so the Terms and the checkout copy are no longer true: ${offenders.join(", ")}`
+  );
+});
+
 if (failed > 0) {
   console.error(`\n${failed} invariant(s) failed`);
   process.exit(1);
