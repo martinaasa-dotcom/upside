@@ -4,7 +4,7 @@
  */
 import assert from "node:assert/strict";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
+import { join, sep } from "node:path";
 import { buildBookInsights } from "../src/lib/book-insights";
 import { forecastThemeForTicker } from "../src/lib/forecast-conviction";
 import {
@@ -6815,6 +6815,50 @@ run("every text box that can fail tells you what happened", () => {
   assert.match(onboarding, /setStockError\("Type a ticker or a company name\."\)/);
   assert.match(onboarding, /Couldn't open a portfolio/);
   assert.match(onboarding, /Couldn't save that holding/);
+});
+
+run("every community route checks membership in code, not just auth", () => {
+  /*
+   * `getSupabaseDataClient()` returns the **service role** client whenever
+   * one is configured, and the service role bypasses RLS entirely. That is
+   * the documented convention here (AGENTS.md: "Prefer
+   * SUPABASE_SERVICE_ROLE_KEY for API writes, with ownership checks in
+   * code") -- but it means the database will not save a route that forgets
+   * to check. The code is the only gate there is.
+   *
+   * Every route under /api/communities/[id] was read by hand in the Round 2
+   * audit and every one of them checks. This turns that reading into
+   * something that stays true: a thirteenth route added next year cannot
+   * quietly ship without a gate, and the failure names the file.
+   *
+   * `requireAuthUser` alone is deliberately not enough to pass. Being
+   * signed in says nothing about belonging to *this* community, and these
+   * routes serve members' emails, bios, cost bases and combined books.
+   */
+  const dir = join(process.cwd(), "src/app/api/communities");
+  const routes: string[] = [];
+  const walk = (d: string) => {
+    for (const entry of readdirSync(d, { withFileTypes: true })) {
+      const full = join(d, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else if (entry.name === "route.ts") routes.push(full);
+    }
+  };
+  walk(dir);
+
+  const scoped = routes.filter((f) => f.includes(`communities${sep}[id]`));
+  // If this ever hits zero the glob broke and the test would pass vacuously.
+  assert.ok(scoped.length >= 9, `expected the [id] routes, found ${scoped.length}`);
+
+  for (const file of scoped) {
+    const src = readFileSync(file, "utf8");
+    const rel = file.slice(file.indexOf("src/"));
+    assert.match(src, /requireAuthUser/, `${rel} must require a signed-in user`);
+    assert.ok(
+      /userIsCommunityMember|userIsCommunityAdmin/.test(src),
+      `${rel} must check membership or admin -- the service role bypasses RLS, so nothing else will`
+    );
+  }
 });
 
 if (failed > 0) {

@@ -1,45 +1,57 @@
-# Pass 8 — Community: fix log
+# Pass 8 — Community fix log (Round 2)
 
-One row per finding in [`08-community.md`](08-community.md). Status is
-**Resolved**, **Deferred**, or **Stuck**. Nothing is marked Resolved
-without fresh re-verification evidence attached.
+Companion to `docs/audit/08-community.md`.
 
-> **The Critical fix is applied and verified in production** (2026-08-19).
-> The policy predicate was read back from `pg_policy` and matches the
-> migration clause for clause, and a fixture test — a throwaway classroom,
-> run as the student via `set local role authenticated`, rolled back —
-> returned `real book blocked = yes | paper sheet allowed = yes`. Both
-> branches confirmed: the bypass is closed and classrooms still work.
->
-> Verifying it surfaced a new adjacent finding, **N1** below — the separate
-> `_admin` policy permitted for a class admin what this fix denies for a
-> student. That is now fixed and applied too. A single rolled-back fixture
-> test covering both roles returns:
->
-> ```
-> student: real blocked = yes  |  paper allowed = yes
-> teacher: real blocked = yes  |  paper allowed = yes
-> ```
+| # | Item | Severity | Status | Evidence |
+|---|---|---|---|---|
+| — | No defects found | — | **No change needed** | 12 routes read; all gated |
+| G1 | Nothing structurally prevented a future ungated route | Medium | **Resolved** | New invariant; verified by adding a leaking route |
 
-| # | Finding | Severity | Status | Evidence | Notes |
-|---|---|---|---|---|---|
-| C1 | RLS let a student pin their real book into a classroom, bypassing the app's own rule | Critical | **Resolved — applied and verified in production** | `supabase/migrations/20260819120000_classroom_real_book_share_rls.sql`; report §Critical 1. Verified two ways on 2026-08-19: `pg_get_expr(polwithcheck, polrelid)` for `portfell_community_portfolios_owner_insert` matches the migration clause for clause (the `kind = 'classroom'` / `classroom_community_id` branch is live), and a fixture test — throwaway classroom, run as the student via `set local role authenticated` and `request.jwt.claims`, whole block rolled back — returned `real book blocked = yes \| paper sheet allowed = yes`. | The app-side rule was already correct; this closes the direct-PostgREST path around it. The positive half of the test matters as much as the negative one: a policy that rejected everything would look "secure" while breaking every classroom, and it doesn't. See **N1** for the sibling path this verification exposed. |
-| H2 | Removing or re-roling one classroom student could silently sweep in their household partner | High | **Resolved** (prior session) | Report §High 2; covered by the `classroom membership actions stay per person, not household-mirrored` invariant, which passes | Fixed when the pass was first run. |
-| H3 | A private community's existence leaked through 404-vs-403 on join-request | High | **Resolved** (prior session) | Report §High 3; covered by the `a private community's existence does not leak through join-request` invariant, which passes | Fixed when the pass was first run. |
-| M1 | Classroom `buy_price` is visible to every classmate, not just the teacher | Medium | **Resolved** | `src/app/api/communities/[id]/book/route.ts` — `showAllCost = classroom && viewerIsAdmin`, plus each student keeps their **own** rows (`ownIds`, derived from the `portfolio_owners` rows the route already fetches, so no extra query). Pinned by the invariant `a classmate's cost basis is not the whole class's business`. | Decided with Martin: narrow it to the teacher, and to yourself. The original comment ("so the teacher can see what students actually paid") named the intent; the check just didn't match it. Compare-your-picks-with-classmates survives intact because it runs on **returns**, which stay visible to everyone — the only thing removed is seeing what a specific classmate paid. Keeping your own cost visible was the part worth getting right: zeroing it for the owner too would have made a student's own class sheet read as a 0 basis, which is worse than the leak. Circles are untouched (cost stays hidden from everyone). |
-| M2 | The "keep at least one admin" invariant is enforced only in app code, not in RLS | Medium | **Resolved — applied to production (2026-08-19, Martin's word)** | `supabase/migrations/20260819160000_community_last_admin_and_classroom_unpin.sql` — a `before update or delete` trigger on `portfell_community_members` mirrors the app's own check (`route.ts:136,200-201`): demoting or deleting the last admin raises `Keep at least one admin`. Explicitly does not fire while a community itself is being deleted (checks the parent `portfell_communities` row is still visible; within one transaction a later command sees an earlier one's effects, so a community's own cascade delete of its last admin row still succeeds). Pinned by the invariant `a community keeps at least one admin, and a student can't self-unpin a classroom sheet, even over direct REST`. | Self-harm-only, so this was never urgent, but cheap once written. Not independently re-verified from this session — no reachable production Supabase project. |
-| **N1** (new, found while verifying C1) | The `_admin` policy re-opens the classroom hole for a class admin | Medium | **Resolved — applied and verified in production** (`supabase/migrations/20260819150000_classroom_admin_share_rls.sql`) | `supabase/migrations/016_account_aliases_and_community_sheets.sql:69-71`: `portfell_community_portfolios_admin` is `for all using (portfell_is_community_admin(community_id)) with check (same)` — no ownership check, no classroom check, and never redefined since. RLS policies are OR'd, so it grants exactly what C1's `owner_insert` fix denies, for anyone who is an admin of that community. | Surfaced while confirming C1 landed in production, not by the original pass. Much smaller than C1: a teacher pinning their **own** real book into their own class is self-inflicted, and pinning a **student's** real book needs that portfolio's UUID, which the other policies don't expose. But `AGENTS.md`'s "Never share a real book into a class" is currently enforced against students only. Fixed by adding the same classroom clause to the admin policy's `with check` only. `using` is left permissive on purpose, so an admin can still read and **remove** a wrongly-pinned row — constraining it would take away the way out of a bad state. Circles are untouched: the `not exists (… kind = 'classroom')` branch is true for them, so the clause short-circuits and circle admins keep the control they have today. |
-| L1 | A student can self-unpin their own classroom sheet via direct REST | Low | **Resolved — applied to production (2026-08-19, Martin's word)** | Same migration as M2 — `portfell_community_portfolios_owner_delete` (migration 043) now denies self-delete for a classroom row; only an admin can remove one, mirroring the insert-side classroom check already in migrations `20260819120000` and `20260819150000`. Circles keep owner self-delete untouched. | Cosmetic and self-inflicted regardless — it never escaped the trading-period lock, because `denyClassroomWrite` keys off `portfolios.classroom_community_id` directly. Folded into M2's migration since both needed the same manual-apply step. |
+## Why there is no fix list
 
-## Deferred summary
+Every community route already checks membership or admin. This is the first
+pass in the Round 2 audit to find nothing wrong, and that is reported as the
+result rather than padded.
 
-Nothing left deferred. **M1** was the one that needed Martin's call and
-has since been made and implemented (teacher plus yourself). **M2** and
-**L1** — database-side hardening for self-inflicted cases (an admin
-demoting themselves; a student hiding their own class sheet) — are
-resolved in `supabase/migrations/20260819160000_community_last_admin_and_classroom_unpin.sql`,
-which Martin has applied to production.
+One finding was drafted and withdrawn before it was written up:
+`[id]/book/route.ts` appeared to serve every member's email and bio with no
+membership check, until the check turned up at line 25 — above where I had
+started reading. Third time in this audit that reading a fragment produced a
+confident, wrong conclusion.
 
-**N1** was fixed rather than deferred once Martin opted into it — with
-that migration written, "never share a real book into a class" now holds
-against students *and* class admins.
+## G1 — the guard this pass ships instead
+
+The exposure here is not a bug that exists; it is the one that gets added.
+`getSupabaseDataClient()` returns the service role in production, which
+bypasses RLS, so a route that forgets to check has **nothing else standing
+behind it** — and these routes serve emails, bios, cost bases and combined
+books.
+
+The invariant walks `communities/[id]/**/route.ts` and requires
+`requireAuthUser` plus `userIsCommunityMember` or `userIsCommunityAdmin` in
+each. Signed-in alone does not pass: it says nothing about belonging to
+*this* community.
+
+Verified the way every guard in this audit is verified — by making it fail:
+
+```
+$ # add a route with requireAuthUser and nothing else
+fail  every community route checks membership in code, not just auth
+  src/app/api/communities/[id]/leaky/route.ts must check membership or
+  admin -- the service role bypasses RLS, so nothing else will
+```
+
+It also asserts it found at least 9 routes, so a broken glob fails loudly
+rather than passing vacuously — the failure mode that makes a
+file-walking test worthless.
+
+## Verification
+
+`npm run typecheck` clean · `npm run lint` clean ·
+`npm test` **191 tests / 36 files** · `npm run test:invariants` green.
+
+## Unable to Verify (Environment-Blocked)
+
+1. **No live cross-tenant attempt** from a real non-member session.
+2. **The invariant proves the gate is called, not that it is correct** —
+   `userIsCommunityMember` is read, not exercised against a database.
