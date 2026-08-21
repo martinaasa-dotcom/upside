@@ -1,28 +1,87 @@
-# Pass 9 — Compliance: fix log
+# Pass 9 — Compliance fix log (Round 2)
 
-One row per finding in [`09-compliance.md`](09-compliance.md). Status is
-**Resolved**, **Deferred**, or **Stuck**. Nothing is marked Resolved
-without fresh re-verification evidence attached.
+Companion to `docs/audit/09-compliance.md`.
 
-Checks run after the fixes in this log: `npx tsc --noEmit` clean,
-`npx eslint --max-warnings 0` clean on every touched file, `npm run test`
-111/111 (including a new assertion for the added export section),
-`npm run test:invariants` at its 2 pre-existing failures.
+| # | Finding | Severity | Status | Evidence |
+|---|---|---|---|---|
+| M1 | Two projection surfaces had no framing | Medium | **Resolved** | Both now carry a disclaimer in the panel header |
+| M2 | Export omitted co-ownership and account aliases | Medium | **Resolved** | New fields in both formats; test asserts both |
+| L1 | Unused constant in the legal-text file | Low | **Resolved** | Replaced with one that is displayed |
 
-| # | Finding | Severity | Status | Evidence | Notes |
-|---|---|---|---|---|---|
-| H1 | R2 disaster-recovery cold copies have no retention policy and are never purged for a deleted account | High | **Resolved** | `src/lib/dr/config.ts` default is **30 days** (was 90), pinned by `src/lib/dr/config.test.ts` so it can't drift from the published number. `docs/DISASTER_RECOVERY.md` documents the 45-day R2 lifecycle rule as a backstop and a restore obligation. Privacy policy §7 states 30 in all three places. | Decision taken: 30 days, cron prune as primary, bucket lifecycle rule at 45 days as a backstop. 30 because these copies exist to rebuild after catastrophic loss, a mass delete, or ransomware — all noticed in days, not months; 90 read as an archive, raising the GDPR bar for no operational gain. **History (2026-08-19):** this row briefly went to "Resolved in code; R2 itself is not provisioned" after it came out mid-session that no Cloudflare/R2 account had ever been created — the cron had been running nightly with cold storage silently skipped (`cold.skipped`, logged only as a warning) since this shipped, while the policy claimed otherwise. §7 was pulled back to describe only nightly in-database snapshots. Martin then created the R2 bucket, the 45-day lifecycle rule, and an API token (rotated once after the original token value was accidentally pasted somewhere it shouldn't have been) and set the four `DR_S3_*` vars in Vercel. §7's disclosure is restored on his instruction to treat the setup as working. **Confirmed by Martin (2026-08-19), not independently re-verified by this session** — he set all four `DR_S3_*` vars and asked that the setup be treated as working; nobody with sandbox access has personally seen a folder appear under `upside-lab/book-snapshots` in R2. If a check of the bucket after a `03:00 UTC` run ever comes back empty, `cold.skipped` failing silently is exactly the failure mode this finding was about — re-pull §7 and treat it as open again until it's confirmed. |
-| M1 | Privacy policy didn't disclose the R2 cold-copy channel | Medium | **Resolved** (Pass 10) | Pass 10 §Medium 1 | Handed to Pass 10 by design (a document change, not a compliance-code one) and closed there, disclosing the channel accurately without inventing a duration that doesn't exist. |
-| M2 | GDPR export omitted `portfell_community_invite_uses` | Medium | **Resolved** | `src/lib/gdpr/user-export.ts` — added to the `UserDataExport` type, queried in the main `Promise.all` (`.select("invite_id, used_at").eq("user_id", uid)`), returned as `community_invite_uses`, and given its own `csvSection`. Covered by a new assertion in `src/lib/gdpr/gdpr.test.ts` checking both the JSON body and the CSV section carry it. | Went past the report's suggestion in one respect: it described only the query, but the export has **two** serialisations, and adding the data without a `csvSection` would have left `?format=csv` still incomplete — a partial fix that looks closed. Both formats now carry it. |
-| L1 | `PulsePage.tsx`'s disclaimer was a duplicated literal instead of the shared constant | Low | **Resolved** (prior session) | Report §Low 1 — now imports `ADVICE_DISCLAIMER_SHORT` | Fixed when the pass was first run, merged to `main`. |
-| L2 | Hardcoded household/alias email tables retain PII indefinitely, untouched by account deletion | Low | **Resolved** | `supabase/migrations/20260819170000_purge_email_seed_tables_on_deletion.sql` extends `portfell_purge_user_data` (already resolves the deleting profile's email to scrub `portfell_error_log`) to also delete matching rows from `portfell_household_groups`, `portfell_account_aliases`, and `portfell_seed_claims`. Fires from the same `portfell_profiles` BEFORE DELETE trigger both the self-service RPC and a dashboard `deleteUser` already go through, so no new integration point. Pinned by the invariant `a deleted account's email doesn't survive in the hardcoded seed tables`. Applied to production 2026-08-19 (Martin's word, not independently re-verified from this session — no reachable production Supabase project). | Martin now has ~20 non-family users on the app — the 2026-08-12 direction this row was written to trigger on. Closes the gap without touching the tables' **content**: `AGENTS.md`'s guard is against inventing or editing whose emails are in these tables, and this migration adds zero rows and edits zero existing ones. It only ensures that *if* an email in any of the three ever matches a deleted account's email, that row goes with it — today that's still just Martin's own household (nothing else writes to these tables), but the erasure path is now complete regardless of who else the pattern is ever extended to. |
-| — | GDPR Article 8 EU consent-age question | Needs a decision | **Resolved** | `src/components/SignInGate.tsx` gates on `invite?.kind === "classroom" ? 13 : 16`; Terms and Privacy state both ages; the legal invariant now asserts both numbers appear in both documents **and** that the gate enforces exactly those. | Decision taken: split by how the account is created rather than pick one number for everyone. Classroom invite → 13 (a school context: pretend money, no payment, a teacher in between — and `AGENTS.md` describes Classroom as the high-school product, so a flat 16 would lock out precisely its users). Everything else → 16, the strictest member-state threshold, which retires the per-country analysis entirely and costs almost no real users. Country-dependent gating was rejected: it needs reliable geolocation to enforce an age nobody can verify anyway. The gate starts at 16 and only relaxes once a classroom invite has resolved, so an unknown visitor sees the strict default. Still worth a lawyer's sign-off — minors plus financial content — but it is no longer an open question. |
+---
 
-## Deferred summary
+## M1 — framing on the surfaces that project money
 
-Nothing left deferred. **L2** was written with the exact condition that
-would make it worth fixing — the household/alias pattern generalising
-beyond Martin's own family — and that condition is now true (~20 outside
-users), so it's fixed rather than still flagged. H1 and the Article 8
-question — the two genuine judgment calls this pass surfaced — were
-already decided and implemented before this.
+**Scenario simulator** now carries `FORECAST_DISCLAIMER` — the constant is
+documented "for forecast/scenario-modeling surfaces specifically", and this
+is one, so no new wording was invented.
+
+**Growth calculator** gets a new `PROJECTION_DISCLAIMER`:
+
+> "This is arithmetic on the numbers you typed, not a prediction. Real
+> investments go up and down, and no rate of return is guaranteed."
+
+Deliberately not a reuse of the advice language, and the reasoning is the
+point. On the AI surfaces the risk is being read as advice. Here the risk is
+being read as a **prediction** — and "not personalized investment advice"
+does nothing about that. The sentence that matters is that the rate is an
+assumption.
+
+Written to the house standard: a grandma gets every word of it. No "past
+performance", no "projected returns", no "hypothetical".
+
+## L1 — folded into M1
+
+`ADVICE_DISCLAIMER_LONG` was unused. Rather than delete it and leave a gap,
+it was **replaced** by `PROJECTION_DISCLAIMER`, which is displayed. The file
+comment now states the rule explicitly: everything defined there is shown
+somewhere, because an unused variant in a legal-text file reads as coverage
+that does not exist.
+
+## M2 — the export now answers "who else can see this?"
+
+Added `portfolio_co_owners` and `account_aliases`.
+
+**Two things went wrong while fixing it, both worth recording.**
+
+**The first draft used a PostgREST `.or()` filter with the address
+interpolated into it:**
+
+```ts
+.or(`alias_email.eq.${email},primary_email.eq.${email}`)
+```
+
+An `or` filter is a string the client assembles, so interpolating a value
+into it puts the filter's own grammar — commas, dots, parentheses — within
+reach of that value. Nobody controls their own auth email here today, so
+this was not exploitable; it is the kind of construction that is safe only
+because of a fact elsewhere, and stops being safe quietly. Replaced with two
+equality queries and a dedupe.
+
+**The second was caught by the test rather than by reading.** The new fields
+went into the JSON export and not into `toExportCsv`, so a person choosing
+CSV would have received a quietly smaller copy of their data than a person
+choosing JSON — a right-of-access answer that depends on which button was
+pressed. The test asserts both formats carry both fields, which is why it
+failed:
+
+```
+AssertionError: expected '# account\nuser_id,email\n…' to contain 'portfolio_co_owners'
+```
+
+The existing `gdpr.test.ts` also caught the change at the type level before
+any of this, by failing to compile — the fixture is a full `UserDataExport`,
+so adding a required field breaks it. That is the fixture doing its job.
+
+## Verification
+
+`npm run typecheck` clean · `npm run lint` clean ·
+`npm test` **192 tests / 36 files** · `npm run test:invariants` green.
+
+## Unable to Verify (Environment-Blocked)
+
+1. **The new export queries have not run against a real database**, so they
+   are confirmed to compile and to be serialized, not to return rows.
+2. **No real deletion run**; completeness is argued from the RPC and the FK
+   cascades.
+3. **No retention policy exists to audit the code against.**

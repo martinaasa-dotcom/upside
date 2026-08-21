@@ -44,10 +44,33 @@ export type UserDataExport = {
   portfolio_invites: unknown[];
   /** Which community invite links this person redeemed, and when. */
   community_invite_uses: unknown[];
+  /**
+   * Who else can reach this person's sheets, and which of their logins the
+   * app treats as the same person. Both are plainly personal data about the
+   * requester and nothing else in this export covered them: co-ownership is
+   * the record of who can see their holdings, and the alias link is what
+   * ties two email addresses to one human.
+   */
+  portfolio_co_owners: unknown[];
+  account_aliases: unknown[];
 };
 
 const INVITE_SAFE_COLUMNS =
   "id, portfolio_id, email, created_by, expires_at, accepted_at, revoked_at, created_at";
+
+/** The two alias lookups overlap when a row points an address at itself. */
+function dedupeAliasRows(rows: unknown[]): unknown[] {
+  const seen = new Set<string>();
+  const out: unknown[] = [];
+  for (const row of rows) {
+    const rec = row as { alias_email?: string; primary_email?: string };
+    const key = `${rec?.alias_email ?? ""}|${rec?.primary_email ?? ""}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(row);
+  }
+  return out;
+}
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
@@ -108,6 +131,11 @@ export function toExportCsv(payload: UserDataExport): string {
       "community_invite_uses",
       asRows(payload.community_invite_uses)
     ),
+    // Both formats carry the same data. A CSV export that quietly holds
+    // less than the JSON one is a right-of-access answer that depends on
+    // which button the person happened to press.
+    csvSection("portfolio_co_owners", asRows(payload.portfolio_co_owners)),
+    csvSection("account_aliases", asRows(payload.account_aliases)),
   ].join("\n\n");
 }
 
@@ -117,6 +145,7 @@ export async function collectUserExport(
   portfolioIds: string[]
 ): Promise<UserDataExport> {
   const uid = user.id;
+  const email = user.email?.trim().toLowerCase() || null;
 
   const [
     profileRes,
@@ -126,6 +155,9 @@ export async function collectUserExport(
     joinRes,
     inviteRes,
     inviteUseRes,
+    coOwnerRes,
+    aliasAsAliasRes,
+    aliasAsPrimaryRes,
   ] = await Promise.all([
     supabase.from(PORTFELL_TABLES.profiles).select("*").eq("id", uid).maybeSingle(),
     supabase
@@ -160,6 +192,38 @@ export async function collectUserExport(
       .from(PORTFELL_TABLES.communityInviteUses)
       .select("invite_id, used_at")
       .eq("user_id", uid),
+    // Every sheet this person co-owns, including ones someone else made and
+    // invited them onto. `portfolios` below is keyed off the same ownership
+    // rows, but only the sheets survive into the export -- the fact of who
+    // shares them does not, and that is the part a person asking "who can
+    // see my holdings?" actually wants.
+    supabase
+      .from(PORTFELL_TABLES.portfolioOwners)
+      .select("portfolio_id, created_at")
+      .eq("user_id", uid),
+    /*
+     * The alias link, looked up by address rather than id: this table
+     * predates profile ids and is keyed on emails.
+     *
+     * Two equality queries rather than one `.or()`. A PostgREST `or` filter
+     * is a string the client builds, so interpolating an address into it
+     * makes the filter's own grammar -- commas, dots, parentheses --
+     * reachable from a value. Nobody controls their own auth email here
+     * today, but a filter that is safe only because of that is the kind
+     * that stops being safe quietly.
+     */
+    email
+      ? supabase
+          .from(PORTFELL_TABLES.accountAliases)
+          .select("alias_email, primary_email, created_at")
+          .eq("alias_email", email)
+      : Promise.resolve({ data: [] as unknown[] }),
+    email
+      ? supabase
+          .from(PORTFELL_TABLES.accountAliases)
+          .select("alias_email, primary_email, created_at")
+          .eq("primary_email", email)
+      : Promise.resolve({ data: [] as unknown[] }),
   ]);
 
   let portfolios: unknown[] = [];
@@ -278,6 +342,11 @@ export async function collectUserExport(
       return typeof pid === "string" && owned.has(pid);
     }),
     community_invite_uses: inviteUses,
+    portfolio_co_owners: coOwnerRes.data ?? [],
+    account_aliases: dedupeAliasRows([
+      ...(aliasAsAliasRes.data ?? []),
+      ...(aliasAsPrimaryRes.data ?? []),
+    ]),
   };
 }
 

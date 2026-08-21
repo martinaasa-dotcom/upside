@@ -51,7 +51,20 @@ function UpsideMark({ className }: { className?: string }) {
   ];
   return (
     <svg
-      viewBox="0 0 128 128"
+      /*
+       * Tight to the artwork, which spans x 11.84..116.59 and
+       * y 20.27..104.64 -- 104.75 x 84.37, an aspect of 1.2416.
+       *
+       * This was `0 0 128 128` with the polygons pushed into it by a
+       * `translate(14 18) scale(0.78)`, which left roughly a third of the
+       * box as empty padding. Harmless at splash size and ruinous in the
+       * app bar: inside a 1.4em square the mark drew about 12 px and read
+       * as missing. The PNG this replaced was a tight crop (878x713, the
+       * same 1.23 aspect), so it filled whatever box it was given -- the
+       * padding is what changed when it became inline geometry, not the
+       * drawing.
+       */
+      viewBox="11.84 20.27 104.75 84.37"
       aria-hidden
       focusable="false"
       className={cn("block shrink-0", className)}
@@ -72,11 +85,14 @@ function UpsideMark({ className }: { className?: string }) {
           </linearGradient>
         ))}
       </defs>
-      <g transform="translate(14 18) scale(0.78)">
-        {facets.map(([points], i) => (
-          <polygon key={i} points={points} fill={`url(#upside-mark-g${i})`} />
-        ))}
-      </g>
+      {/*
+        * No wrapping transform. The polygon coordinates and the gradients'
+        * userSpaceOnUse coordinates were always in the same space, so
+        * dropping the group leaves the bevel exactly where it was.
+        */}
+      {facets.map(([points], i) => (
+        <polygon key={i} points={points} fill={`url(#upside-mark-g${i})`} />
+      ))}
     </svg>
   );
 }
@@ -145,7 +161,7 @@ export function UpsideLogo({
         role="img"
         aria-label={title}
       >
-        <UpsideMark className={cn("h-[1.35em] w-[1.35em]", LOCKUP_MARK_NUDGE)} />
+        <UpsideMark className={cn("h-[1.35em] w-[1.68em]", LOCKUP_MARK_NUDGE)} />
         <LogoType />
       </span>
     );
@@ -157,7 +173,7 @@ export function UpsideLogo({
       role="img"
       aria-label={title}
     >
-      <UpsideMark className={cn("h-[1.4em] w-[1.4em]", LOCKUP_MARK_NUDGE)} />
+      <UpsideMark className={cn("h-[1.4em] w-[1.74em]", LOCKUP_MARK_NUDGE)} />
       <LogoType
         className={
           alwaysType ? "max-[22.5rem]:hidden" : "hidden xs:inline"

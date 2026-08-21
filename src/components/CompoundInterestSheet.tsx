@@ -26,6 +26,7 @@ import {
 } from "@/lib/compound-play";
 import { blendedExpectedAnnualReturn } from "@/lib/forecast-conviction";
 import { cn, percent } from "@/lib/format";
+import { PROJECTION_DISCLAIMER } from "@/lib/disclaimer";
 import { persistCompoundSnapshot } from "@/lib/offline/snapshots";
 import { PALETTE } from "@/lib/palette";
 import { safeDiv } from "@/lib/money";
@@ -762,6 +763,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
         <PanelHeader
           icon={<Calculator className="h-4 w-4" />}
           title="Growth calculator"
+          subtitle={PROJECTION_DISCLAIMER}
           actions={
             <Segmented
               ariaLabel="Show amounts in"
