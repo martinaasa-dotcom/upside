@@ -148,6 +148,34 @@
   --select: var(--primary);
   --select-ink: var(--primary-foreground);
   --caution: var(--warning);
+  /*
+   * The ambient page glow's cool counter-lobe, and nothing else. See
+   * DESIGN_TOKENS.md "Ambient counter-lobe".
+   *
+   * Hue 250 is 160 degrees from `--primary`'s 90, i.e. all but the last
+   * twenty of the opponent contrast available. Blue and yellow are the
+   * two ends of one of the channels colour is actually encoded on leaving
+   * the retina, so this pair is opposite in the eye rather than merely on
+   * a diagram -- the most contrast the eye can register per unit of
+   * colour, which is what a wash this faint needs.
+   *
+   * It also clears every hue this palette has already spent: 88 degrees
+   * from `--gain` (162), 205 from `--warning` (45), 234 from `--loss`
+   * (16). That margin is the point rather than a bonus. The first version
+   * of this was a teal at hue 200, chosen while a blanket ban on violet
+   * pushed the search short of the complement; teal sits 38 degrees off
+   * the emerald that means a position went up, which is the one collision
+   * a money app cannot afford. The ban was lifted on 2026-08-21 and the
+   * hue moved with it.
+   *
+   * Lightness 0.72 / chroma 0.13 is where hue 250 stays in sRGB with
+   * headroom: verified by rasterising to a canvas, rgb(96,170,243), no
+   * channel pinned at 0 or 255.
+   *
+   * Not exported through `@theme inline` on purpose: there is no
+   * `bg-ambient-cool` utility, because there is no second call site.
+   */
+  --ambient-cool: oklch(0.72 0.13 250);
   --surface: var(--card);
   --panel: var(--card);
   --inset-panel: 1.5rem;
@@ -179,9 +207,19 @@
   --color-surface: var(--surface);
   --color-panel: var(--panel);
   --color-border: var(--border);
+  /*
+   * Two faces, split by job. Geist carries every sentence and every
+   * figure; Archivo carries headings and the wordmark. The families are
+   * named literally rather than through next/font's CSS variable because
+   * that is how this theme block already resolves them — `next/font`
+   * registers each face under its real family name, so "Archivo" matches
+   * the loaded webfont (verified against `document.fonts`, not assumed).
+   * Keep the `Fallback` entry second: next/font generates it with metric
+   * overrides, so the swap costs no layout shift.
+   */
   --font-sans: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
-  --font-heading: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
-  --font-logo: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Archivo", "Archivo Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-logo: "Archivo", "Archivo Fallback", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, monospace;
   --color-warning: var(--warning);
   --spacing-panel: var(--inset-panel);
@@ -244,18 +282,23 @@ body {
 }
 
 /*
- * Ambient glow shared by every signed-in page — one soft warm-yellow wash,
- * off the top-left corner, tall enough to sit behind the fixed header too
- * (so the header's own glass fill has something to refract instead of the
- * glow visibly stopping at its edge). `.page-frame` (PAGE_FRAME_CLASS)
- * wraps every screen and paints its own opaque bg-background, which would
- * otherwise hide a glow set on body. `isolation: isolate` gives it a
- * stacking context so the negative z-index pseudo below sits above that
- * fill but under the page's real content. Fixed position so it reads as
- * the room's light while scrolling, not a decoration tied to page length.
- * One color only, deliberately: gain-green is a financial signal
- * (DESIGN_TOKENS.md's Accent Palette), not decoration, so it doesn't
- * belong in ambient chrome that has nothing to do with performance.
+ * Ambient glow shared by every signed-in page — a warm-yellow key light off
+ * the top-left corner and a cool teal counter-lobe off the bottom-right,
+ * tall enough to sit behind the fixed header too (so the header's own glass
+ * fill has something to refract instead of the glow visibly stopping at its
+ * edge). `.page-frame` (PAGE_FRAME_CLASS) wraps every screen and paints its
+ * own opaque bg-background, which would otherwise hide a glow set on body.
+ * `isolation: isolate` gives it a stacking context so the negative z-index
+ * pseudo below sits above that fill but under the page's real content. Fixed
+ * position so it reads as the room's light while scrolling, not a decoration
+ * tied to page length.
+ *
+ * This used to be one colour, on the grounds that "gain-green is a financial
+ * signal, not decoration". That reasoning stands, and it is why the second
+ * hue is `--ambient-cool` (blue, hue 250) and not any near neighbour of
+ * `--gain` (emerald, 162): 88 degrees clear, so a corner wash cannot read as
+ * the app commenting on performance. See DESIGN_TOKENS.md "Ambient
+ * counter-lobe" for the measurements behind both lobes.
  */
 .page-frame {
   position: relative;
@@ -268,33 +311,69 @@ body {
   z-index: -1;
   pointer-events: none;
   /*
-   * Key light tightened and roughly doubled in strength (was 1700x1300 at
-   * 24%). Turning the glass blur back on changed nothing visible, and the
-   * measurement says why: a blur can only show itself if the backdrop it
-   * samples has structure, and behind a card this field varied by about
-   * 11 levels out of 255 in a perfectly smooth ramp. Blurring that is
-   * arithmetically indistinguishable from not blurring it.
+   * Two small corner lobes on a black field — warm off the top-left, teal
+   * off the bottom-right, and *real black* between them. The black is the
+   * design, not the leftover: it is what separates the two lights and
+   * keeps them reading as corners of a dark room rather than as a tint
+   * laid over the whole page. Roughly three quarters of the field
+   * measures under 2/255.
    *
-   * So the fix is the room, not the glass. A smaller, brighter,
-   * faster-falling lobe roughly doubles the field's dynamic range across
-   * a page (measured spread 33 -> 68 of 255) and makes it actually ramp
-   * across a row of cards, so each pane picks up the part of the light it
-   * sits in — which is the thing that reads as glass on a black field.
+   * Sized in `vw`/`vh`, not `px`, and that is the mobile fix. At a fixed
+   * 1250x1000 the lobe was wider than a phone, so both lights flooded the
+   * whole screen and stacked into horizontal bands: measured on a 390x844
+   * viewport, the old key light left the *top-right* corner at 58/255 and
+   * the middle of the page at 29/255 — no black anywhere, and no diagonal.
+   * A lobe measured against the viewport keeps the same proportion at
+   * every width, so the warm-to-teal read runs corner to corner on a phone
+   * exactly as it does on a desktop. The check for that is the other two
+   * corners: top-right and bottom-left both measure 0 at both sizes.
    *
-   * Deliberately still one warm light plus a faint counter-lobe. A second
-   * strong lobe was tried and measured worse: it lit both sides evenly and
-   * flattened the left-to-right difference between cards from 13 to 5.
+   * Anchored just off-screen (-6%/-8%, 106%/108%) so the brightest point
+   * of each lobe is outside the frame and only its falloff is visible.
+   * Anchored exactly on the corner instead, the hottest pixel sits in the
+   * frame and reads as a lamp rather than as spill.
+   *
+   * Three stops each, not two. A single colour-to-transparent ramp drops
+   * off in a way you can see the edge of — the lobe reads as a shape
+   * sitting on the page rather than as light. Falling 28 → 12 → 4 → 0
+   * spends most of the distance in the very dim end, so it thins out into
+   * the black with no boundary anywhere. Peaks and black area measure the
+   * same either way, so this buys nothing but the look, which is the
+   * point.
+   *
+   * Deliberately dim: peaks land near 40/255 warm and 35/255 blue, below
+   * the 94/255 this had before it was ever touched. Warm stays the
+   * stronger of the two — one key light plus a counter-lobe, not two
+   * lamps.
+   *
+   * The two alphas differ (28% warm, 31% cool) because sRGB is not
+   * symmetrical: its blue primary carries roughly a fourteenth of the
+   * luminance of its green, so the cool side has far less headroom at a
+   * given lightness. The numbers are matched by *measurement*, not by
+   * being written the same. Changing the cool hue means re-solving this
+   * alpha — the old teal at hue 200 sat at 25% for the same result.
+   *
+   * Every number above is measurable, so re-measure rather than eyeball if
+   * these change: corner peaks, the two *opposite* corners staying at 0
+   * (which is what makes it diagonal), and the share of the field under
+   * 2/255 (which is what keeps the black). Brightening this is the easy
+   * mistake — an earlier pass at 60%/34% with 1700px lobes lit 99% of the
+   * field and left no black at all.
    */
   background-image:
     radial-gradient(
-      1250px 1000px at -4% -8%,
-      oklch(from var(--primary) l c h / 52%),
-      transparent 66%
+      95vw 58vh at -6% -8%,
+      oklch(from var(--primary) l c h / 28%) 0%,
+      oklch(from var(--primary) l c h / 12%) 30%,
+      oklch(from var(--primary) l c h / 4%) 52%,
+      transparent 76%
     ),
     radial-gradient(
-      1300px 1000px at 100% 100%,
-      oklch(from var(--primary) l c h / 14%),
-      transparent 72%
+      95vw 58vh at 106% 108%,
+      oklch(from var(--ambient-cool) l c h / 31%) 0%,
+      oklch(from var(--ambient-cool) l c h / 13.5%) 30%,
+      oklch(from var(--ambient-cool) l c h / 5%) 52%,
+      transparent 78%
     );
 }
 
@@ -480,23 +559,39 @@ body {
   }
 }
 
+/*
+ * Headings are `--font-heading`, not `--font-sans`. They always were in
+ * intent -- the `font-heading` utility is on ~20 call sites -- but this
+ * element rule named `--font-sans`, and while both tokens pointed at Geist
+ * nothing gave the mismatch away. A bare `<h2>` and a `<h2 class="font-heading">`
+ * now resolve to the same face, which is what the two tokens were for.
+ *
+ * Tracking tightens as size grows rather than sitting flat at -0.025em.
+ * Letterfit is optical: the spacing that looks right at 14px looks loose at
+ * 24px, because tracking is a fraction of the em and the gaps grow with it.
+ * `text-wrap: balance` keeps a two-line heading from leaving one orphan word
+ * on the second line -- the browser evens the lines instead.
+ */
 h1,
 h2,
 h3,
 h4 {
-  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  letter-spacing: -0.025em;
+  font-family: var(--font-heading), ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.02em;
   font-weight: 600;
+  text-wrap: balance;
 }
 
 h1 {
   font-size: 1.5rem;
   line-height: 2rem;
+  letter-spacing: -0.035em;
 }
 
 h2 {
   font-size: 1.125rem;
   line-height: 1.75rem;
+  letter-spacing: -0.028em;
 }
 
 h3 {

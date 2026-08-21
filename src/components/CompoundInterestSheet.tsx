@@ -26,7 +26,6 @@ import {
 } from "@/lib/compound-play";
 import { blendedExpectedAnnualReturn } from "@/lib/forecast-conviction";
 import { cn, percent } from "@/lib/format";
-import { PROJECTION_DISCLAIMER } from "@/lib/disclaimer";
 import { persistCompoundSnapshot } from "@/lib/offline/snapshots";
 import { PALETTE } from "@/lib/palette";
 import { safeDiv } from "@/lib/money";
@@ -757,13 +756,32 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
   return (
     <div className="grid w-full min-w-0 max-w-full items-start gap-4 overflow-x-clip lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
       {/* min-h-0 / min-w-0: grid items default to min-content, which lets
-          wide tables below blow the calculator off a phone screen. */}
-      <div className="min-h-0 min-w-0 w-full max-w-full lg:sticky lg:top-24 lg:max-h-[calc(100dvh-6rem-var(--dock-pad))] lg:overflow-y-auto lg:overscroll-y-contain lg:[-webkit-overflow-scrolling:touch]">
+          wide tables below blow the calculator off a phone screen.
+
+          Deliberately NOT a pinned column. This used to be `lg:sticky
+          lg:top-24` with `lg:max-h-[calc(100dvh-6rem-var(--dock-pad))]`
+          and its own `lg:overflow-y-auto`, which cut the calculator off
+          mid-form: `--dock-pad` is the page's bottom clearance for the
+          fixed book dock (11.5rem on desktop, or the dock's measured
+          height once `useDockPad` runs), so the clamp came to roughly
+          `100dvh - 17.5rem` -- about 620px on a 900px window, and less
+          on a laptop or at browser zoom. "Adding along the way", the
+          last section of the form, fell below that line and was
+          reachable only by scrolling inside a container with no visible
+          scrollbar and a hard-cut bottom edge where the panel's own
+          border should be.
+
+          Pinning cannot be fixed by widening the clamp, either: a
+          sticky element taller than the viewport pins its top and puts
+          its bottom permanently off-screen. A form is scrolled through
+          and filled in, not consulted while reading something else --
+          so it scrolls with the page like every other panel in the app
+          (this was the only sticky sidebar in the codebase). */}
+      <div className="min-h-0 min-w-0 w-full max-w-full">
         <Panel className={SHEET_PANEL}>
         <PanelHeader
           icon={<Calculator className="h-4 w-4" />}
           title="Growth calculator"
-          subtitle={PROJECTION_DISCLAIMER}
           actions={
             <Segmented
               ariaLabel="Show amounts in"
