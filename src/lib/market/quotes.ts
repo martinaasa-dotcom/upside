@@ -12,6 +12,25 @@ import { yahooQuoteCandidates } from "@/lib/ticker";
 import type { Quote } from "@/lib/types";
 import { sanitizeQuote } from "@/lib/market/quote-sanitize";
 import { recallFx, recallQuotes, rememberFx, rememberQuotes } from "@/lib/market/quote-store";
+import {
+  markUnresolvable,
+  partitionUnresolvable,
+} from "@/lib/market/unresolvable";
+
+/**
+ * Most names one request may ask about.
+ *
+ * This is a cost ceiling, not a UI limit. A miss walks 17 exchange
+ * candidates at two upstream calls each, so an uncapped request amplifies
+ * roughly 34x per unknown name -- 50 made-up tickers measured at 1,718
+ * Yahoo requests from a single unauthenticated GET. The per-IP limiter in
+ * `rate-limit.ts` counts requests, which does not see that at all.
+ *
+ * 120 is far above any real book (the largest the app itself sends is a
+ * user's whole holdings list) and far below the point where one request can
+ * hurt the providers everybody shares.
+ */
+export const MAX_TICKERS_PER_REQUEST = 120;
 
 function quoteForRequested(
   quotes: Record<string, Quote>,
@@ -133,7 +152,13 @@ export async function fetchQuotesWithFallback(
   }
 
   const lastKnown = await recallQuotes(unique);
-  const yahoo = await fetchQuotesYahoo(unique);
+
+  // Names that resolved nowhere very recently are not asked about again --
+  // they are the expensive ones, and asking twice costs 52 upstream calls
+  // to learn what we already know. They still fall through to the cached
+  // and missing paths below exactly as before.
+  const { worthAsking, recentlyMissed } = partitionUnresolvable(unique);
+  const yahoo = await fetchQuotesYahoo(worthAsking);
   const quotes: Record<string, Quote> = {};
   ingestLive(yahoo.quotes, lastKnown, quotes, sources, "yahoo");
   aliasResolvedQuotes(unique, quotes, sources);
@@ -162,6 +187,12 @@ export async function fetchQuotesWithFallback(
       aliasResolvedQuotes(unique, quotes, sources);
       stillMissing = unresolvedSymbols(unique, quotes);
     }
+  }
+
+  // Anything that walked the whole provider chain and came back with
+  // nothing is remembered, so the next attempt is free.
+  if (stillMissing.length > 0) {
+    markUnresolvable(stillMissing.filter((t) => !recentlyMissed.includes(t)));
   }
 
   const liveQuotes: Record<string, Quote> = {};
