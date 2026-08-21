@@ -310,3 +310,64 @@ Two things were tried and measured *worse*, so don't reach for them:
 When judging a change here, measure rather than eyeball: page-wide field
 spread, the left-vs-right difference between two cards in the same row,
 and the top-edge lift in luminance levels.
+
+## Dim text on a primary fill: name the fill, never a variant (2026-08-21)
+
+`text-muted-foreground` is a grey tuned for the black field. Dropped
+inside a filled `--primary` pill — a selected tab, an active chip — it
+becomes mid-grey on light yellow, which is roughly invisible. That is what
+happened to the count in "All portfolios 3", and `globals.css` has carried
+a rule since then that re-resolves such text against
+`--primary-foreground` so it stays a step quieter than the label beside it
+without vanishing.
+
+That rule shipped with two selectors:
+
+```css
+.bg-primary .text-muted-foreground,
+[data-variant="default"] .text-muted-foreground { … }
+```
+
+The second one is the bug. `data-variant="default"` is not a primary fill
+— it is the *default variant* of nine separate shadcn primitives, each of
+which emits the attribute unconditionally: `Item`, `ItemMedia`, `Empty`,
+`Field`, `Badge`, `Button`, `TabsList`, `ToggleGroup`, `DropdownMenuItem`.
+Only `Badge` and `Button` actually paint `--primary` when default, and
+both already carry a literal `bg-primary` class, so the first selector had
+them covered. The other seven paint nothing, `bg-muted`, or the card — so
+every piece of secondary text inside any of them resolved to
+`--primary-foreground` (`oklch(0.145 0 0)`, near-black) at 65% alpha and
+disappeared into the black field.
+
+Measured in Chromium against the compiled bundle, before and after:
+
+| Element | Before | After |
+|---|---|---|
+| Leaderboard rank number (inside `ItemMedia`) | `oklch(0.145 0 0 / 0.65)` | `oklch(0.708 0 0)` |
+| "(you)" tag (inside `ItemTitle`) | `oklch(0.145 0 0 / 0.65)` | `oklch(0.708 0 0)` |
+| `DropdownMenuShortcut` | `oklch(0.145 0 0 / 0.65)` | `oklch(0.708 0 0)` |
+| `Empty` state copy | `oklch(0.145 0 0 / 0.65)` | `oklch(0.708 0 0)` |
+| Count inside a default `Badge` | `oklch(0.145 0 0 / 0.65)` | `oklch(0.145 0 0 / 0.65)` |
+
+The last row is the case the rule exists for, and it is unchanged. The
+first four are 21 files' worth of collateral — the community leaderboard,
+Account, the holding modal, Pulse, Forecast, the watchlist strip, the
+ticker drawer, snapshots, invites, onboarding, and the rest.
+
+**Rule: this selector may only ever name a fill.** If a future call site
+paints `--primary` some other way (a `data-active:bg-primary` variant, an
+inline style), give that element the plain `bg-primary` class too rather
+than widening the selector back out to a variant name.
+
+### Same pass: the leaderboard medals
+
+Rank 3 in the community "Today" list was drawing its medal in
+`text-caution` — i.e. `--warning`, the true orange this file reserves for
+"caution/warning states only … don't reach for it decoratively." A
+leaderboard row is not an alert, and third place lit up louder than first.
+Gold/silver/bronze is not a palette this app has, so the three medals are
+now one accent stepping down in strength — `text-primary`,
+`text-primary/65`, `text-primary/40` — which reads as rank without
+borrowing a semantic colour. (Rank 2's medal was previously
+`text-muted-foreground`, so it was also a casualty of the selector bug
+above and rendered near-black.)

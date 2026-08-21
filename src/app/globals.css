@@ -432,9 +432,27 @@ body {
    * Rather than trusting every future call site to notice, secondary text
    * on a primary fill resolves against `--primary-foreground` instead, so
    * it stays a step quieter than the label beside it without vanishing.
+   *
+   * The selector must name the *fill*, never a variant name. This used to
+   * read `.bg-primary .text-muted-foreground, [data-variant="default"]
+   * .text-muted-foreground` -- and `data-variant="default"` is not a
+   * primary fill, it is the default variant of nine separate shadcn
+   * primitives: `Item`, `ItemMedia`, `Empty`, `Field`, `Badge`, `Button`,
+   * `TabsList`, `ToggleGroup`, `DropdownMenuItem`. Only two of those
+   * (`Badge`, `Button`) actually paint `--primary` when default, and both
+   * carry a literal `bg-primary` class, so the first selector already had
+   * them covered. The other seven paint nothing, `bg-muted`, or the card
+   * -- so every piece of secondary text inside them resolved to
+   * `--primary-foreground` (oklch 0.145, near-black) at 65% alpha and went
+   * effectively invisible on the black field: the ranks and the "(you)"
+   * tag in the community leaderboard, the silver medal beside second
+   * place, menu shortcuts, field hints, empty-state copy.
+   *
+   * If a future call site paints a primary fill some other way (a
+   * `data-active:bg-primary` variant, an inline style), give it the plain
+   * `bg-primary` class too rather than widening this selector again.
    */
-  .bg-primary .text-muted-foreground,
-  [data-variant="default"] .text-muted-foreground {
+  .bg-primary .text-muted-foreground {
     color: color-mix(in oklch, var(--primary-foreground), transparent 35%);
   }
 
