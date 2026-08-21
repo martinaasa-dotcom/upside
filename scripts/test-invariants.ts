@@ -2193,11 +2193,22 @@ run("chrome is quiet, black field, prose sits in a dark box", () => {
    * selected segment stays *distinguishable* and that hover keeps using
    * the shared token rather than a one-off.
    */
-  assert.match(segmented, /data-\[state=on\]:bg-secondary/);
+  /*
+   * `--secondary` is byte-for-byte `--muted`, and `--muted` is what the
+   * segmented container is filled with, so a selected pill painted
+   * `bg-secondary` was exactly the colour it sat on and vanished. The
+   * selected surface is a veil now, defined relative to whatever is under
+   * it, so it cannot collide with its own container.
+   */
+  assert.match(segmented, /data-\[state=on\]:bg-selected/);
   assert.match(segmented, /data-\[state=on\]:text-primary/);
   assert.match(segmented, /hover:bg-hover/);
   // Never an opaque fill on the active segment again.
-  assert.doesNotMatch(segmented, /data-\[state=on\]:bg-(background|muted|card)\b/);
+  assert.doesNotMatch(
+    segmented,
+    /data-\[state=on\]:bg-(background|muted|card|secondary)\b/,
+    "a fixed colour can equal the container it sits on -- use the veil"
+  );
   // Hover must not reintroduce a one-off alpha wash beside the token.
   assert.doesNotMatch(segmented, /hover:bg-foreground\//);
   assert.doesNotMatch(panel, /bg-zinc-100 text-zinc-900/);
@@ -5757,9 +5768,10 @@ run("workspace nav marks the current room and the skip link exists", () => {
   // button in the bar. A raised secondary surface with primary text says
   // "you are here" without shouting.
   assert.ok(/aria-current=\{active \? "page"/.test(switcher));
-  assert.ok(/bg-secondary/.test(switcher));
+  assert.ok(/bg-selected/.test(switcher));
   assert.ok(/text-primary/.test(switcher));
   assert.ok(!/bg-primary text-primary-foreground/.test(switcher));
+  assert.ok(!/bg-secondary/.test(switcher), "bg-secondary equals bg-muted; use the selected veil");
   assert.ok(!/bg-zinc-100 text-zinc-900/.test(switcher));
   assert.ok(!/bg-brand\/20 text-brand-bright/.test(switcher));
   const providers = readFileSync(
@@ -7057,6 +7069,51 @@ run("SVG paint servers get per-instance ids, never literals", () => {
   );
   assert.match(logo, /useId\(\)/, "the logo mark must derive its gradient ids from useId");
   assert.match(logo, /id=\{`upside-mark-\$\{uid\}/);
+});
+
+run("nothing distinguishes a surface by a colour equal to its container", () => {
+  /*
+   * `--secondary` and `--muted` hold the same value. That is fine until
+   * something paints one on top of the other to say "this is the selected
+   * one", which is exactly what the segmented control did: the chosen pill
+   * was the same colour as the container it sat in and disappeared, while
+   * the hover veil above it stayed visible. The control advertised the item
+   * under your cursor more loudly than the item you had picked.
+   *
+   * This fails while the two tokens are identical AND anything uses
+   * bg-secondary for a selected state. If they are ever given different
+   * values, the check retires itself.
+   */
+  const css = readFileSync(join(process.cwd(), "src/app/globals.css"), "utf8");
+  const val = (name: string) => {
+    const m = new RegExp(`^\\s+--${name}:\\s*([^;]+);`, "m").exec(css);
+    return m ? m[1]!.trim() : null;
+  };
+  const secondary = val("secondary");
+  const muted = val("muted");
+  assert.ok(secondary && muted, "could not read --secondary / --muted");
+
+  if (secondary !== muted) return; // they differ now; nothing to guard
+
+  const offenders: string[] = [];
+  const walk = (dir: string) => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, e.name);
+      if (e.isDirectory()) { walk(full); continue; }
+      if (!/\.tsx?$/.test(e.name) || e.name.includes(".test.")) continue;
+      const src = readFileSync(full, "utf8");
+      if (/(data-\[state=on\]|aria-pressed|aria-selected|data-\[state=active\]):bg-secondary/.test(src)) {
+        offenders.push(full.slice(full.indexOf("src/")).split(sep).join("/"));
+      }
+    }
+  };
+  walk(join(process.cwd(), "src"));
+
+  assert.deepEqual(
+    offenders,
+    [],
+    `--secondary and --muted are both ${secondary}, so a selected state painted bg-secondary is invisible on a bg-muted container: ${offenders.join(", ")}`
+  );
 });
 
 if (failed > 0) {

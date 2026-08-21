@@ -45,7 +45,7 @@ export function WorkspaceSwitcher({ className }: { className?: string }) {
       size="sm"
       className={cn(
         active &&
-          "card-sheen bg-secondary text-primary hover:bg-secondary hover:text-primary"
+          "card-sheen bg-selected text-primary hover:bg-selected hover:text-primary"
       )}
     >
       <Link

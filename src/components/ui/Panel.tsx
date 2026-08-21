@@ -872,7 +872,7 @@ export function Stat(props: ScoreProps) {
  * pill (background, input border, shadow), same as TabsTrigger.
  */
 const SEGMENTED_ITEM =
-  "rounded-md border border-transparent text-muted-foreground shadow-none group-data-[spacing=0]/toggle-group:rounded-md group-data-horizontal/toggle-group:data-[spacing=0]:first:rounded-md group-data-horizontal/toggle-group:data-[spacing=0]:last:rounded-md hover:bg-hover hover:text-foreground data-[state=on]:card-sheen data-[state=on]:bg-secondary data-[state=on]:text-primary data-[state=on]:shadow-sm data-[state=on]:hover:bg-secondary";
+  "rounded-md border border-transparent text-muted-foreground shadow-none group-data-[spacing=0]/toggle-group:rounded-md group-data-horizontal/toggle-group:data-[spacing=0]:first:rounded-md group-data-horizontal/toggle-group:data-[spacing=0]:last:rounded-md hover:bg-hover hover:text-foreground data-[state=on]:card-sheen data-[state=on]:bg-selected data-[state=on]:text-primary data-[state=on]:shadow-sm data-[state=on]:hover:bg-selected";
 
 /**
  * The one segmented toggle. Overview's today/lifetime, the drawer's 3y/5y,
