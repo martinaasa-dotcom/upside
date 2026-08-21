@@ -49,7 +49,7 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
-import { ChevronRight, Plus, RefreshCw, X } from "lucide-react";
+import { ChevronRight, Loader2, Plus, RefreshCw, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 /** Stable server-side value; a fresh [] each render would churn the memo. */
@@ -236,6 +236,18 @@ export function WatchlistStrip({
   // without the server and client trees disagreeing.
   const [list, setList] = useHydratedCache<string[]>(loadWatchlist, EMPTY_LIST);
   const [draft, setDraft] = useState("");
+  /**
+   * What just happened to the thing you typed.
+   *
+   * Every path out of `add()` used to be a bare `return`: a name it could
+   * not resolve, a ticker you already hold, a search that failed. You
+   * pressed Enter and the app did nothing at all -- no message, no spinner,
+   * your text still sitting in the box. The onboarding modal ten files away
+   * gets this right for the same interaction, which is the standard here.
+   */
+  const [note, setNote] = useState<string | null>(null);
+  /** True while the company-name lookup is in flight. */
+  const [adding, setAdding] = useState(false);
   const [quotes, setQuotes] = useHydratedCache<Record<string, Quote>>(
     () => loadCachedQuotes().quotes,
     EMPTY_QUOTES
@@ -367,13 +379,18 @@ export function WatchlistStrip({
   }, [draft, suggestions.length]);
 
   async function add(symbol?: string) {
+    if (adding) return;
+    setNote(null);
     let t = (symbol ?? "").trim();
     if (t && !looksLikeTickerQuery(t)) t = "";
     if (!t) {
       const picked = pickTickerSuggestion(draft, suggestions);
       t = picked?.symbol ?? "";
     }
+    let lookupFailed = false;
     if (!t && draft.trim()) {
+      // The only slow step: turning a typed company name into a symbol.
+      setAdding(true);
       try {
         const res = await fetch(
           `/api/market/search?q=${encodeURIComponent(draft.trim())}`,
@@ -385,12 +402,36 @@ export function WatchlistStrip({
         t = pickTickerSuggestion(draft, data.results ?? [])?.symbol ?? "";
       } catch {
         t = "";
+        lookupFailed = true;
+      } finally {
+        setAdding(false);
       }
     }
     if (!t && looksLikeTickerQuery(draft)) t = normalizeYahooTicker(draft);
     t = normalizeYahooTicker(t);
-    if (!/^[A-Z0-9.=^-]{1,12}$/.test(t)) return;
-    if (heldTickers.some((h) => h.toUpperCase() === t)) return;
+    if (!/^[A-Z0-9.=^-]{1,12}$/.test(t)) {
+      // Tell apart "we could not reach the search" from "that is not a
+      // company we can find", because the first one is worth retrying.
+      setNote(
+        lookupFailed
+          ? "Couldn't look that up just now. Try again in a second."
+          : `No company found for "${draft.trim()}". Try the ticker symbol.`
+      );
+      return;
+    }
+    if (heldTickers.some((h) => h.toUpperCase() === t)) {
+      // Not a failure. You already own it, which is why it is not here.
+      setNote(`You already own ${t}, so it's in your portfolio, not your watchlist.`);
+      setDraft("");
+      setOpen(false);
+      return;
+    }
+    if (list.some((w) => w.toUpperCase() === t)) {
+      setNote(`${t} is already on your watchlist.`);
+      setDraft("");
+      setOpen(false);
+      return;
+    }
     const next = addWatchlistTicker(list, t);
     setList(next);
     setDraft("");
@@ -426,6 +467,7 @@ export function WatchlistStrip({
                     value={draft}
                     onChange={(e) => {
                       setDraft(sanitizeTickerQuery(e.target.value));
+                      setNote(null);
                       setOpen(true);
                     }}
                     onFocus={() => {
@@ -463,14 +505,26 @@ export function WatchlistStrip({
                     <InputGroupButton
                       type="submit"
                       size="icon-xs"
-                      disabled={!draft.trim()}
+                      disabled={!draft.trim() || adding}
                       aria-label="Add to watchlist"
                       className="touch-target lg:min-h-0 lg:min-w-0"
                     >
-                      <Plus />
+                      {adding ? <Loader2 className="animate-spin" /> : <Plus />}
                     </InputGroupButton>
                   </InputGroupAddon>
                 </InputGroup>
+                {note ? (
+                  /*
+                   * `role="status"` so a screen reader announces it without
+                   * stealing focus from the box the person is still typing in.
+                   */
+                  <p
+                    role="status"
+                    className="absolute top-full right-0 mt-1 max-w-56 text-right text-xs text-muted-foreground"
+                  >
+                    {note}
+                  </p>
+                ) : null}
               </form>
             </PopoverAnchor>
             <PopoverContent

@@ -103,6 +103,18 @@ export function markRateLimited(key: string, retryAfterSec: number) {
   });
 }
 
+/**
+ * Test seam: forget every bucket, as a cold serverless instance would.
+ *
+ * Exists so a test can simulate a caller landing on an instance that has
+ * never seen them -- the case a per-instance limiter cannot handle on its
+ * own, and the reason the market budget consults a shared bucket.
+ */
+export function resetRateLimitForTests() {
+  buckets.clear();
+  lastSweep = 0;
+}
+
 /** Client IP as Vercel sets it. First hop is the platform, so this is trustworthy on Vercel. */
 export function clientIp(req: Request): string {
   const vercel = req.headers
