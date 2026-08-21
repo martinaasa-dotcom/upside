@@ -17,11 +17,11 @@
       "schedule": "0 4 * * 0"
     },
     {
-      "path": "/api/cron/sunday-note",
+      "path": "/api/cron/sunday-note?resume=1",
       "schedule": "20 4 * * 0"
     },
     {
-      "path": "/api/cron/sunday-note",
+      "path": "/api/cron/sunday-note?resume=1",
       "schedule": "40 4 * * 0"
     },
     {
