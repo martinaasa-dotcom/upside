@@ -17,6 +17,12 @@ export const EMPTY_BOOK_NUDGE_BATCH = 40;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+type HoldingRow = {
+  ticker?: string | null;
+  shares?: number | null;
+  portfolio_id?: string | null;
+};
+
 export function hasLiveHoldings(
   rows: { ticker?: string | null; shares?: number | null }[]
 ): boolean {
@@ -143,46 +149,71 @@ export async function dispatchEmptyBookNudges(): Promise<{
   const aliasMap = await loadAliasMap(supabase);
   const recipients = collapseMailRecipients(profiles ?? [], aliasMap);
 
-  let sent = 0;
-  let skipped = 0;
-  for (const { to: email, profile } of recipients) {
-    if (
-      !email ||
-      !isEmptyBookNudgeDue({
+  // Everyone still due, decided in memory before any per-person query.
+  const due = recipients.filter(
+    ({ to, profile }) =>
+      to &&
+      isEmptyBookNudgeDue({
         createdAt: profile.created_at as string,
         sentAt: profile.empty_book_nudge_sent_at as string | null,
       })
-    ) {
-      skipped += 1;
-      continue;
-    }
+  );
+  let sent = 0;
+  let skipped = recipients.length - due.length;
 
-    const { data: owns } = await supabase
-      .from(PORTFELL_TABLES.portfolioOwners)
-      .select("portfolio_id")
-      .eq("user_id", profile.id);
-    const ids = (owns ?? []).map((o) => o.portfolio_id as string);
+  // Three batched reads for the whole batch, not two per candidate. At the
+  // 40-candidate cap that is 3 round trips where it used to be up to 80.
+  const dueUserIds = due.map(({ profile }) => profile.id as string);
+  const { data: ownRows } = dueUserIds.length
+    ? await supabase
+        .from(PORTFELL_TABLES.portfolioOwners)
+        .select("portfolio_id, user_id")
+        .in("user_id", dueUserIds)
+    : { data: [] as { portfolio_id: string; user_id: string }[] };
+  const owned = (ownRows ?? []) as { portfolio_id: string; user_id: string }[];
+  const idsByUser = new Map<string, string[]>();
+  for (const row of owned) {
+    const bucket = idsByUser.get(row.user_id);
+    if (bucket) bucket.push(row.portfolio_id);
+    else idsByUser.set(row.user_id, [row.portfolio_id]);
+  }
+  const allIds = [...new Set(owned.map((r) => r.portfolio_id))];
 
-    let hasClassroom = false;
-    let live = false;
-    if (ids.length > 0) {
-      const { data: books } = await supabase
+  const { data: bookRows } = allIds.length
+    ? await supabase
         .from(PORTFELL_TABLES.portfolios)
         .select("id, classroom_community_id")
-        .in("id", ids);
-      hasClassroom = (books ?? []).some((p) =>
-        isClassroomSheet({
-          classroom_community_id: p.classroom_community_id as string | null,
-        })
-      );
-      const { data: rows } = await supabase
+        .in("id", allIds)
+    : { data: [] as { id: string; classroom_community_id: string | null }[] };
+  const classroomIds = new Set(
+    ((bookRows ?? []) as { id: string; classroom_community_id: string | null }[])
+      .filter((p) =>
+        isClassroomSheet({ classroom_community_id: p.classroom_community_id })
+      )
+      .map((p) => p.id)
+  );
+
+  const { data: holdingRows } = allIds.length
+    ? await supabase
         .from(PORTFELL_TABLES.holdings)
-        .select("ticker, shares")
-        .in("portfolio_id", ids);
-      live = hasLiveHoldings(
-        (rows ?? []) as { ticker?: string | null; shares?: number | null }[]
-      );
-    }
+        .select("ticker, shares, portfolio_id")
+        .in("portfolio_id", allIds)
+    : { data: [] as HoldingRow[] };
+  const holdingsByPortfolio = new Map<string, HoldingRow[]>();
+  for (const row of (holdingRows ?? []) as HoldingRow[]) {
+    const key = String(row.portfolio_id ?? "");
+    if (!key) continue;
+    const bucket = holdingsByPortfolio.get(key);
+    if (bucket) bucket.push(row);
+    else holdingsByPortfolio.set(key, [row]);
+  }
+
+  for (const { to: email, profile } of due) {
+    const ids = idsByUser.get(profile.id as string) ?? [];
+    const hasClassroom = ids.some((id) => classroomIds.has(id));
+    const live = hasLiveHoldings(
+      ids.flatMap((id) => holdingsByPortfolio.get(id) ?? [])
+    );
 
     if (shouldSkipEmptyBookNudge({ hasClassroomSheet: hasClassroom, hasLiveHoldings: live })) {
       skipped += 1;

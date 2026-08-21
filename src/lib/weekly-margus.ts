@@ -172,7 +172,13 @@ function accept(text: string): string | null {
 }
 
 export async function writeWeeklyTake(
-  letter: WeeklyLetter
+  letter: WeeklyLetter,
+  /**
+   * How long this one letter may spend with the model. The weekly cron
+   * writes many letters inside a single 60s function, so it passes whatever
+   * its own run has left rather than letting each call take a fixed 22s.
+   */
+  opts: { budgetMs?: number } = {}
 ): Promise<string | null> {
   if (chatIsBusy()) return fallbackWeeklyTake(letter);
   if (!beginBackgroundLlm()) return fallbackWeeklyTake(letter);
@@ -198,7 +204,7 @@ Do not restate these rules. Do not list words to avoid. Do not plan out loud.`,
           maxOutputTokens: 640,
           abortSignal: signal,
         }),
-      { deadlineAt: Date.now() + 22_000 }
+      { deadlineAt: Date.now() + (opts.budgetMs ?? 22_000) }
     );
     return accept(text) ?? fallbackWeeklyTake(letter);
   } catch (err) {

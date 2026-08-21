@@ -892,6 +892,7 @@ export type Database = {
           morning_note: boolean
           note_morning: boolean
           note_sunday: boolean
+          note_sunday_sent_at: string | null
           plan: string | null
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
@@ -913,6 +914,7 @@ export type Database = {
           morning_note?: boolean
           note_morning?: boolean
           note_sunday?: boolean
+          note_sunday_sent_at?: string | null
           plan?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
@@ -934,6 +936,7 @@ export type Database = {
           morning_note?: boolean
           note_morning?: boolean
           note_sunday?: boolean
+          note_sunday_sent_at?: string | null
           plan?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null

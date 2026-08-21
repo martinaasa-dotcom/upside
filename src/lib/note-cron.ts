@@ -1,5 +1,6 @@
 import {
   collapseMailRecipients,
+  connectedEmailsFor,
   emailMatchesAllowlist,
   loadAliasMap,
 } from "@/lib/auth/identity";
@@ -22,6 +23,76 @@ import { noteEmailConfigured, sendNoteEmail } from "@/lib/send-note";
 import { getSupabaseServer, supabaseUsesServiceRole } from "@/lib/supabase/server";
 import { PORTFELL_TABLES } from "@/lib/supabase/tables";
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * How long the whole run may take before it stops starting new recipients.
+ *
+ * The route's `maxDuration` is 60s. Leaving 10s of headroom means the
+ * dispatcher returns its own JSON -- with a truthful `remaining` count --
+ * instead of being killed mid-send and serving the platform's plain-text
+ * timeout page.
+ */
+const RUN_BUDGET_MS = 50_000;
+
+/** Per-recipient model budget, capped again by whatever the run has left. */
+const LETTER_BUDGET_MS = 20_000;
+
+/**
+ * Below this there is no point starting another letter -- the model call
+ * alone would not land, and a half-written run is worse than a resumed one.
+ */
+const MIN_LETTER_MS = 8_000;
+
+type BookRow = {
+  id: string;
+  cash_balance: number;
+  classroom_community_id?: string | null;
+};
+type HoldingRow = {
+  ticker?: string | null;
+  shares?: number | null;
+  buy_price?: number | null;
+  portfolio_id?: string | null;
+};
+type LabRow = {
+  conviction?: unknown;
+  watchlist?: unknown;
+  owner_id?: string | null;
+};
+
+/**
+ * A recipient marked inside this window is skipped.
+ *
+ * The letter goes out weekly, so three days is comfortably long enough that
+ * a resumed run never writes to the same person twice and comfortably short
+ * enough that next Sunday is never blocked.
+ */
+const RESEND_WINDOW_MS = 3 * DAY_MS;
+
+export function weeklyLetterAlreadySent(
+  sentAt: string | Date | null | undefined,
+  now: Date = new Date()
+): boolean {
+  if (!sentAt) return false;
+  const at = new Date(sentAt).getTime();
+  if (!Number.isFinite(at)) return false;
+  return now.getTime() - at < RESEND_WINDOW_MS;
+}
+
+/** Group rows by a key, so one batched query replaces a query per recipient. */
+function groupBy<T>(rows: readonly T[], key: (row: T) => string | null): Map<string, T[]> {
+  const out = new Map<string, T[]>();
+  for (const row of rows) {
+    const k = key(row);
+    if (!k) continue;
+    const bucket = out.get(k);
+    if (bucket) bucket.push(row);
+    else out.set(k, [row]);
+  }
+  return out;
+}
+
 export type NoteDispatchOpts = {
   /** When set, only these addresses get a note. Scheduled cron leaves this off. */
   onlyEmails?: readonly string[];
@@ -43,6 +114,8 @@ export async function dispatchWeeklyLetters(
   sent: number;
   skipped: number;
   optedIn: number;
+  /** Recipients the run did not reach before its deadline. A later run takes them. */
+  remaining: number;
   emailed: boolean;
   error?: string;
   status?: number;
@@ -53,6 +126,7 @@ export async function dispatchWeeklyLetters(
       sent: 0,
       skipped: 0,
       optedIn: 0,
+      remaining: 0,
       emailed: false,
       error: "Note skipped. Service role is not configured.",
       status: 503,
@@ -65,6 +139,7 @@ export async function dispatchWeeklyLetters(
       sent: 0,
       skipped: 0,
       optedIn: 0,
+      remaining: 0,
       emailed: false,
       error: "Supabase not configured",
       status: 400,
@@ -73,7 +148,7 @@ export async function dispatchWeeklyLetters(
 
   const { data: profiles, error } = await supabase
     .from(PORTFELL_TABLES.profiles)
-    .select("id, email, display_name")
+    .select("id, email, display_name, note_sunday_sent_at")
     .eq("note_sunday", true);
   if (error) {
     return {
@@ -81,6 +156,7 @@ export async function dispatchWeeklyLetters(
       sent: 0,
       skipped: 0,
       optedIn: 0,
+      remaining: 0,
       emailed: false,
       error: error.message,
       status: 500,
@@ -104,125 +180,222 @@ export async function dispatchWeeklyLetters(
       sent: 0,
       skipped: recipients.length,
       optedIn: recipients.length,
+      remaining: 0,
       emailed: false,
     };
   }
+  const startedAt = Date.now();
+  const optedIn = recipients.length;
+
+  // Anyone already written to this week is done -- this is what lets a run
+  // that stopped at its deadline be resumed by the next one without
+  // double-mailing.
+  //
+  // A targeted send (`?only=me`, or any non-cron hit) is a test by
+  // definition, so it ignores the marker and does not stamp one -- otherwise
+  // testing the letter on Saturday would make Sunday's real run skip you.
+  const isTestSend = allowSet.size > 0;
+  const now = new Date();
+  const pending = recipients.filter(
+    ({ to, profile }) =>
+      to &&
+      (isTestSend ||
+        !weeklyLetterAlreadySent(
+          (profile as { note_sunday_sent_at?: string | null })
+            .note_sunday_sent_at,
+          now
+        ))
+  );
+  let skipped = optedIn - pending.length;
   let sent = 0;
-  let skipped = 0;
-  for (const { to: email, profile } of recipients) {
-    if (!email) {
-      skipped += 1;
-      continue;
-    }
-    const { data: owns } = await supabase
-      .from(PORTFELL_TABLES.portfolioOwners)
-      .select("portfolio_id")
-      .eq("user_id", profile.id);
-    const ids = (owns ?? []).map((o) => o.portfolio_id as string);
-    if (ids.length === 0) {
-      skipped += 1;
-      continue;
-    }
-    const { data: bookRows } = await supabase
-      .from(PORTFELL_TABLES.portfolios)
-      .select("id, cash_balance, classroom_community_id")
-      .in("id", ids);
-    const books = (bookRows ?? []) as {
-      id: string;
-      cash_balance: number;
-      classroom_community_id?: string | null;
-    }[];
-    const noteBooks = ownedBookPortfolios(books);
-    const noteIds = new Set(
-      (noteBooks as { id: string }[]).map((p) => p.id)
+
+  // ---- One batched read per table, not one per recipient. ----------------
+  //
+  // This loop used to issue four sequential queries for every recipient, so
+  // the database round trips grew linearly with the mailing list while the
+  // function's time budget stayed at 60s. The same data comes back in four
+  // queries total.
+  const userIds = pending.map(({ profile }) => profile.id as string);
+  const { data: ownRows } = userIds.length
+    ? await supabase
+        .from(PORTFELL_TABLES.portfolioOwners)
+        .select("portfolio_id, user_id")
+        .in("user_id", userIds)
+    : { data: [] as { portfolio_id: string; user_id: string }[] };
+  const ownsByUser = groupBy(
+    (ownRows ?? []) as { portfolio_id: string; user_id: string }[],
+    (r) => r.user_id
+  );
+
+  const allPortfolioIds = [
+    ...new Set((ownRows ?? []).map((r) => r.portfolio_id as string)),
+  ];
+  const { data: bookRows } = allPortfolioIds.length
+    ? await supabase
+        .from(PORTFELL_TABLES.portfolios)
+        .select("id, cash_balance, classroom_community_id")
+        .in("id", allPortfolioIds)
+    : { data: [] as BookRow[] };
+  const bookById = new Map(
+    ((bookRows ?? []) as BookRow[]).map((b) => [b.id, b])
+  );
+
+  const { data: holdingRows } = allPortfolioIds.length
+    ? await supabase
+        .from(PORTFELL_TABLES.holdings)
+        .select("ticker, shares, buy_price, portfolio_id")
+        .in("portfolio_id", allPortfolioIds)
+    : { data: [] as HoldingRow[] };
+  const holdingsByPortfolio = groupBy(
+    (holdingRows ?? []) as HoldingRow[],
+    (h) => (h.portfolio_id as string) ?? null
+  );
+
+  const { data: labRows } = userIds.length
+    ? await supabase
+        .from(PORTFELL_TABLES.labState)
+        .select("conviction, watchlist, owner_id")
+        .in("owner_id", userIds)
+    : { data: [] as LabRow[] };
+  const labByOwner = new Map(
+    ((labRows ?? []) as LabRow[]).map((l) => [l.owner_id as string, l])
+  );
+
+  // ---- Assemble every letter's inputs in memory, then quote once. --------
+  type Prepared = {
+    to: string;
+    profile: (typeof pending)[number]["profile"];
+    cash: number;
+    holdings: { ticker: string; shares: number; buy_price: number }[];
+    tickers: string[];
+    watchlist: string[];
+    lab: LabRow | undefined;
+  };
+  const prepared: Prepared[] = [];
+  for (const { to, profile } of pending) {
+    const ids = (ownsByUser.get(profile.id as string) ?? []).map(
+      (o) => o.portfolio_id
     );
-    if (noteIds.size === 0) {
+    const books = ids
+      .map((id) => bookById.get(id))
+      .filter((b): b is BookRow => Boolean(b));
+    const noteBooks = ownedBookPortfolios(books) as BookRow[];
+    if (noteBooks.length === 0) {
       skipped += 1;
       continue;
     }
-    const { data: rows } = await supabase
-      .from(PORTFELL_TABLES.holdings)
-      .select("ticker, shares, buy_price, portfolio_id")
-      .in("portfolio_id", [...noteIds]);
-    const holdings = (rows ?? []).map((h) => ({
-      ticker: String(h.ticker ?? "").toUpperCase(),
-      shares: Number(h.shares ?? 0),
-      buy_price: Number(h.buy_price ?? 0),
-    }));
+    const holdings = noteBooks
+      .flatMap((b) => holdingsByPortfolio.get(b.id) ?? [])
+      .map((h) => ({
+        ticker: String(h.ticker ?? "").toUpperCase(),
+        shares: Number(h.shares ?? 0),
+        buy_price: Number(h.buy_price ?? 0),
+      }));
     if (!hasLiveHoldings(holdings)) {
       skipped += 1;
       continue;
     }
     const tickers = [...new Set(holdings.map((h) => h.ticker))].filter(Boolean);
-    const quotes =
-      tickers.length > 0
-        ? (await fetchQuotesWithFallback(tickers)).quotes
-        : {};
-    const weekReturns =
-      tickers.length > 0 ? await fetchWeekReturns(tickers) : undefined;
-    const cash = (
-      noteBooks as {
-        cash_balance?: number;
-        classroom_community_id?: string | null;
-      }[]
-    ).reduce((s, p) => s + sheetCashBalance({
-      cash_balance: Number(p.cash_balance ?? 0),
-      classroom_community_id: p.classroom_community_id,
-    }), 0);
-    const { data: lab } = await supabase
-      .from(PORTFELL_TABLES.labState)
-      .select("conviction, watchlist")
-      .eq("owner_id", profile.id)
-      .maybeSingle();
-
-    // Watchlist names are quoted separately: they are not held, so they
-    // never reach the holdings fetch above.
     const held = new Set(tickers);
+    const lab = labByOwner.get(profile.id as string);
     const watchlist = sanitizeWatchlist(lab?.watchlist).filter(
       (t) => !held.has(t)
     );
-    const watchQuotes =
-      watchlist.length > 0
-        ? (await fetchQuotesWithFallback(watchlist)).quotes
-        : {};
-    const watchWeekReturns =
-      watchlist.length > 0 ? await fetchWeekReturns(watchlist) : undefined;
+    const cash = noteBooks.reduce(
+      (s, p) =>
+        s +
+        sheetCashBalance({
+          cash_balance: Number(p.cash_balance ?? 0),
+          classroom_community_id: p.classroom_community_id,
+        }),
+      0
+    );
+    prepared.push({ to: to as string, profile, cash, holdings, tickers, watchlist, lab });
+  }
 
-    // One calendar call covering everything the letter can mention.
-    const calendarTickers = [...new Set([...tickers, ...watchlist])];
-    const earnings =
-      calendarTickers.length > 0
-        ? (await fetchMarketEvents(calendarTickers)).earnings
-        : undefined;
+  // Everyone's names in one set. Two readers holding NVDA used to mean two
+  // separate quote requests for NVDA; now the whole mailing list costs the
+  // upstream providers one round of calls, not one per reader.
+  const allTickers = [
+    ...new Set(prepared.flatMap((p) => [...p.tickers, ...p.watchlist])),
+  ].filter(Boolean);
+  const allQuotes =
+    allTickers.length > 0
+      ? (await fetchQuotesWithFallback(allTickers)).quotes
+      : {};
+  const allWeekReturns =
+    allTickers.length > 0 ? await fetchWeekReturns(allTickers) : undefined;
+  const allEarnings =
+    allTickers.length > 0
+      ? (await fetchMarketEvents(allTickers)).earnings
+      : undefined;
 
+  const pick = <T,>(
+    source: Record<string, T> | undefined,
+    names: readonly string[]
+  ): Record<string, T> | undefined => {
+    if (!source) return undefined;
+    const out: Record<string, T> = {};
+    for (const n of names) if (n in source) out[n] = source[n];
+    return out;
+  };
+
+  // ---- Write and send, stopping cleanly before the platform kills us. ----
+  let remaining = 0;
+  for (let i = 0; i < prepared.length; i++) {
+    const left = RUN_BUDGET_MS - (Date.now() - startedAt);
+    if (left < MIN_LETTER_MS) {
+      // Out of time. The rest keep their null marker, so the next run --
+      // scheduled later the same morning -- picks them up.
+      remaining = prepared.length - i;
+      break;
+    }
+    const item = prepared[i];
+    const letterNames = new Set([...item.tickers, ...item.watchlist]);
     const letter = buildWeeklyLetter({
-      name: profile.display_name as string | null,
-      cash,
-      holdings,
-      quotes,
-      conviction: parseConviction(lab?.conviction),
-      weekReturns,
-      earnings,
-      watchlist,
-      watchQuotes,
-      watchWeekReturns,
+      name: item.profile.display_name as string | null,
+      cash: item.cash,
+      holdings: item.holdings,
+      quotes: pick(allQuotes, item.tickers) ?? {},
+      conviction: parseConviction(item.lab?.conviction),
+      weekReturns: pick(allWeekReturns, item.tickers),
+      earnings: allEarnings?.filter((e) =>
+        letterNames.has(String(e.ticker ?? "").toUpperCase())
+      ),
+      watchlist: item.watchlist,
+      watchQuotes: pick(allQuotes, item.watchlist) ?? {},
+      watchWeekReturns: pick(allWeekReturns, item.watchlist),
     });
-    letter.margus = await writeWeeklyTake(letter);
+    letter.margus = await writeWeeklyTake(letter, {
+      budgetMs: Math.min(LETTER_BUDGET_MS, left),
+    });
     const ok = await sendNoteEmail({
-      to: email,
+      to: item.to,
       subject: weeklySubject(letter),
       text: weeklyLetterText(letter),
       html: weeklyLetterHtml(letter),
     });
-    if (ok) sent += 1;
-    else skipped += 1;
+    if (!ok) {
+      skipped += 1;
+      continue;
+    }
+    // Mark before counting: an unmarked send is one this run cannot prove,
+    // and a resumed run would write to that person again.
+    if (!isTestSend) {
+      await supabase
+        .from(PORTFELL_TABLES.profiles)
+        .update({ note_sunday_sent_at: new Date().toISOString() })
+        .in("email", connectedEmailsFor(item.to, aliasMap));
+    }
+    sent += 1;
   }
 
   return {
     ok: true,
     sent,
     skipped,
-    optedIn: recipients.length,
+    optedIn,
+    remaining,
     emailed,
   };
 }

@@ -17,6 +17,14 @@
       "schedule": "0 4 * * 0"
     },
     {
+      "path": "/api/cron/sunday-note",
+      "schedule": "20 4 * * 0"
+    },
+    {
+      "path": "/api/cron/sunday-note",
+      "schedule": "40 4 * * 0"
+    },
+    {
       "path": "/api/cron/popular-tickers",
       "schedule": "0 7 1 * *"
     },
