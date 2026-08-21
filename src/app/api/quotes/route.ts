@@ -5,6 +5,10 @@ import {
   fetchQuotesWithFallback,
 } from "@/lib/market/quotes";
 import { marketSession } from "@/lib/market/session";
+import {
+  chargeUnresolvedBudget,
+  checkUnresolvedBudget,
+} from "@/lib/market/unresolved-budget";
 import { NextRequest, NextResponse } from "next/server";
 import { observeRoute } from "@/lib/observe-route";
 
@@ -63,8 +67,31 @@ async function handleGET(req: NextRequest) {
     );
   }
 
-  const { quotes, delayed, fx, sources, missing, updatedAt } =
+  // Looking up names that resolve nowhere is the expensive thing this
+  // endpoint does, and an address that has spent its share of it is refused
+  // before any provider is contacted. Real books never reach this.
+  const budget = checkUnresolvedBudget(req);
+  if (!budget.ok) {
+    return NextResponse.json(
+      { error: "Too many unknown tickers. Try again shortly." },
+      {
+        status: 429,
+        headers: {
+          ...noStoreHeaders(),
+          "Retry-After": String(budget.retryAfterSec ?? 60),
+        },
+      }
+    );
+  }
+
+  const { quotes, delayed, fx, sources, missing, newlyUnresolvable, updatedAt } =
     await fetchQuotesWithFallback(tickers);
+
+  // Billed after the fact, against work actually done. A repeat ask for a
+  // ticker already known to be dead costs nothing here, because it cost
+  // nothing upstream.
+  await chargeUnresolvedBudget(req, newlyUnresolvable);
+
   return NextResponse.json(
     {
       quotes,

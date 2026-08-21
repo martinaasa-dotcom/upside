@@ -1013,6 +1013,15 @@ export type Database = {
         Args: { p_key: string; p_limit: number; p_window_ms: number }
         Returns: Json
       }
+      portfell_rate_take_weighted: {
+        Args: {
+          p_key: string
+          p_limit: number
+          p_window_ms: number
+          p_cost: number
+        }
+        Returns: Json
+      }
       portfell_redeem_community_invite: {
         Args: { p_token_hash: string }
         Returns: Json
