@@ -22,6 +22,11 @@ comment on column public.portfell_profiles.note_sunday_sent_at is
 
 -- The dispatcher reads note_sunday = true and then filters on this column,
 -- so extend the existing partial index rather than adding a second one.
-create index if not exists portfell_profiles_note_sunday_sent_idx
+-- CONCURRENTLY: portfell_profiles is a live table, and a plain CREATE INDEX
+-- takes a lock that queues every write to it while the index builds. The
+-- repo's own linter (scripts/migrate-online.ts --lint) rejects the
+-- non-concurrent form, and it rejected the first version of this file.
+-- The runner executes this outside a transaction, which Postgres requires.
+create index concurrently if not exists portfell_profiles_note_sunday_sent_idx
   on public.portfell_profiles (note_sunday_sent_at)
   where note_sunday = true;

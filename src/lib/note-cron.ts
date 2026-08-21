@@ -1,3 +1,4 @@
+import { logEvent } from "@/lib/telemetry";
 import {
   collapseMailRecipients,
   connectedEmailsFor,
@@ -96,14 +97,37 @@ function groupBy<T>(rows: readonly T[], key: (row: T) => string | null): Map<str
 export type NoteDispatchOpts = {
   /** When set, only these addresses get a note. Scheduled cron leaves this off. */
   onlyEmails?: readonly string[];
+  /**
+   * One of the later Sunday slots, whose job is to pick up recipients an
+   * earlier run did not reach. Only meaningful when the sent-marker column
+   * exists: without it a resume run cannot tell who already has the letter,
+   * so it stands down rather than sending a duplicate.
+   */
+  isResumeRun?: boolean;
 };
 
 /** Vercel Cron still mails everyone opted in. A manual hit stays on Martin. */
 export function noteTestAudience(req: Request): NoteDispatchOpts {
-  const only = new URL(req.url).searchParams.get("only")?.trim().toLowerCase();
-  if (only === "me") return { onlyEmails: [SUPERADMIN_NOTE_EMAIL] };
-  if (req.headers.get("x-vercel-cron") === "1") return {};
-  return { onlyEmails: [SUPERADMIN_NOTE_EMAIL] };
+  const url = new URL(req.url);
+  const only = url.searchParams.get("only")?.trim().toLowerCase();
+  // vercel.json marks the 04:20 and 04:40 slots with ?resume=1.
+  const isResumeRun = url.searchParams.get("resume") === "1";
+  if (only === "me") return { onlyEmails: [SUPERADMIN_NOTE_EMAIL], isResumeRun };
+  if (req.headers.get("x-vercel-cron") === "1") return { isResumeRun };
+  return { onlyEmails: [SUPERADMIN_NOTE_EMAIL], isResumeRun };
+}
+
+/**
+ * PostgREST's shape for "you asked for a column that is not there"
+ * (Postgres 42703). Matched on the code where it is given, and on the
+ * message otherwise, because the column name is what makes this specific
+ * rather than any schema complaint.
+ */
+function missingMarkerColumn(err: { code?: string; message?: string }): boolean {
+  if (err?.code === "42703") return true;
+  const message = String(err?.message ?? "");
+  return /note_sunday_sent_at/.test(message) &&
+    /(does not exist|could not find|schema cache)/i.test(message);
 }
 
 /** The Sunday letter is the only scheduled email, so there is no kind. */
@@ -146,10 +170,66 @@ export async function dispatchWeeklyLetters(
     };
   }
 
-  const { data: profiles, error } = await supabase
+  /*
+   * The marker column may not exist yet, and that must not stop the letter.
+   *
+   * `docs/ZERO_DOWNTIME_MIGRATIONS.md` ships the app (step 4) *before*
+   * applying the SQL on production (step 5), so there is always a window
+   * where this code is live and `note_sunday_sent_at` is not there. This
+   * function used to select the column unconditionally and return
+   * `ok: false` on any error, which meant that during that window nobody
+   * got a letter at all -- no partial send, no warning, just a quiet
+   * Sunday. The window is however long it takes someone to run a
+   * migration, which in practice was hours.
+   *
+   * So: ask for the marker, and if the database says there is no such
+   * column, ask again without it. Everything else about the run is
+   * unchanged; only the resume bookkeeping is unavailable.
+   */
+  let markerAvailable = true;
+  let { data: profiles, error } = await supabase
     .from(PORTFELL_TABLES.profiles)
     .select("id, email, display_name, note_sunday_sent_at")
     .eq("note_sunday", true);
+
+  if (error && missingMarkerColumn(error)) {
+    markerAvailable = false;
+    logEvent(
+      "sunday_letter_marker_column_missing",
+      { message: error.message },
+      "warn"
+    );
+    const retry = await supabase
+      .from(PORTFELL_TABLES.profiles)
+      .select("id, email, display_name")
+      .eq("note_sunday", true);
+    error = retry.error;
+    profiles = (retry.data ?? []).map((row) => ({
+      ...row,
+      // No column, so nobody has a recorded send. Everyone is pending.
+      note_sunday_sent_at: null,
+    }));
+  }
+
+  /*
+   * Without the marker there is no way to tell who already received this
+   * week's letter, and the schedule fires three times on a Sunday (04:00
+   * plus two resume slots). Sending from every one of them would put the
+   * same letter in the same inbox three times, which is worse than the
+   * problem the resume slots exist to solve. So the first run of the day
+   * does the work and the later two stand down until the column lands.
+   */
+  if (!markerAvailable && opts.isResumeRun) {
+    return {
+      ok: true,
+      sent: 0,
+      skipped: 0,
+      optedIn: 0,
+      remaining: 0,
+      emailed: false,
+    };
+  }
+
   if (error) {
     return {
       ok: false,
@@ -381,7 +461,7 @@ export async function dispatchWeeklyLetters(
     }
     // Mark before counting: an unmarked send is one this run cannot prove,
     // and a resumed run would write to that person again.
-    if (!isTestSend) {
+    if (!isTestSend && markerAvailable) {
       await supabase
         .from(PORTFELL_TABLES.profiles)
         .update({ note_sunday_sent_at: new Date().toISOString() })
