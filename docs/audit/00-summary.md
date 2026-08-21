@@ -1,4 +1,25 @@
-# Upside Lab — 10-Pass Formal Audit: Index
+# Upside Lab — audit index
+
+> ## Round 2 (2026-08-21) supersedes everything below.
+>
+> Eleven passes were re-run from scratch, treating every prior "Resolved"
+> as an unverified claim. Start with **[`11-go-no-go.md`](11-go-no-go.md)**
+> — the verdict, the launch blockers, and the consolidated list of what
+> this environment could not check.
+>
+> **Verdict: Go for existing users. No-Go for taking money from strangers**
+> until four unapplied migrations are run and billing is exercised in
+> Stripe test mode. One of those migrations is not an improvement but live
+> breakage: shipped code selects `note_sunday_sent_at`, so until it exists
+> the Sunday letter sends nothing to anyone.
+>
+> Round 2 reports are `02`–`10` plus `deferred-items-fix-log.md`. Round 1's
+> index is kept below for history; where the two disagree, Round 2 was
+> derived against the current code and wins.
+
+---
+
+## Round 1 index (historical)
 
 Ten independent passes, each on its own branch off `main`, each reading
 `AGENTS.md` first so intentional, documented product decisions weren't
