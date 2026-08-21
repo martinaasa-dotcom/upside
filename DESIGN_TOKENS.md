@@ -379,21 +379,24 @@ above and rendered near-black.)
 ## Ambient counter-lobe (`--ambient-cool`, 2026-08-21)
 
 The `.page-frame` glow was one warm colour: a `--primary` key light off the
-top-left at 52%, and a `--primary` counter-lobe off the bottom-right at 14%.
-Martin asked for the bottom-right to carry a different, complementary hue,
-and for both lobes to cover more of the page so the glass has something to
-refract.
+top-left at 52%, and a `--primary` counter-lobe off the bottom-right at 14%,
+both sized in fixed pixels. Martin asked for the bottom-right to carry a
+different, complementary hue, and for the whole thing to stay subtle — a
+diagonal warm-to-cool read with genuine black in between, on phones as well
+as desktops.
 
-**The hue.** `--ambient-cool: oklch(0.78 0.1 200)` — teal.
+### The hue
 
-The true complement of `--primary`'s hue 90 is hue 270, which is inside the
-violet arc this app bans, so the choice is a cool hue short of it. Teal at
-200 also settles the objection the old one-colour comment raised: it argued
-green does not belong in ambient chrome because "gain-green is a financial
-signal, not decoration." That is correct, and it rules out `--gain`
-specifically, not every cool hue. Hue 200 clears `--gain`'s 162 by 38° and
-resolves with its blue channel at or above its green, so a corner wash reads
-as cool light rather than as the app saying something about money.
+`--ambient-cool: oklch(0.78 0.1 200)` — teal.
+
+The true complement of `--primary`'s hue 90 is hue 270, inside the violet arc
+this app bans, so the choice is a cool hue short of it. Teal at 200 also
+settles the objection the old one-colour comment raised: it argued green does
+not belong in ambient chrome because "gain-green is a financial signal, not
+decoration." That is correct, and it rules out `--gain` specifically, not
+every cool hue. Hue 200 clears `--gain`'s 162 by 38° and resolves with its
+blue channel at or above its green, so a corner wash reads as cool light
+rather than as the app saying something about money.
 
 Lightness 0.78 and chroma 0.10 put it in the same restrained family as
 `--primary` (0.80 / 0.09), so the two read as one room lit from two sides
@@ -402,30 +405,62 @@ canvas: `rgb(93,203,209)`, no channel pinned at 0 or 255. Chroma 0.13 at the
 same hue clipped red to 0 and was rejected for exactly the reason `--loss`
 came down from 0.246 to 0.21.
 
-**The geometry.** Key light `1700px 1350px at -6% -10%` at 60%, counter-lobe
-`1700px 1300px at 102% 102%` at 34%.
+### The geometry: small corner lobes, sized in viewport units
 
-The old comment warned that a second strong lobe had been tried and measured
-worse — "it lit both sides evenly and flattened the left-to-right difference
-between cards from 13 to 5." Worth reading precisely: that was measured with
-*two warm lobes*, where the second only adds luminance the first already
-supplied. Two different hues do not share that failure mode, and the numbers
-confirm it. Measured in headless Chromium at 1440×900 over a three-card row,
-sampling the compiled stylesheet:
+Key light `95vw 58vh at -6% -8%`; counter-lobe `95vw 58vh at 106% 108%`. Each
+falls through three stops — 28% → 12% → 4% → transparent for the warm one,
+25% → 11% → 4% → transparent for the teal.
 
-| | Before | After |
-|---|---|---|
-| Lit field area (≥ 4/255) | 58.6% | **98.9%** |
-| Page-wide spread | 161 | 161 |
-| Left-vs-right across a card row | 67.2 | **76.7** |
-| Bottom-right corner | `rgb(28,25,16)` | `rgb(30,64,66)` |
+Three things are load-bearing here, and all three are measurable.
 
-Coverage is the thing that changed, which is the point — an unlit corner
-gives a translucent card nothing to refract. The left-to-right ramp went
-*up*, not down, and the spread held.
+**The black between them is the design.** It is what separates the two lights
+and keeps them reading as corners of a dark room rather than as a tint laid
+over the page. About three quarters of the field measures under 2/255.
 
-**Treat these as the top of the range.** Pushing further — 1800×1400 at 42%
-with chroma 0.13 — dropped the spread from 161 to 154 and clipped the teal.
-If any of these numbers change, re-measure the three rows above rather than
-eyeballing it; a corner wash this faint is exactly the kind of thing that
-looks fine and measures flat.
+**`vw`/`vh`, not `px` — this is the mobile fix.** At a fixed 1250×1000 the
+lobe was wider than a phone, so both lights flooded the screen and stacked
+into horizontal bands. On a 390×844 viewport the *old* key light left the
+top-right corner at 58/255 and the page middle at 29/255: no black anywhere,
+and no diagonal. Sizing against the viewport holds the same proportion at
+every width, so the corner-to-corner read survives on a phone. The test for
+"is it diagonal" is the other two corners — top-right and bottom-left must
+both measure 0.
+
+**Anchored just off-screen.** At `-6% -8%` and `106% 108%` the brightest point
+of each lobe sits outside the frame and only its falloff is visible. Anchored
+exactly on the corner, the hottest pixel is in frame and reads as a lamp
+rather than as spill.
+
+**Three stops, not two.** A single colour-to-transparent ramp has a visible
+edge — the lobe reads as a shape sitting on the page rather than as light.
+Spending most of the falloff in the very dim end (28 → 12 → 4 → 0) thins the
+light into the black with no boundary anywhere. Peaks and black area measure
+the same either way, so this buys nothing but the look, which is the point.
+
+Measured in headless Chromium against the compiled stylesheet, at 1440×900
+with a three-card row and at 390×844 with a single column:
+
+| | Original | Overshoot | Now |
+|---|---|---|---|
+| Top-left peak | 94 | 111 | **40** |
+| Bottom-right peak | 28 (warm) | 68 | **36** (teal) |
+| Top-right / bottom-left, desktop | 0 / 0 | 7 / 0 | **0 / 0** |
+| Top-right / bottom-left, **phone** | 58 / 17 | 88 / 53 | **0 / 0** |
+| Page middle, phone | 28.9 | 74.1 | **0** |
+| Field under 2/255, desktop | 36.4% | 0.6% | **68.3%** |
+
+The "Overshoot" column is a real pass that shipped to a preview and was wrong:
+1700px lobes at 60%/34%, chasing coverage on the theory that an unlit corner
+gives the glass nothing to refract. It lit 99% of the field and left no black
+at all, which is the opposite of the brief. Recorded here because brightening
+this is the easy mistake and the metric that catches it is the share of field
+under 2/255, not how good a single screenshot looks.
+
+Verified at 1440x900, 1280x800, 834x1112 and 390x844: the peaks hold at 40 /
+34-36, the opposite corners stay at 0, the middle stays at 0, and the black
+share stays 66-68% at every one. That consistency is the whole reason for
+sizing in viewport units.
+
+Contrast was re-checked after dimming, since ambient light sits behind text:
+muted text on glass in the hottest corner measures 8.19-8.81 across those
+sizes -- better than the 7.92 this had originally, and well clear of AAA.

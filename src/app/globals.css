@@ -294,43 +294,61 @@ body {
   z-index: -1;
   pointer-events: none;
   /*
-   * Key light tightened and roughly doubled in strength (was 1700x1300 at
-   * 24%). Turning the glass blur back on changed nothing visible, and the
-   * measurement says why: a blur can only show itself if the backdrop it
-   * samples has structure, and behind a card this field varied by about
-   * 11 levels out of 255 in a perfectly smooth ramp. Blurring that is
-   * arithmetically indistinguishable from not blurring it.
+   * Two small corner lobes on a black field — warm off the top-left, teal
+   * off the bottom-right, and *real black* between them. The black is the
+   * design, not the leftover: it is what separates the two lights and
+   * keeps them reading as corners of a dark room rather than as a tint
+   * laid over the whole page. Roughly three quarters of the field
+   * measures under 2/255.
    *
-   * So the fix is the room, not the glass. A lobe that actually ramps
-   * across a row of cards, so each pane picks up the part of the light it
-   * sits in, is the thing that reads as glass on a black field.
+   * Sized in `vw`/`vh`, not `px`, and that is the mobile fix. At a fixed
+   * 1250x1000 the lobe was wider than a phone, so both lights flooded the
+   * whole screen and stacked into horizontal bands: measured on a 390x844
+   * viewport, the old key light left the *top-right* corner at 58/255 and
+   * the middle of the page at 29/255 — no black anywhere, and no diagonal.
+   * A lobe measured against the viewport keeps the same proportion at
+   * every width, so the warm-to-teal read runs corner to corner on a phone
+   * exactly as it does on a desktop. The check for that is the other two
+   * corners: top-right and bottom-left both measure 0 at both sizes.
    *
-   * Both lobes then grew, and the counter-lobe became a different hue.
-   * The old warning here -- that a second strong lobe "lit both sides
-   * evenly and flattened the left-to-right difference between cards from
-   * 13 to 5" -- was measured with *two warm lobes*, where the second one
-   * only adds luminance the first already supplied. Two different hues do
-   * not have that failure mode, and the measurement says so: strengthening
-   * the counter-lobe from 14% to 34% and recolouring it teal moved the
-   * left-to-right difference across a card row from 67.2 to 76.7 levels,
-   * i.e. up, while the page-wide spread held at 161. Lit field area
-   * (>= 4/255) went from 58.6% to 98.9%, which is the point -- an unlit
-   * corner gives the glass nothing to refract.
+   * Anchored just off-screen (-6%/-8%, 106%/108%) so the brightest point
+   * of each lobe is outside the frame and only its falloff is visible.
+   * Anchored exactly on the corner instead, the hottest pixel sits in the
+   * frame and reads as a lamp rather than as spill.
    *
-   * There is still a ceiling. Pushing further (1800x1400, 42%, chroma
-   * 0.13) started flattening the field, spread 161 -> 154, and clipped the
-   * teal's red channel to 0. Treat these numbers as the top of the range,
-   * and re-measure rather than eyeball if they change.
+   * Three stops each, not two. A single colour-to-transparent ramp drops
+   * off in a way you can see the edge of — the lobe reads as a shape
+   * sitting on the page rather than as light. Falling 28 → 12 → 4 → 0
+   * spends most of the distance in the very dim end, so it thins out into
+   * the black with no boundary anywhere. Peaks and black area measure the
+   * same either way, so this buys nothing but the look, which is the
+   * point.
+   *
+   * Deliberately dim: peaks land near 40/255 warm and 35/255 teal, below
+   * the 94/255 this had before it was ever touched. Warm stays the
+   * stronger of the two — one key light plus a counter-lobe, not two
+   * lamps.
+   *
+   * Every number above is measurable, so re-measure rather than eyeball if
+   * these change: corner peaks, the two *opposite* corners staying at 0
+   * (which is what makes it diagonal), and the share of the field under
+   * 2/255 (which is what keeps the black). Brightening this is the easy
+   * mistake — an earlier pass at 60%/34% with 1700px lobes lit 99% of the
+   * field and left no black at all.
    */
   background-image:
     radial-gradient(
-      1700px 1350px at -6% -10%,
-      oklch(from var(--primary) l c h / 60%),
-      transparent 72%
+      95vw 58vh at -6% -8%,
+      oklch(from var(--primary) l c h / 28%) 0%,
+      oklch(from var(--primary) l c h / 12%) 30%,
+      oklch(from var(--primary) l c h / 4%) 52%,
+      transparent 76%
     ),
     radial-gradient(
-      1700px 1300px at 102% 102%,
-      oklch(from var(--ambient-cool) l c h / 34%),
+      95vw 58vh at 106% 108%,
+      oklch(from var(--ambient-cool) l c h / 25%) 0%,
+      oklch(from var(--ambient-cool) l c h / 11%) 30%,
+      oklch(from var(--ambient-cool) l c h / 4%) 52%,
       transparent 78%
     );
 }
