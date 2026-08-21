@@ -65,7 +65,7 @@ New: `--warning` / `--chart-3`: `oklch(0.63 0.22 45)`.
 | Orange | `--warning`, `--chart-3` | Caution/warning states only (e.g. Pulse alert badges). Not a general-purpose accent — don't reach for it decoratively. |
 | Emerald | `--gain` | Gains only. Semantic, not brand. |
 | Rose | `--loss` / `--destructive` | Losses and destructive actions only. Semantic, not brand. |
-| Teal | `--ambient-cool` | The ambient page glow's bottom-right counter-lobe, and nothing else — see "Ambient counter-lobe" below. Deliberately not exported as a Tailwind utility, so there is no `bg-ambient-cool` to reach for. |
+| Blue | `--ambient-cool` | The ambient page glow's bottom-right counter-lobe, and nothing else — see "Ambient counter-lobe" below. Deliberately not exported as a Tailwind utility, so there is no `bg-ambient-cool` to reach for. |
 
 Four colors total, three of them semantic single-purpose (warning/gain/loss)
 and one general brand accent (warm yellow) — plus one chrome-only value
@@ -387,23 +387,55 @@ as desktops.
 
 ### The hue
 
-`--ambient-cool: oklch(0.78 0.1 200)` — teal.
+`--ambient-cool: oklch(0.72 0.13 250)` — blue.
 
-The true complement of `--primary`'s hue 90 is hue 270, inside the violet arc
-this app bans, so the choice is a cool hue short of it. Teal at 200 also
-settles the objection the old one-colour comment raised: it argued green does
-not belong in ambient chrome because "gain-green is a financial signal, not
-decoration." That is correct, and it rules out `--gain` specifically, not
-every cool hue. Hue 200 clears `--gain`'s 162 by 38° and resolves with its
-blue channel at or above its green, so a corner wash reads as cool light
-rather than as the app saying something about money.
+**Why 250 and not a teal.** Hue 250 is 160° from `--primary`'s 90 — all but the
+last twenty degrees of the opponent contrast available. That matters for a
+reason beyond arithmetic: colour leaves the retina encoded on two opponent
+channels, and blue–yellow is one of them, so this pair is opposite *in the
+visual system* rather than merely on a diagram. It is the most contrast the
+eye can register per unit of colour spent, which is exactly what a wash this
+faint needs.
 
-Lightness 0.78 and chroma 0.10 put it in the same restrained family as
-`--primary` (0.80 / 0.09), so the two read as one room lit from two sides
-rather than as two brand colours. Verified in-gamut by rasterising to a
-canvas: `rgb(93,203,209)`, no channel pinned at 0 or 255. Chroma 0.13 at the
-same hue clipped red to 0 and was rejected for exactly the reason `--loss`
-came down from 0.246 to 0.21.
+It also clears every hue this palette has already spent — 88° from `--gain`
+(162), 205° from `--warning` (45), 234° from `--loss` (16). **That margin is
+the point, not a bonus.** The first version of this was a teal at hue 200,
+picked while a blanket ban on violet stopped the search short of the
+complement. Teal sits 38° from the emerald that means a position went up,
+which is the one collision a money app cannot afford. The ban was lifted on
+2026-08-21 and the hue moved with it.
+
+Lightness 0.72 / chroma 0.13 is where hue 250 stays in sRGB with headroom.
+Verified in-gamut by rasterising to a canvas: `rgb(96,170,243)`, no channel
+pinned at 0 or 255.
+
+**The two lobe alphas differ on purpose** — 28% warm, 31% cool. sRGB is not
+symmetrical: its blue primary carries roughly a fourteenth of the luminance
+of its green, so the cool side has far less headroom at a given lightness.
+The two lobes are matched by *measurement*, not by being written the same
+number. Measured bottom-right luminance is 33.8 against the warm lobe's
+neighbourhood, and the old teal needed only 25% for the same result.
+**Changing the cool hue means re-solving this alpha**, or the corner silently
+gets brighter or dimmer than the one opposite it.
+
+Alternatives considered, all rendered in the real stylesheet and matched to
+the same measured brightness before comparing — which matters, because an
+equal-alpha lineup flatters warm hues for gamut reasons that have nothing to
+do with the choice:
+
+| Hue | OKLCH | Alpha to match | ° from gold | ° from gain | Verdict |
+|---|---|---|---|---|---|
+| Teal 200 | `0.78 0.10 200` | 27% | 110 | **38** | Prettiest at the least alpha; too near `--gain` |
+| Cyan 220 | `0.80 0.11 220` | 27% | 130 | 58 | Holds up best in a dark room (nearest the rod peak) |
+| **Blue 250** | `0.72 0.13 250` | **31%** | **160** | **88** | **Chosen** |
+| Violet 270 | `0.66 0.15 270` | 36% | 180 | 108 | The literal complement; reads purple, needs the most alpha |
+| Indigo 285 | `0.64 0.16 285` | 37% | 165 | 123 | Starts reading as a brand colour rather than as light |
+| Orchid 310 | `0.68 0.16 310` | 35% | 140 | 148 | Furthest from every semantic hue, and the most dated |
+
+Violet at 270 is the literal opposite and remains defensible; 250 was taken
+because it keeps nearly all of that contrast while staying on the blue side
+of purple, needs less alpha to be felt, and reads as night and distance
+rather than as a colour someone picked.
 
 ### The geometry: small corner lobes, sized in viewport units
 
@@ -443,7 +475,7 @@ with a three-card row and at 390×844 with a single column:
 | | Original | Overshoot | Now |
 |---|---|---|---|
 | Top-left peak | 94 | 111 | **40** |
-| Bottom-right peak | 28 (warm) | 68 | **36** (teal) |
+| Bottom-right peak | 28 (warm) | 68 | **34** (blue, by luminance) |
 | Top-right / bottom-left, desktop | 0 / 0 | 7 / 0 | **0 / 0** |
 | Top-right / bottom-left, **phone** | 58 / 17 | 88 / 53 | **0 / 0** |
 | Page middle, phone | 28.9 | 74.1 | **0** |
