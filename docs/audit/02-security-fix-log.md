@@ -1,38 +1,86 @@
-# Pass 2 — Security: fix log
+# Pass 2 — Security fix log (Round 2)
 
-One row per finding in [`02-security.md`](02-security.md). Status is
-**Resolved**, **Deferred**, or **Stuck**. Nothing is marked Resolved
-without fresh re-verification evidence attached.
+Companion to `docs/audit/02-security.md`. One row per finding.
+**No row is Resolved without fresh re-verification by the method that
+surfaced it.**
 
-Checks run after the fixes in this log: `npx tsc --noEmit` clean,
-`npx eslint --max-warnings 0` clean on every touched file, `npm run test`
-111/111 passing, `npm run test:invariants` back to its 2 pre-existing
-failures (`circle awards…`, `Fund page labels…` — both unrelated to these
-files, confirmed by a `git stash` baseline run).
-
-| # | Finding | Severity | Status | Evidence | Notes |
+| # | Finding | Severity | Status | Attempts | Evidence |
 |---|---|---|---|---|---|
-| C1 | Any signed-in user could self-grant an active Stripe subscription via an RLS gap | Critical | **Resolved** (prior session) | Migration `20260818223000_lock_billing_columns.sql`; report §Critical | Fixed when the pass was first run, merged to `main`. |
-| M1 | In-memory rate limiting is per-warm-instance, not distributed | Medium | **Resolved for the endpoints that matter** | `/api/feedback`, `/api/internal/telemetry`, `/api/internal/log-error` and `/api/communities/join` (the invite peek) now call `takeDurableRateLimit()`. Pinned by the invariant `the four open write endpoints survive a serverless restart`, which also asserts none of them still calls `checkRateLimit`. | **This row previously said the fix "needs Redis/Upstash/Vercel KV". That was wrong** — the durable limiter already exists and is Postgres-backed (`portfell_rate_take`), the same one Margus and the GDPR export use, so no new infrastructure was involved. These four were picked because they are the ones an in-memory counter actually fails on: each takes an unauthenticated or cheap-to-repeat **write**, and a counter that resets with the lambda hands a reconnecting caller a fresh budget every time. The remaining `checkRateLimit()` call sites are left deliberately — they guard reads and authenticated actions where a per-instance ceiling is a fine first line and a database round trip per request is not worth it. |
-| M2 | CSP `script-src` includes `'unsafe-inline'` | Medium | **Deferred** | — | Already reasoned through and documented at `src/lib/security-headers.ts:57-70`: Next.js's Flight scripts on cached/ISR pages have no nonce, and a nonce would void `'unsafe-inline'` per spec. Revisit if Next ships noncing for cached Flight payloads. |
-| M3 | `/api/market/seasonality?force=1` let any unauthenticated caller force a cache-bypassing upstream fetch | Medium | **Resolved** | `src/app/api/market/seasonality/route.ts:19-24`. `force` is now honoured only when `getAuthUser()` returns a user; an anonymous caller's `force=1` is ignored and served from cache. | The only client that sends `force=1` is `SeasonalityPage.tsx:546` (the Lab tab's refresh button), which is behind auth already — so no real user flow changes. Public market data, `publicCdnHeaders` unchanged, no per-user content in the response. |
-| M4 | GDPR export had no per-user rate limit distinct from the IP one | Medium | **Resolved** | `src/lib/gdpr/export-response.ts:19-32`. Both `/api/account/export` and `/api/user/export` funnel through `userExportResponse`, which now takes `takeDurableRateLimit("export:<uid>", 6, 10min)` and returns 429 + `Retry-After` when exhausted. | Uses the same durable Postgres-backed limiter already used for Margus (`portfell_rate_take`), so it holds across warm instances. 6 per 10 min is generous for a person downloading their own data and closes the "script 20 full-book exports a minute off a stolen session" path. |
-| M5 | Open (email-less) community invite links never expire | Medium | **Resolved** | `src/app/api/communities/[id]/invites/route.ts` — `DEFAULT_INVITE_DAYS = 30`; omitting `daysValid` now means 30 days, and never-expiring needs an explicit `neverExpires: true` (schema in `src/lib/api-schemas.ts`, checkbox in `CommunityView.tsx` with a warning next to it). Copy on the form updated from "This link stays live" to "This link works for 30 days". Pinned by the `email and admin RPCs are not callable with a user JWT` invariant, which now asserts the 30-day default and the explicit opt-out. | Decided with Martin. The original decision (reusable links) is untouched — what changed is only the **default lifetime**, which was infinite. An open link is a bearer credential: whoever holds it joins, so one pasted into a public repo, a forum, or a screenshot granted membership forever. The enforcement was already there (`expires_at` is checked at redeem and in RLS); only the creation default was missing, which is why this was cheap. 30 days matches how these are actually used (send a link, people join that week) and the portfolio-invite route has defaulted to 14 days all along, so circles were the outlier. |
-| L1 | CSV export is not formula-injection-safe | Low | **Resolved** | `src/lib/gdpr/csv.ts:1-23`. Verified by running `csvEscape` over the real cases: `=HYPERLINK(...)` → `"'=HYPERLINK…"`, `+1+1` → `'+1+1`, `@SUM(A1)` → `'@SUM(A1)`, and critically `-7000` → `-7000` (unchanged). | Refined the report's suggested fix: the `'` guard applies to **text only**, not numbers/booleans. A blanket prefix on anything starting with `-` would have mangled every negative amount in the export (Aasad's cash is −7000), breaking round-trippability to fix a vector that only text can carry. |
-| L2 | `/api/demo/lock` has no auth check, relying only on `NODE_ENV`/`VERCEL_ENV` | Low | **Resolved** | `src/app/api/demo/lock/route.ts:12-24`. `isProduction()` → `isDeployed()`, which now also refuses when `VERCEL_ENV` or `VERCEL` is set at all — so a preview deployment 404s too. | Chose a deployment guard over the report's suggested auth check: this is the local dev tool that freezes the demo book, and local demo mode has no Supabase session to authenticate against, so requiring auth would break the tool it protects. Blocking every Vercel environment closes the exact hole named (a misconfigured preview) without that cost. `scripts/test-invariants.ts:1870-1874` updated — it pinned the old function name; the assertion now checks for the wider guard. |
-| L3 | Encrypted export ships the AES-256-GCM unwrap key in a response header alongside the body | Low | **Deferred** | — | Documented, intentional "protect the file at rest if it's stored somewhere else later" pattern (`src/lib/gdpr/user-export.ts:294-303`). Provides no confidentiality against someone who can already read the response, but costs nothing and isn't a defect. No change without a product decision to drop the pattern. |
-| L4 | `parseJsonBody()` had no explicit request-body size cap | Low | **Resolved** | `src/lib/parse-json-body.ts:4-41`. Now refuses with 413 before parsing: `Content-Length` checked first, then the actual decoded length (a chunked body can omit or lie about the header). Default 1 MB, overridable per route via `opts.maxBytes`. | Confirmed no route needs a larger cap first: the only genuinely large upload, `/api/book/ytd-from-image`, reads `formData()` (route.ts:77), not this helper. Every `parseJsonBody` caller sends JSON well under 1 MB. |
+| C1 | Legacy `public.portfolios` / `holdings` / `covered_call_targets` world-readable and world-writable via the anon key | Critical | **Resolved** | 1 | Exploit reproduced and then blocked on a local Postgres 16 — see below |
+| M1 | `portfolios/join` had no rate limit while `communities/join` does | Medium | **Resolved** | 1 | `grep -c takeDurableRateLimit src/app/api/portfolios/join/route.ts` → 2 (was 0) |
 
-## Deferred summary
+## C1 — verified by running the attack, not by reading the policy
 
-Two items left unfixed, none silently. **M2** needs a framework change
-rather than a code one (CSP `unsafe-inline` awaits Next.js nonce support),
-and **L3** is a documented intentional pattern. Both are described above
-with the reason.
+The brief asks for attempted exploitation rather than policy reading. There
+is no production access here, so the schema was rebuilt locally: a faithful
+copy of migration 001's three tables, their `for all using (true) with check
+(true)` policies, the default Supabase `anon`/`authenticated` grants, and
+one row of data standing in for legacy content.
 
-**M1** and **M5** have since been closed and their rows rewritten. M1 was
-deferred on a false premise — that distributed rate limiting needed Redis
-or Vercel KV, when a Postgres-backed durable limiter was already in the
-codebase — so the four endpoints that an in-memory counter genuinely
-fails on now use it. M5 was the invite-expiry default, which Martin
-decided: 30 days, with never-expiring available on request.
+**Before the migration, as `anon`:**
+
+```
+-- read:    select count(*) from public.portfolios;  ->  1
+-- write:   insert into public.portfolios ...        ->  succeeded (2 rows)
+-- delete:  delete from public.holdings;             ->  succeeded
+```
+
+All three worked. That is the finding, executed.
+
+**After running `20260821120000_revoke_legacy_public_tables.sql`, same
+session, same statements:**
+
+```
+select ... from public.portfolios   ->  ERROR: permission denied for table portfolios
+insert into public.portfolios ...   ->  ERROR: permission denied for table portfolios
+delete from public.holdings         ->  ERROR: permission denied for table holdings
+
+legacy_policies remaining: 0
+anon/authenticated grants: 0
+rows_still_present:        2   <- nothing destroyed
+```
+
+Also verified:
+
+- **Idempotent** — re-running the migration on the already-fixed database
+  exits 0.
+- **Safe where the tables never existed** — running it against a fresh
+  database with none of them exits 0 (`to_regclass` guard).
+- **Non-destructive** — the seeded row survives. The migration revokes
+  access; it does not drop tables.
+
+**Deliberately left for Martin:** whether to drop these three tables
+outright. That is the tidier end state, but it is irreversible against data
+nobody has inspected, and the exposure is fully closed without it. Each
+table now carries a `comment` saying it is legacy, unused, revoked, and safe
+to drop once its contents are confirmed unneeded.
+
+## M1 — closed for the right reason
+
+A limiter keyed by user id, matching `communities/join`'s shape (30 per 5
+minutes). Recorded honestly in the report: this is **not** an enumeration
+fix. Invite tokens are `randomBytes(18)` — 144 bits — so no request rate
+gets near guessing one. It closes an unmetered database round-trip per
+attempt and an inconsistency between two routes doing the same job.
+
+## Unable to Verify (Environment-Blocked)
+
+Carried into Pass 11 as gaps, not passes:
+
+1. **Live RLS testing against a real non-owner Supabase session.** C1 was
+   proven on a local Postgres reproduction, which validates the migration
+   and the exploit mechanics but is not the production database.
+2. **Whether the C1 tables hold rows in production.** Decides whether the
+   finding was a live data exposure or "only" an open write primitive. The
+   fix is identical either way, which is why this did not block closing it.
+3. **Stripe webhook replay/idempotency end to end** — signature
+   verification confirmed by reading; the live test-mode flow belongs to
+   Pass 6.
+
+## Handed to Pass 4, not fixed here
+
+Public market endpoints (`quotes`, `market/*`, `popular-tickers`) are
+unauthenticated and unthrottled, so a stranger can drive upstream provider
+calls. Pass 4 owns the caching strategy that removes the incentive
+entirely; patching the same code from two passes is what the brief warns
+against. Recorded so Pass 4 inherits it rather than rediscovering it.
