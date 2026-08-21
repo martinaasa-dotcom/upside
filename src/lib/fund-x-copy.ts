@@ -3,8 +3,8 @@ import type { FundAction } from "@/lib/margus-fund";
 import { FUND_X_HANDLE, FUND_X_URL } from "@/lib/product";
 
 export { FUND_X_HANDLE, FUND_X_URL };
-/** Long enough for the scoreboard card. Premium X, not the 280 cap. */
-export const TWEET_MAX = 4000;
+/** Free X cap. Keep the scoreboard card inside this. */
+export const TWEET_MAX = 280;
 
 export type FundStretch = {
   dollar?: number | null;
@@ -24,10 +24,10 @@ export type FundXPostInput = {
 };
 
 const TRADE_VERB: Record<Exclude<FundAction["type"], "hold">, string> = {
-  buy: "Opened",
-  exit: "Exited",
-  trim: "Trimmed",
-  add: "Added to",
+  buy: "bought",
+  exit: "sold",
+  trim: "trimmed",
+  add: "bought",
 };
 
 function finite(n: number | null | undefined): n is number {
@@ -62,35 +62,55 @@ function stretchLine(
   if (!stretch) return null;
   const move = moneyPct(stretch.dollar ?? null, stretch.pct ?? null);
   if (!move) return null;
-  const spy = finite(stretch.spyPct) ? ` - $SPY ${pct2(stretch.spyPct)}` : "";
-  return `${vsSpyMark(stretch.pct ?? null, stretch.spyPct ?? null)} ${label}: ${move}${spy}`;
+  const spy = finite(stretch.spyPct) ? ` · SPY ${pct2(stretch.spyPct)}` : "";
+  return `${vsSpyMark(stretch.pct ?? null, stretch.spyPct ?? null)} ${label} ${move}${spy}`;
 }
 
-function tradeBullet(
+/** Plain ticker for the opener: msft, not $MSFT. */
+function plainTicker(ticker: string): string {
+  return ticker.trim().toLowerCase();
+}
+
+/**
+ * Day 5: held
+ * Day 6: bought msft
+ * Day 7: sold msft, bought nvda
+ */
+function actionHeadline(
+  period: "DAY" | "WEEK",
+  serial: number,
   actions: Array<Pick<FundAction, "type" | "ticker">>
 ): string {
+  const label = period === "DAY" ? "Day" : "Week";
   const trades = actions.filter((a) => a.type !== "hold" && a.ticker.trim());
-  if (trades.length === 0) return "No trades executed";
+  if (trades.length === 0) return `${label} ${serial}: held`;
 
-  const grouped = new Map<string, string[]>();
+  // Group consecutive same verbs: "bought nvda, msft" / "sold msft, bought nvda"
+  const parts: string[] = [];
+  let lastVerb: string | null = null;
+  let tickers: string[] = [];
+  const flush = () => {
+    if (!lastVerb || tickers.length === 0) return;
+    parts.push(`${lastVerb} ${tickers.join(", ")}`);
+    tickers = [];
+  };
   for (const a of trades) {
     if (a.type === "hold") continue;
-    const tag = cashtag(a.ticker);
-    if (tag === "—") continue;
+    const t = plainTicker(a.ticker);
+    if (!t) continue;
     const verb = TRADE_VERB[a.type];
-    const list = grouped.get(verb) ?? [];
-    if (!list.includes(tag)) list.push(tag);
-    grouped.set(verb, list);
+    if (verb !== lastVerb) {
+      flush();
+      lastVerb = verb;
+    }
+    if (!tickers.includes(t)) tickers.push(t);
   }
-
-  const parts: string[] = [];
-  for (const [verb, tags] of grouped) {
-    parts.push(`${verb} ${tags.join(" · ")}`);
-  }
-  return parts.join(" · ") || "No trades executed";
+  flush();
+  if (parts.length === 0) return `${label} ${serial}: held`;
+  return `${label} ${serial}: ${parts.join(", ")}`;
 }
 
-function moverBullet(
+function moverBit(
   movers: Array<{ ticker: string; changePct: number | null | undefined }>
 ): string | null {
   const ranked = movers
@@ -106,9 +126,9 @@ function moverBullet(
     .join(" ");
 }
 
-function thesisBullet(
+function thesisLine(
   actions: Array<Pick<FundAction, "type" | "ticker">>
-): string {
+): string | null {
   const exits = [
     ...new Set(
       actions
@@ -117,17 +137,8 @@ function thesisBullet(
         .filter((tag) => tag !== "—")
     ),
   ];
-  if (exits.length === 0) return "Thesis intact across all holdings";
+  if (exits.length === 0) return null;
   return `Thesis broken on ${exits.join(" · ")}`;
-}
-
-function shortWait(waitFor: string): string {
-  const trimmed = waitFor
-    .replace(/^wait(?:ing)? for\s+/i, "")
-    .replace(/[\u2010\u2011\u2212\u2014]/g, "-")
-    .trim();
-  if (!trimmed) return "";
-  return trimmed.split(/\s+/).slice(0, 3).join(" ").replace(/[.,;:]+$/, "");
 }
 
 function radarLine(
@@ -137,9 +148,7 @@ function radarLine(
   for (const item of radar) {
     const tag = cashtag(item.ticker);
     if (tag === "—") continue;
-    const wait = shortWait(item.waitFor ?? "");
-    const bit = wait ? `${tag} ${wait}` : tag;
-    if (!parts.includes(bit)) parts.push(bit);
+    if (!parts.includes(tag)) parts.push(tag);
   }
   return parts.length > 0 ? parts.join(" · ") : null;
 }
@@ -148,35 +157,41 @@ function composeFundXPost(
   period: "DAY" | "WEEK",
   input: FundXPostInput
 ): string {
-  const lines: string[] = [
-    `UPSIDE FUND - ${period} ${input.serial} UPDATE 📊`,
-  ];
-  const daily = stretchLine("Daily", input.daily);
-  const weekly = stretchLine("Weekly", input.weekly);
-  const total = stretchLine("Total", input.total);
+  const actions = input.actions ?? [];
+  const lines: string[] = [actionHeadline(period, input.serial, actions)];
+
+  const daily = stretchLine("Day", input.daily);
+  const weekly = stretchLine("Wk", input.weekly);
+  const total = stretchLine("Tot", input.total);
   if (daily) lines.push(daily);
   if (weekly) lines.push(weekly);
   if (total) lines.push(total);
 
   if (finite(input.balance)) {
-    lines.push("", `💼 Balance: ${currency(input.balance, 0)}`);
+    lines.push(`💼 ${currency(input.balance, 0)}`);
   }
 
-  const actions = input.actions ?? [];
-  const actionLines = [
-    tradeBullet(actions),
-    moverBullet(input.movers ?? []),
-    thesisBullet(actions),
-  ].filter((line): line is string => Boolean(line));
-  lines.push("", "⚡ PORTFOLIO ACTION");
-  for (const line of actionLines) lines.push(`• ${line}`);
+  const movers = moverBit(input.movers ?? []);
+  if (movers) lines.push(movers);
+
+  const thesis = thesisLine(actions);
+  if (thesis) lines.push(thesis);
 
   const radar = radarLine(input.radar ?? []);
-  if (radar) {
-    lines.push("", "👀 ON RADAR", radar);
-  }
+  if (radar) lines.push(`👀 ${radar}`);
 
-  return lines.join("\n");
+  const text = lines.join("\n");
+  if (text.length <= TWEET_MAX) return text;
+
+  const withoutRadar = lines.filter((l) => !l.startsWith("👀 ")).join("\n");
+  if (withoutRadar.length <= TWEET_MAX) return withoutRadar;
+
+  const withoutMovers = lines
+    .filter((l) => !l.startsWith("👀 ") && !/^\$[A-Z]/.test(l))
+    .join("\n");
+  return withoutMovers.length <= TWEET_MAX
+    ? withoutMovers
+    : withoutMovers.slice(0, TWEET_MAX);
 }
 
 export function composeDailyFundPost(input: FundXPostInput): string {
