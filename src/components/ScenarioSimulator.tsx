@@ -20,6 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { CARD, Card, EmptyState, Panel, PanelHeader, Pill, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW, Stat } from "@/components/ui/Panel";
+import { FORECAST_DISCLAIMER } from "@/lib/disclaimer";
 import {
   Activity,
   ChevronDown,
@@ -115,6 +116,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
         <PanelHeader
           icon={<Shield className="h-4 w-4" />}
           title="What a bad day costs you"
+          subtitle={FORECAST_DISCLAIMER}
         />
 
         <div className={cn(CARD, "overflow-hidden")}>

@@ -36,6 +36,41 @@ function payload(partial?: Partial<BookSnapshotPayload>): BookSnapshotPayload {
   };
 }
 
+function makeExport(): UserDataExport {
+  return {
+    exported_at: "2026-08-17T12:00:00.000Z",
+    account: { user_id: "u1", email: "a@b.c" },
+    profile: { id: "u1", note_sunday: true },
+    settings: {
+      email_notes: { sunday: true },
+      experience_tier: "investor",
+      knows_options: false,
+    },
+    portfolios: [{ id: "p1", name: "Book", cash_balance: 0 }],
+    holdings: [{ ticker: "NBIS", shares: 1 }],
+    cash_events: [{ delta: 100, balance_after: 100 }],
+    snapshots: [],
+    lab_state: null,
+    communities: [],
+    community_duels: [],
+    join_requests: [],
+    portfolio_invites: [],
+    portfolio_co_owners: [
+      { portfolio_id: "p1", created_at: "2026-08-01T00:00:00.000Z" },
+    ],
+    account_aliases: [
+      {
+        alias_email: "a@b.c",
+        primary_email: "main@b.c",
+        created_at: "2026-08-01T00:00:00.000Z",
+      },
+    ],
+    community_invite_uses: [
+      { invite_id: "inv1", used_at: "2026-08-01T00:00:00.000Z" },
+    ],
+  };
+}
+
 describe("snapshot GDPR slice/scrub", () => {
   it("keeps only owned sheets in an export slice", () => {
     const sliced = sliceSnapshotPayload(payload(), ["a"]);
@@ -78,28 +113,7 @@ describe("export csv and encryption", () => {
   });
 
   it("serializes plaintext JSON for the account download", () => {
-    const dump: UserDataExport = {
-      exported_at: "2026-08-17T12:00:00.000Z",
-      account: { user_id: "u1", email: "a@b.c" },
-      profile: { id: "u1", note_sunday: true },
-      settings: {
-        email_notes: { sunday: true },
-        experience_tier: "investor",
-        knows_options: false,
-      },
-      portfolios: [{ id: "p1", name: "Book", cash_balance: 0 }],
-      holdings: [{ ticker: "NBIS", shares: 1 }],
-      cash_events: [{ delta: 100, balance_after: 100 }],
-      snapshots: [],
-      lab_state: null,
-      communities: [],
-      community_duels: [],
-      join_requests: [],
-      portfolio_invites: [],
-      community_invite_uses: [
-        { invite_id: "inv1", used_at: "2026-08-01T00:00:00.000Z" },
-      ],
-    };
+    const dump = makeExport();
     const file = serializeUserExport(dump, { format: "json", encrypt: false });
     expect(file.filename).toBe("upside-export-2026-08-17.json");
     expect(file.body).toContain('"user_id": "u1"');
@@ -136,4 +150,22 @@ describe("session storage keep list", () => {
     expect(keepLocalKey("upside-last-user-v1")).toBe(false);
     expect(keepLocalKey("upside-book-cache-v1")).toBe(false);
   });
+
+  it("answers 'who else can see my holdings?' and 'which logins are me?'", () => {
+    /*
+     * Both were missing from the export. Neither is exotic: co-ownership is
+     * the record of who can open this person's sheets, and the alias link is
+     * what ties two email addresses to one human. A right-of-access copy
+     * that lists the holdings but not who shares them answers the easy half
+     * of the question.
+     */
+    const dump = makeExport();
+    expect(dump.portfolio_co_owners).toBeDefined();
+    expect(dump.account_aliases).toBeDefined();
+
+    const csv = toExportCsv(dump);
+    expect(csv).toContain("portfolio_co_owners");
+    expect(csv).toContain("account_aliases");
+  });
+
 });

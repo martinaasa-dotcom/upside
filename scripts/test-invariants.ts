@@ -6861,6 +6861,82 @@ run("every community route checks membership in code, not just auth", () => {
   }
 });
 
+run("the logo mark fills its box, and its lockups keep its aspect", () => {
+  /*
+   * This mark went missing from the app bar and nothing failed.
+   *
+   * It became inline SVG (to get a 260 KB PNG out of the LCP path) keeping
+   * the source's `0 0 128 128` box, with the polygons pushed inside it by a
+   * `translate(14 18) scale(0.78)`. That left about a third of the viewBox
+   * as empty padding. Invisible at splash size; in a 1.4em app-bar box the
+   * mark drew roughly 12 px and read as simply absent.
+   *
+   * A geometry bug like that throws nothing and types fine, so the only
+   * thing that catches it is measuring the artwork against the box it is
+   * declared in. That is what this does.
+   */
+  const src = readFileSync(
+    join(process.cwd(), "src/components/UpsideLogo.tsx"),
+    "utf8"
+  );
+
+  const facetBlock = /const facets: \[string, string, string\]\[\] = \[([\s\S]*?)\n  \];/.exec(src);
+  assert.ok(facetBlock, "could not find the facet table");
+  const points = [...facetBlock![1].matchAll(/\["([^"]+)"/g)].map((m) => m[1]!);
+  assert.ok(points.length >= 10, `expected the ten facets, found ${points.length}`);
+
+  const xs: number[] = [];
+  const ys: number[] = [];
+  for (const poly of points) {
+    for (const pair of poly.trim().split(/\s+/)) {
+      const [x, y] = pair.split(",").map(Number);
+      assert.ok(Number.isFinite(x) && Number.isFinite(y), `bad point ${pair}`);
+      xs.push(x!);
+      ys.push(y!);
+    }
+  }
+  const minX = Math.min(...xs);
+  const minY = Math.min(...ys);
+  const artW = Math.max(...xs) - minX;
+  const artH = Math.max(...ys) - minY;
+
+  const vb = /viewBox="([^"]+)"/.exec(src);
+  assert.ok(vb, "no viewBox on the mark");
+  const [vx, vy, vw, vh] = vb![1].trim().split(/\s+/).map(Number) as number[];
+
+  // No wrapping transform: the polygons are drawn in the viewBox's own space,
+  // so these numbers are directly comparable.
+  assert.doesNotMatch(
+    src,
+    /<g transform=/,
+    "a transform inside the mark makes the viewBox no longer describe the artwork"
+  );
+
+  const close = (a: number, b: number) => Math.abs(a - b) <= 1;
+  assert.ok(close(vx!, minX), `viewBox x ${vx} should sit at the art's left edge ${minX.toFixed(2)}`);
+  assert.ok(close(vy!, minY), `viewBox y ${vy} should sit at the art's top edge ${minY.toFixed(2)}`);
+  assert.ok(close(vw!, artW), `viewBox width ${vw} should match the art width ${artW.toFixed(2)}`);
+  assert.ok(close(vh!, artH), `viewBox height ${vh} should match the art height ${artH.toFixed(2)}`);
+
+  /*
+   * The mark is about 1.24x wider than tall. Every lockup that gives it an
+   * explicit box must use that ratio, or the browser letterboxes it and the
+   * mark silently loses height it could have had -- the same "still there,
+   * just too small to see" failure in a different disguise.
+   */
+  const aspect = artW / artH;
+  const boxes = [...src.matchAll(/h-\[([\d.]+)(em|rem)\] w-\[([\d.]+)\2\]/g)];
+  assert.ok(boxes.length >= 3, `expected the mark's sized boxes, found ${boxes.length}`);
+  for (const box of boxes) {
+    const h = Number(box[1]);
+    const w = Number(box[3]);
+    assert.ok(
+      Math.abs(w / h - aspect) < 0.05,
+      `${box[0]} has aspect ${(w / h).toFixed(3)}, but the mark is ${aspect.toFixed(3)} wide`
+    );
+  }
+});
+
 if (failed > 0) {
   console.error(`\n${failed} invariant(s) failed`);
   process.exit(1);
