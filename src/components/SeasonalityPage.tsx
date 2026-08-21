@@ -117,8 +117,8 @@ function CycleMonthlyChart({
               isSelected
                 ? "bg-accent ring-2 ring-primary"
                 : isCurrent
-                  ? "ring-1 ring-ring/40 hover:bg-accent"
-                  : "hover:bg-accent"
+                  ? "ring-1 ring-ring/40 hover:bg-hover"
+                  : "hover:bg-hover"
             )}
             title={`${row.label}: avg ${fmtPct(v)} (${row.samples} prior ${row.label}s)`}
           >
@@ -752,8 +752,8 @@ export function SeasonalityPage({ bookTickers = [] }: Props) {
                         viewMonth === m
                           ? "bg-primary text-primary-foreground"
                           : m === marketToday.month
-                            ? "text-foreground ring-1 ring-ring/40 hover:bg-accent"
-                            : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                            ? "text-foreground ring-1 ring-ring/40 hover:bg-hover"
+                            : "text-muted-foreground hover:bg-hover hover:text-foreground"
                       )}
                     >
                       {label}

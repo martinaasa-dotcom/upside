@@ -29,11 +29,24 @@ export function WorkspaceSwitcher({ className }: { className?: string }) {
     title: string,
     Icon: typeof BookOpen
   ) => (
+    /*
+     * Room nav, not a call to action.
+     *
+     * The active room used to render as a filled `--primary` pill, which
+     * put a second solid-yellow button in the header next to "Add
+     * holding" — two things shouting "press me" when only one of them is
+     * an action at all. The active room is a statement of where you are,
+     * so it now reads as a raised surface with primary text: visible at a
+     * glance, but it never competes with the one real CTA in the bar.
+     */
     <Button
       asChild
-      variant={active ? "default" : "ghost"}
+      variant="ghost"
       size="sm"
-      className={cn(active && "bg-primary text-primary-foreground")}
+      className={cn(
+        active &&
+          "card-sheen bg-secondary text-primary hover:bg-secondary hover:text-primary"
+      )}
     >
       <Link
         href={href}

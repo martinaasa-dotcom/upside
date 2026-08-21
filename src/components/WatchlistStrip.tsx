@@ -491,7 +491,7 @@ export function WatchlistStrip({
                         "flex min-h-11 w-full items-center justify-between gap-3 rounded-md px-2.5 text-left lg:min-h-8",
                         i === active
                           ? "bg-accent text-accent-foreground"
-                          : "hover:bg-accent hover:text-accent-foreground"
+                          : "hover:bg-hover hover:text-accent-foreground"
                       )}
                       onMouseDown={(e) => e.preventDefault()}
                       onMouseEnter={() => setActive(i)}

@@ -165,7 +165,7 @@ export function HomeWorld({
           <Card
             tone="brand"
             interactive
-            className="h-full transition group-hover:bg-accent"
+            className="h-full transition group-hover:bg-hover"
           >
             <div className="flex items-start justify-between gap-3">
               <MicroLabel>
@@ -212,7 +212,7 @@ export function HomeWorld({
         <Link href={communityHref} prefetch className="group block h-full">
           <Card
             interactive
-            className="h-full transition group-hover:bg-accent"
+            className="h-full transition group-hover:bg-hover"
           >
             <div className="flex items-start justify-between gap-3">
               <MicroLabel>

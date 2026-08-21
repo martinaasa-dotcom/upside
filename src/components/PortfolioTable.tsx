@@ -161,7 +161,7 @@ function InlineNumber({
         }
       }}
       className={cn(
-        "inline-edit no-spinner rounded-t px-1 py-0.5 text-center tabular-nums text-foreground outline-none hover:bg-accent focus:bg-muted focus:ring-1 focus:ring-ring/50",
+        "inline-edit no-spinner rounded-t px-1 py-0.5 text-center tabular-nums text-foreground outline-none hover:bg-hover focus:bg-muted focus:ring-1 focus:ring-ring/50",
         className ?? "mx-auto w-full max-w-[4.5rem]"
       )}
     />
@@ -447,7 +447,7 @@ export const PortfolioTable = memo(function PortfolioTable({
                 type="button"
                 onClick={onImportCsv}
                 title="Import / update holdings from a CSV file"
-                className="touch-target inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                className="touch-target inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:bg-hover hover:text-foreground"
                 aria-label="Import CSV"
               >
                 <FileUp className="h-3.5 w-3.5" />
@@ -457,7 +457,7 @@ export const PortfolioTable = memo(function PortfolioTable({
               type="button"
               onClick={canCash ? onEditCash : undefined}
               disabled={!canCash}
-              className="touch-target inline-flex items-center gap-2 rounded-md px-2 py-1 text-left transition hover:bg-accent disabled:cursor-not-allowed disabled:hover:bg-transparent"
+              className="touch-target inline-flex items-center gap-2 rounded-md px-2 py-1 text-left transition hover:bg-hover disabled:cursor-not-allowed disabled:hover:bg-transparent"
               title={canCash ? "Edit cash (stored in USD)" : tradeLock?.message}
             >
               <span className="text-sm font-medium text-muted-foreground">
@@ -507,7 +507,7 @@ export const PortfolioTable = memo(function PortfolioTable({
                 <button
                   type="button"
                   onClick={() => onDelete(h.id)}
-                  className="rounded-md p-2.5 text-muted-foreground hover:bg-accent hover:text-loss"
+                  className="rounded-md p-2.5 text-muted-foreground hover:bg-hover hover:text-loss"
                   aria-label={`Delete ${h.ticker}`}
                 >
                   <Trash2 className="h-4 w-4" />

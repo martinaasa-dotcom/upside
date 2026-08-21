@@ -18,6 +18,29 @@ import { plainError } from "@/lib/plain-error";
 import { Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
+const STATUS_CACHE_KEY = "upside-billing-status";
+
+/** Last known billing status, so the header renders its final shape on
+ * the first frame instead of re-flowing when the fetch lands. */
+function readCachedStatus(): string | null | undefined {
+  if (typeof window === "undefined") return undefined;
+  try {
+    const raw = window.localStorage.getItem(STATUS_CACHE_KEY);
+    if (raw === null) return undefined;
+    return raw === "" ? null : raw;
+  } catch {
+    return undefined;
+  }
+}
+
+function writeCachedStatus(status: string | null): void {
+  try {
+    window.localStorage.setItem(STATUS_CACHE_KEY, status ?? "");
+  } catch {
+    /* private mode / storage disabled — the fetch still drives the UI */
+  }
+}
+
 /**
  * Header-level "Upgrade" entry point. The Account page has always had the
  * real Billing card, but that only reaches someone who already went
@@ -34,7 +57,28 @@ export function UpgradeNudge({
   variant?: "pill" | "icon";
 }) {
   const { user } = useAuth();
-  const [status, setStatus] = useState<string | null | undefined>(undefined);
+  /*
+   * Seeded from the last known answer, not from `undefined`.
+   *
+   * This used to render nothing until `/api/billing/status` came back,
+   * then pop the pill in — so the whole header re-flowed a beat after
+   * everything else had painted. Nothing in the chrome is allowed to
+   * jump like that.
+   *
+   * Billing status barely ever changes, so the previous answer is a good
+   * prediction of this one: a returning subscriber renders no pill from
+   * the first frame, a returning free user renders it immediately, and
+   * neither shifts when the fetch confirms it. Only a genuinely first-ever
+   * load has nothing to go on, and that case holds the pill's space with
+   * an invisible placeholder instead of collapsing it (see below).
+   *
+   * The cache is a rendering hint only — every gate that actually matters
+   * is enforced server-side, so a stale value here can never unlock
+   * anything.
+   */
+  const [status, setStatus] = useState<string | null | undefined>(() =>
+    readCachedStatus()
+  );
   const [open, setOpen] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
 
@@ -45,7 +89,9 @@ export function UpgradeNudge({
       .then((r) => (r.ok ? r.json() : null))
       .then((data: { subscriptionStatus?: string | null } | null) => {
         if (ctrl.signal.aborted) return;
-        setStatus(data?.subscriptionStatus ?? null);
+        const next = data?.subscriptionStatus ?? null;
+        setStatus(next);
+        writeCachedStatus(next);
       })
       .catch(() => {
         if (!ctrl.signal.aborted) setStatus(null);
@@ -53,9 +99,23 @@ export function UpgradeNudge({
     return () => ctrl.abort();
   }, [user]);
 
-  if (!user || status === undefined || isActiveSubscription(status)) {
-    return null;
+  if (!user) return null;
+
+  // First-ever load: hold the space rather than collapsing it, so the
+  // header lands in its final geometry on the first paint either way.
+  if (status === undefined) {
+    return (
+      <span
+        aria-hidden
+        className={cn(
+          "pointer-events-none invisible shrink-0",
+          variant === "icon" ? "size-7" : "h-7 w-[6.5rem]"
+        )}
+      />
+    );
   }
+
+  if (isActiveSubscription(status)) return null;
 
   async function startCheckout() {
     setCheckingOut(true);
@@ -89,14 +149,14 @@ export function UpgradeNudge({
             <Sparkles />
           </Button>
         ) : (
+          /* Ghost like every other secondary control in the bar, with the
+           * accent carried by the icon and label rather than a filled
+           * tinted box. It is a nudge, not the header's main action. */
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             size="sm"
-            className={cn(
-              "gap-1.5 border-primary/30 bg-primary/10 text-primary",
-              "hover:bg-primary/20 hover:text-primary"
-            )}
+            className={cn("gap-1.5 text-primary hover:text-primary")}
           >
             <Sparkles className="size-3.5" aria-hidden />
             Upgrade

@@ -45,9 +45,13 @@ export function HeaderOverflowMenu({
     <div className="relative flex">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
+          {/* Ghost, like every other secondary control in the header. An
+            * outlined box here made View read as a heavier control than
+            * Feedback next to it, for no reason — they do the same kind of
+            * job. */}
           <Button
             type="button"
-            variant="outline"
+            variant="ghost"
             size={avatar ? "icon" : "default"}
             aria-label={label}
             title={label}

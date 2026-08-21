@@ -593,7 +593,7 @@ export function ExperienceOnboardingModal({ onDone }: Props) {
                         <li key={row.symbol}>
                           <button
                             type="button"
-                            className="flex w-full items-baseline justify-between gap-3 px-3 py-2 text-left text-sm text-foreground hover:bg-accent"
+                            className="flex w-full items-baseline justify-between gap-3 px-3 py-2 text-left text-sm text-foreground hover:bg-hover"
                             onMouseDown={(e) => e.preventDefault()}
                             onClick={() => {
                               setTicker(row.symbol);

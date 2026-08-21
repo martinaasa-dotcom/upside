@@ -271,7 +271,7 @@ function EoyPriceInput({
         }
       }}
       className={cn(
-        "inline-edit no-spinner mx-auto w-[5.5rem] max-w-full rounded-t px-1 py-0.5 text-center tabular-nums outline-none hover:bg-accent focus:bg-muted focus:ring-1 focus:ring-ring/50",
+        "inline-edit no-spinner mx-auto w-[5.5rem] max-w-full rounded-t px-1 py-0.5 text-center tabular-nums outline-none hover:bg-hover focus:bg-muted focus:ring-1 focus:ring-ring/50",
         targeted ? "text-foreground" : "text-muted-foreground"
       )}
     />

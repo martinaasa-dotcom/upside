@@ -934,13 +934,6 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
                 className="w-24 font-semibold"
               />
             </label>
-            <p className="min-h-5 text-sm text-muted-foreground">
-              {tipping != null
-                ? `From year ${tipping}, growth adds more than you do.`
-                : payIn
-                  ? "On this plan, you still add more than growth does."
-                  : "\u00a0"}
-            </p>
           </fieldset>
           <fieldset
             disabled={!takeOut}
@@ -1157,7 +1150,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
                         key={row.goal}
                         ref={isFirstPending ? firstPendingRowRef : undefined}
                         className={cn(
-                          "border-b border-border transition hover:bg-accent/30",
+                          "border-b border-border transition hover:bg-hover/30",
                           isFirstPending && "bg-primary/[0.06]"
                         )}
                       >
@@ -1338,7 +1331,7 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
                       <tr
                         key={row.index}
                         className={cn(
-                          "border-b border-border transition hover:bg-accent/30",
+                          "border-b border-border transition hover:bg-hover/30",
                           isLast && "bg-accent/20 font-semibold text-foreground"
                         )}
                       >

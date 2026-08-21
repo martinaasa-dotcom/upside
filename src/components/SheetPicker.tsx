@@ -130,7 +130,7 @@ export function SheetPicker({ sheets, value, onChange, onAdd }: Props) {
                     setOpen(false);
                     onAdd();
                   }}
-                  className="flex w-full items-center gap-2 px-3 py-3 text-left text-sm text-foreground hover:bg-accent sm:py-2.5"
+                  className="flex w-full items-center gap-2 px-3 py-3 text-left text-sm text-foreground hover:bg-hover sm:py-2.5"
                 >
                   <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden />
                   New sheet
@@ -163,7 +163,7 @@ function PickerRow({
         "flex w-full items-center justify-between gap-3 px-3 py-3 text-left text-sm sm:py-2.5",
         selected
           ? "bg-accent text-foreground"
-          : "text-foreground hover:bg-accent"
+          : "text-foreground hover:bg-hover"
       )}
     >
       <span className="min-w-0 truncate">{label}</span>

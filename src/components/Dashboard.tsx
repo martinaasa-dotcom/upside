@@ -3583,7 +3583,7 @@ export function Dashboard() {
             {!isMetaTab && source === "supabase" && activePortfolio && (
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 onClick={() => setInviteOpen(true)}
                 className="hidden md:inline-flex"
               >
