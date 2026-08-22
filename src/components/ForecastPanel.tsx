@@ -1169,7 +1169,7 @@ export const ForecastPanel = memo(function ForecastPanel({
 
       <div className="border-t border-border p-6">
         <div>
-          <h3 className="text-lg font-semibold tracking-tight text-foreground">
+          <h3 className="font-semibold text-foreground">
             What Margus makes of it
           </h3>
           {plan?.generatedAt && (

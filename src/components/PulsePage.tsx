@@ -233,6 +233,51 @@ function PulseCard({
     Boolean(shown?.thesisBreak);
   const needsMargusRun = !loading && !shown;
 
+  /* Drawn twice — right-aligned in the header's action column from `sm`
+   * up, and on its own full-width row under the price line on a phone.
+   * Only one of the two is ever visible; see the note on the header. */
+  const verdictRow = (
+    <>
+      {shown ? (
+        <>
+          <ActionBadge action={action} />
+          <Pill
+            tone={
+              status === "broken"
+                ? "bad"
+                : status === "watch"
+                  ? "warn"
+                  : "good"
+            }
+          >
+            <StatusIcon status={status} />
+            {statusLabel(status)}
+          </Pill>
+        </>
+      ) : loading ? (
+        <span className="text-sm text-muted-foreground">Checking …</span>
+      ) : null}
+      {onRefresh && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-sm"
+          onClick={onRefresh}
+          disabled={loading}
+          title={
+            checkedAt
+              ? `Last check ${formatRelativeTime(checkedAt)}. Re-check now`
+              : "Re-check just this ticker now"
+          }
+          aria-label={`Re-check ${c.ticker}`}
+          className="relative text-muted-foreground after:absolute after:-inset-2 after:content-['']"
+        >
+          <RefreshCw className={cn(loading && "animate-spin")} />
+        </Button>
+      )}
+    </>
+  );
+
   return (
     <li id={`pulse-card-${c.ticker}`} className="scroll-mt-28">
       <Card
@@ -243,8 +288,36 @@ function PulseCard({
           status: shown ? status : null,
         })}
       >
+      {/*
+        * The verdict row moves under the price line on a phone.
+        *
+        * shadcn's CardHeader switches to `grid-cols-[1fr_auto]` the moment
+        * a CardAction is present, and the action here is a whole row of
+        * chrome — the verdict badge, the thesis pill, the re-check button.
+        * On a phone that `auto` track took most of the width, so the
+        * ticker and the day's move — the two things you came to read —
+        * were the two things wearing the squeeze: `$VST` and
+        * `+1.1% After-hours` crushed into what was left of the column.
+        *
+        * Below `sm` the CardAction is hidden and the same row is rendered
+        * again underneath, full width, where the pills wrap instead of
+        * laddering. Hidden rather than removed on purpose: `CardHeader`
+        * picks its column count with `has-[data-slot=card-action]`, which
+        * is a two-class selector and outranks any `max-sm:grid-cols-1`
+        * written here — but a `display: none` child collapses the `auto`
+        * track to zero, so the first column gets the full width anyway
+        * and the primitive is left alone.
+        *
+        * The title and the price line are then placed by hand. A
+        * `display: none` child is not laid out in a grid at all, so the
+        * action stops reserving the second column — and auto-placement
+        * cheerfully put the price line up there instead, right-aligned
+        * beside the ticker rather than under it. Naming the cell costs two
+        * classes and changes nothing on desktop, where auto-placement was
+        * landing on those same two cells anyway.
+        */}
       <CardHeader>
-        <CardTitle className="flex flex-wrap items-center gap-2">
+        <CardTitle className="col-start-1 row-start-1 flex flex-wrap items-center gap-2">
           {onWriteThesis ? (
             <Button
               type="button"
@@ -266,63 +339,41 @@ function PulseCard({
             </Pill>
           ) : null}
         </CardTitle>
-        <CardDescription
-          className={cn(
-            "inline-flex items-center gap-1 font-medium tabular-nums",
-            up ? "text-gain" : "text-loss"
-          )}
-        >
-          {up ? (
-            <TrendingUp className="size-3.5" />
-          ) : (
-            <TrendingDown className="size-3.5" />
-          )}
-          {formatMovePct(c.effectivePct)}
+        {/*
+          * The move and the session it belongs to are two readings, not
+          * one string. At `gap-1` in a single inline row they sat 4px
+          * apart in the same rhythm as the arrow glyph, so "+1.1%" and
+          * "After-hours" ran together as one crowded token — and in the
+          * narrow column the old header left, they had nowhere to go but
+          * closer. The figure keeps its arrow tight; the label gets a
+          * clear step and its own line when there is no room beside it.
+          */}
+        <CardDescription className="col-start-1 row-start-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 font-medium tabular-nums">
+          <span
+            className={cn(
+              "inline-flex items-center gap-1",
+              up ? "text-gain" : "text-loss"
+            )}
+          >
+            {up ? (
+              <TrendingUp className="size-3.5" />
+            ) : (
+              <TrendingDown className="size-3.5" />
+            )}
+            {formatMovePct(c.effectivePct)}
+          </span>
           <span className="font-normal text-muted-foreground">{c.moveLabel}</span>
         </CardDescription>
-        <CardAction className="flex flex-wrap items-center justify-end gap-1.5">
-          {shown ? (
-            <>
-              <ActionBadge action={action} />
-              <Pill
-                tone={
-                  status === "broken"
-                    ? "bad"
-                    : status === "watch"
-                      ? "warn"
-                      : "good"
-                }
-              >
-                <StatusIcon status={status} />
-                {statusLabel(status)}
-              </Pill>
-            </>
-          ) : loading ? (
-            <span className="text-sm text-muted-foreground">Checking …</span>
-          ) : null}
-          {onRefresh && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              onClick={onRefresh}
-              disabled={loading}
-              title={
-                checkedAt
-                  ? `Last check ${formatRelativeTime(checkedAt)}. Re-check now`
-                  : "Re-check just this ticker now"
-              }
-              aria-label={`Re-check ${c.ticker}`}
-              className="relative text-muted-foreground after:absolute after:-inset-2 after:content-['']"
-            >
-              <RefreshCw className={cn(loading && "animate-spin")} />
-            </Button>
-          )}
+        <CardAction className="hidden flex-wrap items-center justify-end gap-1.5 sm:flex">
+          {verdictRow}
         </CardAction>
+        <div className="col-start-1 row-start-3 mt-1 flex flex-wrap items-center gap-1.5 sm:hidden">
+          {verdictRow}
+        </div>
       </CardHeader>
       <CardContent className="flex flex-col gap-6">
       {c.inBook ? (
-        <div className="grid grid-cols-2 gap-6 rounded-lg border border-border/50 bg-muted/40 p-6 sm:grid-cols-4">
+        <div className="glass-well grid grid-cols-2 gap-x-4 gap-y-5 rounded-lg p-4 sm:grid-cols-4 sm:gap-6 sm:p-6">
           <Metric label="Price" hint={currency(c.currentValue)}>
             {currency(c.price)}
           </Metric>
@@ -1214,7 +1265,7 @@ export const PulsePage = memo(function PulsePage({
 
       {pinnedCandidate && (
         <section>
-          <h3 className="mb-3 text-sm font-medium text-muted-foreground">
+          <h3 className="mb-3 text-muted-foreground">
             The one you asked about
           </h3>
           <ul className="flex flex-col gap-6">
@@ -1286,7 +1337,7 @@ export const PulsePage = memo(function PulsePage({
 
           {rest.length > 0 && (
             <section>
-              <h3 className="mb-3 text-sm font-medium text-muted-foreground">
+              <h3 className="mb-3 text-muted-foreground">
                 {attention.length > 0
                   ? "Everything else"
                   : `Your ${plural(rest.length, "biggest holding")}`}

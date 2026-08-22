@@ -169,7 +169,7 @@ export function SnapshotsModal({
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <div className="flex items-center gap-2">
             <History className="h-4 w-4 text-primary" />
-            <h2 className="text-sm font-semibold text-foreground">Snapshots</h2>
+            <h2 className="font-semibold text-foreground">Snapshots</h2>
           </div>
           <Button
             type="button"

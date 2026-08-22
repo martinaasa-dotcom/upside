@@ -416,6 +416,64 @@ body {
 }
 
 /*
+ * The phone gets a different lamp, not a scaled-down copy of the desktop
+ * one.
+ *
+ * Two lobes each 170vw wide is a deliberate desktop choice: on a 1440px
+ * field that reach is what keeps the falloff invisible. Carried onto a
+ * 390px phone the same proportion puts the page middle roughly two thirds
+ * of the way along each ramp, so *both* lights reach the centre of the
+ * screen at once. What that looks like in the hand is the warm side
+ * washing over the whole page while the blue, arriving at the same middle
+ * from the other corner, cancels into it and never reads as blue at all.
+ * That is the "the yellow bleeds into everything and the blue doesn't
+ * stand out" report, and the cause is reach, not brightness -- turning
+ * either lobe up on the desktop numbers would only spread more of it.
+ *
+ * So the phone trades reach for peak. The lobes come in to 130vw x 70vh,
+ * which lands the page middle at ~96% along the ramp (effectively zero),
+ * and the peaks go up by the same factor the alphas were carrying before
+ * (60%/66%, from 28%/31%). Measured over black at 390x844, field alone
+ * with the frame's children hidden: top-left corner 77/255 on its
+ * brightest channel against 43 before, bottom-right 99 against 55, the
+ * two *opposite* corners at 3 and 4, and the page middle at 1 (it was 7
+ * on the desktop numbers, which is the bleed this removes). Corner spread
+ * is what makes it read as a lit room, and
+ * this widens that spread rather than lifting the floor -- the mistake
+ * the desktop note warns about (60%/34% with 1700px lobes) was those
+ * peaks with the *long* reach, which lit 99% of the field and put the
+ * middle at 32.
+ *
+ * The 10% ratio between the two peaks is kept, not re-picked: sRGB's blue
+ * primary carries a fraction of the luminance of its green, so the cool
+ * side needs the extra alpha to sit level with the warm one. Re-measure
+ * that pair if `--ambient-cool` ever moves, exactly as on desktop.
+ */
+@media (max-width: 767px) {
+  .page-frame::before {
+    background-image:
+      radial-gradient(
+        130vw 70vh at -8% -10%,
+        oklch(from var(--primary) l c h / 60%) 0%,
+        oklch(from var(--primary) l c h / 34%) 18%,
+        oklch(from var(--primary) l c h / 16%) 34%,
+        oklch(from var(--primary) l c h / 6.5%) 52%,
+        oklch(from var(--primary) l c h / 2.6%) 72%,
+        transparent 98%
+      ),
+      radial-gradient(
+        130vw 70vh at 108% 110%,
+        oklch(from var(--ambient-cool) l c h / 66%) 0%,
+        oklch(from var(--ambient-cool) l c h / 38%) 18%,
+        oklch(from var(--ambient-cool) l c h / 18%) 34%,
+        oklch(from var(--ambient-cool) l c h / 7.2%) 52%,
+        oklch(from var(--ambient-cool) l c h / 2.9%) 72%,
+        transparent 100%
+      );
+  }
+}
+
+/*
  * These three live in `@layer utilities` on purpose. Tailwind v4's own
  * utilities (including every `hover:bg-*`/`hover:ring-*` variant used
  * alongside `.glass`/`.glass-well` throughout the app) are emitted inside
@@ -595,6 +653,57 @@ body {
       inset 0 1px 0 0 color-mix(in oklch, white, transparent 88%),
       inset 0 0 0 1px color-mix(in oklch, var(--border), transparent 35%);
   }
+
+  /*
+   * Thinner glass on a phone, and a harder edge to pay for it.
+   *
+   * The panel fill is what decides how much of the field reaches your
+   * eye, and on a phone the panels *are* the page -- a card runs gutter to
+   * gutter, so at the desktop 55% there is almost no bare field left for
+   * the corner lights to show up in. The lights ended up visible only in
+   * the thin margins, which is the other half of "the colour doesn't come
+   * through": the glow was fine, the panes over it were not.
+   *
+   * 66%/74% lets the warm corner read through the cards nearest it and
+   * the blue through the ones at the foot of the page, so the diagonal
+   * runs across the content rather than around it. A thinner fill is a
+   * weaker edge, though, and a card with no edge on a black field stops
+   * being a card -- so the border stroke goes to full `--border` and the
+   * top specular a step brighter, which is what actually sells glass at
+   * this opacity. Text sits on the blur, not on the fill, and the field
+   * under it peaks at 102/255, so body copy stays far above AAA.
+   *
+   * The blur drops 40px -> 30px: at 66% fill the extra radius buys
+   * nothing you can see, and it is per-frame work on the weakest GPU the
+   * app runs on. Saturate goes the other way, since the whole point here
+   * is the colour that gets through.
+   */
+  @media (max-width: 767px) {
+    .glass {
+      background-color: color-mix(in oklch, var(--card), transparent 66%);
+      -webkit-backdrop-filter: blur(30px) saturate(2.2);
+      backdrop-filter: blur(30px) saturate(2.2);
+    }
+    .card-sheen.glass {
+      box-shadow:
+        inset 0 1px 0 0 color-mix(in oklch, white, transparent 62%),
+        inset 0 -1px 0 0 color-mix(in oklch, white, transparent 86%),
+        inset 0 0 0 1px var(--border),
+        0 14px 36px -18px color-mix(in oklch, black, transparent 12%);
+    }
+    .glass-well {
+      background-color: color-mix(in oklch, var(--muted), transparent 74%);
+      -webkit-backdrop-filter: blur(20px) saturate(2);
+      backdrop-filter: blur(20px) saturate(2);
+      box-shadow: inset 0 0 0 1px
+        color-mix(in oklch, var(--border), transparent 15%);
+    }
+    .card-sheen.glass-well {
+      box-shadow:
+        inset 0 1px 0 0 color-mix(in oklch, white, transparent 80%),
+        inset 0 0 0 1px color-mix(in oklch, var(--border), transparent 15%);
+    }
+  }
 }
 
 /*
@@ -609,37 +718,65 @@ body {
  * 24px, because tracking is a fraction of the em and the gaps grow with it.
  * `text-wrap: balance` keeps a two-line heading from leaving one orphan word
  * on the second line -- the browser evens the lines instead.
+ *
+ * `@layer base`, and that is load-bearing rather than tidiness.
+ *
+ * Written un-layered, as these were until 2026-08-22, an element rule beats
+ * every Tailwind utility in the app: an un-layered declaration wins over a
+ * layered one regardless of specificity or source order, and Tailwind emits
+ * `text-sm`/`font-medium`/`tracking-tight` inside `@layer utilities`. So a
+ * size named on a heading was silently discarded --
+ * `<h1 className="text-sm">` in the phone top bar rendered at 1.5rem/600,
+ * which is how a circle's name arrived in the bar at the size of a page
+ * title. It held for every typographic property this block sets: font
+ * family, size, line-height, weight, tracking, wrap. Measured on the
+ * running app before the fix: `<h3 class="text-sm font-medium
+ * tracking-tight">` computed to 16px / 600 / -0.02em, none of which it
+ * asked for.
+ *
+ * Base layer keeps the defaults for a bare `<h2>` exactly as they were and
+ * lets a call site that names a size get the size it named. The 53 call
+ * sites whose classes this brought to life were stripped of them in the
+ * same commit, so nothing re-rendered: every heading in the app still
+ * measures what it measured, and from here a class on a heading does what
+ * it says. Verified by capturing computed size/line-height/weight/tracking
+ * for all 214 headings across ten pages at two widths, before and after.
+ *
+ * The one exception is `PanelHeader`'s `hero` branch, which asks for the
+ * h1 scale on its `<h2>` and had never once got it.
  */
-h1,
-h2,
-h3,
-h4 {
-  font-family: var(--font-heading), ui-sans-serif, system-ui, sans-serif;
-  letter-spacing: -0.02em;
-  font-weight: 600;
-  text-wrap: balance;
-}
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-heading), ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: -0.02em;
+    font-weight: 600;
+    text-wrap: balance;
+  }
 
-h1 {
-  font-size: 1.5rem;
-  line-height: 2rem;
-  letter-spacing: -0.035em;
-}
+  h1 {
+    font-size: 1.5rem;
+    line-height: 2rem;
+    letter-spacing: -0.035em;
+  }
 
-h2 {
-  font-size: 1.125rem;
-  line-height: 1.75rem;
-  letter-spacing: -0.028em;
-}
+  h2 {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+    letter-spacing: -0.028em;
+  }
 
-h3 {
-  font-size: 1rem;
-  line-height: 1.5rem;
-}
+  h3 {
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
 
-h4 {
-  font-size: 0.875rem;
-  line-height: 1.25rem;
+  h4 {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
 }
 
 /* Hide scrollbars in horizontal tab rails (still scrollable). */
@@ -978,6 +1115,32 @@ button:disabled,
   }
   html {
     @apply font-sans;
+  }
+  /*
+   * No rubber band on the document, and that is a layout fix rather than a
+   * taste one.
+   *
+   * WebKit translates the whole visual viewport during an overscroll
+   * bounce, and `position: fixed`/`sticky` elements ride along with it --
+   * they are pinned to the layout viewport, not to the glass. So pulling
+   * down at the top of a page dragged the phone top bar down with the
+   * page (reported as "the whole header keeps going down"), and pushing
+   * past the bottom slid the floating tab bar half off the screen for the
+   * length of the bounce before it snapped back. Both are the same
+   * bounce, seen from the two ends.
+   *
+   * `overscroll-behavior-y: none` stops the document itself from
+   * overscrolling, so the two bars stay welded to the viewport edges.
+   * Scroll containers *inside* the page keep their own behaviour: this is
+   * the root scroller only, and `.overflow-x-auto` further up still opts
+   * its own axis into containment separately.
+   *
+   * Set on both elements on purpose -- which one is the root scroller
+   * differs between engines, and the property is not inherited.
+   */
+  html,
+  body {
+    overscroll-behavior-y: none;
   }
   input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
       [type="file"]

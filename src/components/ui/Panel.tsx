@@ -143,13 +143,23 @@ export const BOX =
   "card-sheen glass rounded-xl text-sm text-card-foreground ring-1 ring-foreground/20";
 /** Nested well inside a box. Not a second card, and not for static facts. */
 export const CARD = "glass-well rounded-lg";
-/** Panel padding. Comfortable density, same on phone and desktop. */
-export const PANEL_PAD = "p-6";
+/**
+ * Panel padding. One step down on a phone.
+ *
+ * 24px on every side was the same number on a 1440px desktop and a 390px
+ * phone. On the phone that is 48px of the width gone before any content
+ * starts, on top of the page gutter — and a panel is usually the full
+ * column, so it compounds: a two-up score cell inside one had about 118px
+ * to set a figure in. That is what pushed "23.0% a year" out through the
+ * side of its own card. 16px on a phone gives each of those cells another
+ * 24px and costs a desktop nothing.
+ */
+export const PANEL_PAD = "p-4 sm:p-6";
 /** Nested card / score-cell padding. Same step as the panel. */
-export const NESTED_PAD = "p-6";
+export const NESTED_PAD = "p-4 sm:p-6";
 /** A Scoreboard cell. Separate card on the field, not a hairline slice. */
 export const SCORE_CELL =
-  "card-sheen glass min-w-0 rounded-xl p-6 ring-1 ring-foreground/20";
+  "card-sheen glass min-w-0 rounded-xl p-4 ring-1 ring-foreground/20 sm:p-6";
 /** Member / row list on the field. */
 export const LIST =
   "glass divide-y divide-border overflow-hidden rounded-xl ring-1 ring-foreground/20";
@@ -165,10 +175,40 @@ const SHELL_TONES = {
   danger: "card-sheen glass ring-destructive/30",
 } as const;
 
+/*
+ * One size step down on a phone, for both figure styles below.
+ *
+ * 24px mono is about 14px a character, and a two-up score cell inside a
+ * panel on a 390px screen has ~123px of content — nine characters.
+ * `$1,822,306` is ten. So an ordinary six-figure balance was hitting the
+ * wrap below and breaking *inside the number*, which is worse than a long
+ * line: `$19,556,` on one row and `216` on the next reads as two figures.
+ * 20px buys three more characters and still sets these as the largest
+ * thing on the card by a clear step.
+ */
 const FIGURE =
-  "mt-2 font-mono text-2xl font-bold tabular-nums";
+  "mt-2 min-w-0 font-mono text-xl font-bold tabular-nums break-words sm:text-2xl";
+/*
+ * `break-words`, and no `whitespace-nowrap`.
+ *
+ * A figure that cannot fit its cell has to do something, and the two
+ * options are wrap or overflow. `whitespace-nowrap` picked overflow, and
+ * because a Score cell is `overflow: visible` the text simply carried on
+ * out through the side of the card and past the edge of the page — on
+ * Circle's "Modeled year" it read as `23.0% a ye` with the rest gone.
+ * Wrapping is the honest answer at a width you cannot control.
+ *
+ * Most values here have no spaces in them (`$629,907`, `42%`, `4.8`), so
+ * they are unaffected either way; it is the handful carrying a unit —
+ * "23.0% a year", "8y 4m" — that gain a second line instead of an escape
+ * route. `break-words` is the backstop under that for a number long
+ * enough to beat the cell on its own.
+ *
+ * `leading-tight` rather than `leading-none`, because a two-line figure at
+ * `leading-none` sets its own lines touching.
+ */
 const DISPLAY =
-  "mt-2 min-w-0 font-mono text-2xl font-bold leading-none tracking-tight tabular-nums whitespace-nowrap";
+  "mt-2 min-w-0 font-mono text-xl font-bold leading-tight tracking-tight tabular-nums break-words sm:text-2xl";
 /** Status word on a reading tile. Not the 24px figure style. */
 const STATUS =
   "mt-1.5 min-w-0 font-heading text-lg font-semibold tracking-tight";
@@ -206,7 +246,7 @@ export function Panel({
       className={cn(
         "h-full min-w-0 max-w-full rounded-xl text-sm text-card-foreground ring-1",
         SHELL_TONES[tone],
-        padded && "flex flex-col gap-6 p-6",
+        padded && "flex flex-col gap-5 p-4 sm:gap-6 sm:p-6",
         className
       )}
       {...rest}
@@ -275,7 +315,17 @@ export function PanelHeader({
           <h2
             className={cn(
               /* Tracking is optical, so it tightens as the size grows —
-               * the fit that reads right at 18px reads loose at 24px. */
+               * the fit that reads right at 18px reads loose at 24px.
+               *
+               * These two pairs are the h1 and h2 steps of the scale in
+               * `globals.css`, written out because this is an `<h2>` that
+               * sometimes wants to be h1-sized. Until 2026-08-22 neither
+               * pair did anything: the heading element rules sat outside
+               * `@layer base` and outranked every utility, so `hero`
+               * rendered identically to the default and the prop was
+               * decorative. The non-hero pair is byte-for-byte the h2
+               * default, so only `hero` moved — two call sites, both
+               * panels that open a page. */
               "font-heading font-semibold text-balance text-foreground",
               hero ? "text-2xl tracking-[-0.035em]" : "text-lg tracking-[-0.028em]"
             )}
@@ -365,9 +415,25 @@ export function MicroLabel({
   className?: string;
 }) {
   return (
+    /*
+     * Inline flow, not a flex row.
+     *
+     * As `flex items-center gap-1.5` the label text and its InfoTip were
+     * two flex items sharing one line, so the moment the words needed a
+     * second line the text blockified into a narrow column on the left
+     * and the icon parked itself at the far right of the cell, centred
+     * against both lines. "Of that, growth" on Growth did exactly that:
+     * two stacked words hard left, an info dot floating off on the right
+     * edge with nothing beside it.
+     *
+     * Inline, the icon is simply the thing after the last word, so it
+     * follows the text onto whichever line the text ends on and the label
+     * reads as one phrase at any width. `align-text-bottom` on the
+     * trigger keeps it sitting on the caps rather than on the baseline.
+     */
     <p
       className={cn(
-        "flex items-center gap-1.5 font-mono text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground",
+        "min-w-0 font-mono text-xs font-medium uppercase tracking-[0.1em] text-muted-foreground [&>[data-slot=info-tip]]:ml-1.5",
         className
       )}
     >
@@ -670,8 +736,9 @@ export function InfoTip({ text, label }: { text: string; label?: string }) {
     <Popover>
       <PopoverTrigger
         type="button"
+        data-slot="info-tip"
         aria-label={label ?? "What does this mean?"}
-        className="relative inline-flex size-4 shrink-0 items-center justify-center text-muted-foreground transition hover:text-foreground"
+        className="relative inline-flex size-4 shrink-0 items-center justify-center align-text-bottom text-muted-foreground transition hover:text-foreground"
         onClick={(e) => e.stopPropagation()}
       >
         <span className="absolute -inset-3.5 lg:-inset-2.5" aria-hidden />
@@ -789,16 +856,25 @@ export function SwatchLegend({
 /** Separate cards with air between them. Use this for any 2–5 number row. */
 export function Scoreboard({
   cols = 4,
+  mobileCols,
   className,
   children,
 }: {
   cols?: 1 | 2 | 3 | 4 | 5;
+  /**
+   * Force the phone count. The default pairs two-up, which is right for a
+   * bare figure ("$629,907", "42%") and wrong the moment a cell carries a
+   * sentence under it — two 123px columns turn one line of explanation
+   * into eight. Pass 1 for those.
+   */
+  mobileCols?: 1 | 2;
   className?: string;
   children: ReactNode;
 }) {
   const n = Children.count(children);
   const desk = filledCardColumns(n, cols);
-  const mobilePreferred = cols <= 1 ? 1 : cols === 3 ? 1 : Math.min(2, cols);
+  const mobilePreferred =
+    mobileCols ?? (cols <= 1 ? 1 : cols === 3 ? 1 : Math.min(2, cols));
   const mobile = filledCardColumns(n, mobilePreferred);
   return (
     <div
@@ -854,14 +930,19 @@ export function Score({
   );
   return (
     <div className={cn(SCORE_CELL, className)}>
+      {/*
+        * Inline, for the same reason `MicroLabel` is — see the note there.
+        * A flex row parked the info dot on the far right of the cell as
+        * soon as the label needed two lines.
+        */}
       {reading ? (
-        <p className="flex items-start gap-1.5 text-sm font-semibold tracking-tight text-foreground">
-          <span className="min-w-0">{label}</span>
+        <p className="min-w-0 text-sm font-semibold tracking-tight text-foreground [&>[data-slot=info-tip]]:ml-1.5">
+          {label}
           {explain && <InfoTip text={explain} />}
         </p>
       ) : (
-        <MicroLabel className={explain ? "items-start" : undefined}>
-          <span className="min-w-0">{label}</span>
+        <MicroLabel>
+          {label}
           {explain && <InfoTip text={explain} />}
         </MicroLabel>
       )}

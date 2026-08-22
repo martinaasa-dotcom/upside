@@ -195,7 +195,7 @@ export function DailyDuelCard({
             <Swords className="h-4 w-4" />
           </div>
           <div>
-            <h3 className="text-sm font-medium tracking-tight text-foreground">Daily Duel</h3>
+            <h3 className="text-foreground">Daily Duel</h3>
             <p className="mt-0.5 text-sm text-muted-foreground">{sessionLine}</p>
           </div>
         </div>
@@ -290,7 +290,7 @@ export function DailyDuelCard({
             <Swords className="h-4 w-4" />
           </div>
           <div>
-            <h3 className="text-sm font-medium tracking-tight text-foreground">Daily Duel</h3>
+            <h3 className="text-foreground">Daily Duel</h3>
             <p className="mt-0.5 text-sm text-muted-foreground">{sessionLine}</p>
           </div>
         </div>

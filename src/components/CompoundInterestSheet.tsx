@@ -75,7 +75,6 @@ import {
   NativeSelectOption,
 } from "@/components/ui/native-select";
 import { ChartXRail, ChartYAxis } from "@/components/ui/ChartAxis";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 type CurrencyCode = DisplayCurrency;
@@ -642,24 +641,6 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
   const clearedMilestones = milestones.filter(milestoneDone);
   const upcomingMilestones = milestones.filter((m) => !milestoneDone(m));
 
-  const firstPendingRowRef = useRef<HTMLTableRowElement | null>(null);
-  const milestoneScrollRef = useRef<HTMLDivElement | null>(null);
-  const scrolledToMilestoneRef = useRef(false);
-  useEffect(() => {
-    if (scrolledToMilestoneRef.current) return;
-    const row = firstPendingRowRef.current;
-    const box = milestoneScrollRef.current;
-    if (!row || !box) return;
-    scrolledToMilestoneRef.current = true;
-    const rowRect = row.getBoundingClientRect();
-    const boxRect = box.getBoundingClientRect();
-    const delta = rowRect.top - boxRect.top;
-    box.scrollTop = Math.max(
-      0,
-      box.scrollTop + delta - box.clientHeight / 2 + rowRect.height / 2
-    );
-  }, [milestones]);
-
   function setMilestoneActual(goal: number, iso: string) {
     setMilestoneActuals((prev) => {
       const next = { ...prev };
@@ -1107,7 +1088,26 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
               {milestoneTakeaway}
             </p>
           )}
-          <div className="mt-4 lg:hidden">
+          {/*
+            * One ladder at every width, not a phone list and a desktop
+            * table.
+            *
+            * The two disagreed about the thing the panel is for. The phone
+            * showed only what is still ahead, highlighted the next round
+            * number, and folded everything already crossed behind an "8
+            * already crossed" summary. The desktop showed all twenty-odd
+            * rows in a scrolling table and auto-scrolled you to your place
+            * in it — so the answer to "what's next" was somewhere in the
+            * middle of a wall of dates, and every number you had already
+            * passed competed with it. The phone reading is the better one
+            * and it is now the only one; the desktop table, its scroll
+            * container, and the auto-scroll that positioned it are gone.
+            *
+            * The rows themselves stretch rather than change: the ladder is
+            * a flex row, so the amount takes the slack a wide screen gives
+            * it and the date column stays where it is.
+            */}
+          <div className="mt-4">
             {upcomingMilestones.length > 0 ? (
               <ul className="divide-y divide-border overflow-hidden rounded-lg bg-muted">
                 {upcomingMilestones.map((row, i) => (
@@ -1144,100 +1144,6 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
                 </ul>
               </details>
             ) : null}
-          </div>
-          <div
-            ref={milestoneScrollRef}
-            className="relative mt-4 hidden max-h-[24rem] min-w-0 max-w-full overflow-x-auto overflow-y-auto rounded-lg border border-border bg-muted lg:block"
-          >
-            <table className={cn(htmlTable, "min-w-[30rem]")}>
-              <thead className="sticky top-0 z-10 bg-card">
-                <tr className="border-b border-border text-sm text-muted-foreground">
-                  <th className={cn(htmlCell, "font-medium")}>Milestone</th>
-                  <th className={cn(htmlCell, "font-medium")}>On this plan</th>
-                  <th className={cn(htmlCell, "font-medium")}>How far off</th>
-                  <th className={cn(htmlCell, "font-medium")}>Got there on</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(() => {
-                  let firstPendingSeen = false;
-                  return milestones.map((row) => {
-                    const done = row.hit || Boolean(row.actualDate);
-                    const isFirstPending = !done && !firstPendingSeen;
-                    if (isFirstPending) firstPendingSeen = true;
-                    return (
-                      <tr
-                        key={row.goal}
-                        ref={isFirstPending ? firstPendingRowRef : undefined}
-                        className={cn(
-                          "border-b border-border transition hover:bg-hover/30",
-                          isFirstPending && "bg-primary/[0.06]"
-                        )}
-                      >
-                        <td className={htmlCell}>
-                          <span
-                            className={cn(
-                              "inline-flex items-center justify-center gap-2 tabular-nums font-medium",
-                              done ? "font-semibold text-gain" : "text-foreground"
-                            )}
-                          >
-                            {done ? (
-                              <CheckCircle2
-                                className="h-4 w-4 shrink-0 text-gain"
-                                aria-hidden
-                              />
-                            ) : (
-                              <span
-                                className="inline-block h-3.5 w-3.5 shrink-0 rounded border border-input bg-transparent"
-                                aria-hidden
-                              />
-                            )}
-                            {show(row.goal)}
-                          </span>
-                        </td>
-                        <td className={cn(htmlCell, "tabular-nums text-muted-foreground")}>
-                          {row.hit ? (
-                            <Badge
-                              variant="secondary"
-                              className="bg-gain/10 text-gain"
-                            >
-                              Already past it
-                            </Badge>
-                          ) : row.targetDate ? (
-                            formatMilestoneDate(row.targetDate)
-                          ) : (
-                            "More than 50 years out"
-                          )}
-                        </td>
-                        <td className={cn(htmlCell, "tabular-nums text-muted-foreground")}>
-                          {row.hit
-                            ? "—"
-                            : row.yearsUntil != null && Number.isFinite(row.yearsUntil)
-                              ? `${row.yearsUntil.toFixed(1)} years`
-                              : "—"}
-                        </td>
-                        <td className={htmlCell}>
-                          <Input
-                            type="date"
-                            aria-label={`Date you reached ${show(row.goal)}`}
-                            value={row.actualDate ?? ""}
-                            onChange={(e) =>
-                              setMilestoneActual(row.goal, e.target.value)
-                            }
-                            className={cn(
-                              "h-7 max-w-[9.5rem] px-1.5 text-sm tabular-nums",
-                              done
-                                ? "border-gain/40 text-gain"
-                                : "text-muted-foreground"
-                            )}
-                          />
-                        </td>
-                      </tr>
-                    );
-                  });
-                })()}
-              </tbody>
-            </table>
           </div>
         </Panel>
 

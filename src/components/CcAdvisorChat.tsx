@@ -340,7 +340,7 @@ function ChatMarkdown({ children }: { children: string }) {
             </h3>
           ),
           h3: ({ children: c }) => (
-            <h4 className="mb-1 mt-2.5 text-base font-semibold text-foreground first:mt-0">
+            <h4 className="mb-1 mt-2.5 font-semibold text-foreground first:mt-0">
               {c}
             </h4>
           ),
@@ -1043,7 +1043,7 @@ export function CcAdvisorChat({
               <Sparkles className="h-4 w-4" />
             </div>
             <div className="min-w-0 flex-1">
-              <h2 className="text-sm font-semibold text-foreground">
+              <h2 className="font-semibold text-foreground">
                 Assistant Margus
               </h2>
               <p className="text-sm leading-snug text-muted-foreground">

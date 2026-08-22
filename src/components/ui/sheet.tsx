@@ -114,7 +114,15 @@ function SheetTitle({
     <SheetPrimitive.Title
       data-slot="sheet-title"
       className={cn(
-        "font-heading text-base font-medium text-foreground",
+      /* Size, weight, line-height and tracking come from the `h2` scale in
+       * `globals.css` — Radix renders this as a real `<h2>`. Until
+       * 2026-08-22 those element rules sat outside `@layer base` and
+       * outranked every utility, so the classes shadcn ships here never
+       * applied and this has always rendered at the heading scale. The
+       * layer moved; these came off with it so nothing re-rendered.
+       * Adopting shadcn's own sizes here is a deliberate typographic
+       * call, not a side effect of that fix. */
+        "font-heading text-foreground",
         className
       )}
       {...props}

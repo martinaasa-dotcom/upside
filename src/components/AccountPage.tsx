@@ -309,7 +309,7 @@ export function AccountPage() {
     <SignInGate>
       <div className={PAGE_FRAME_CLASS}>
         <MobileChrome title="Account" active={null} />
-        <AppHeader className="hidden md:block" title="Account">
+        <AppHeader title="Account">
           <Button
             type="button"
             variant="outline"
@@ -326,7 +326,7 @@ export function AccountPage() {
 
         <main id="main" className={PAGE_MAIN_CLASS}>
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">My account</h1>
+            <h1 className="text-2xl font-semibold">My account</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               How you appear, your data, and the danger zone.
             </p>
@@ -696,7 +696,7 @@ export function AccountPage() {
                 <AlertTriangle className="h-4 w-4" />
               </span>
               <div className="min-w-0 flex-1">
-                <h2 className="font-heading text-lg font-semibold tracking-tight text-destructive">
+                <h2 className="font-heading text-lg font-semibold text-destructive">
                   Delete my account
                 </h2>
                 <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">

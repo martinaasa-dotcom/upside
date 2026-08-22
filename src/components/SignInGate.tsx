@@ -184,7 +184,7 @@ export function SignInGate({ children }: Props) {
                 * flagged. It measured 19.26:1 -> 14.73:1 contrast, so it
                 * was never actually illegible — it just reads as a hedge on
                 * the one sentence that has to sound certain. */}
-              <h1 className="text-balance font-heading text-2xl font-semibold leading-tight tracking-tight text-foreground">
+              <h1 className="text-balance font-heading text-2xl font-semibold text-foreground">
                 {invite ? inviteLandingCopy(invite).title : PRODUCT_SENTENCE}
               </h1>
               <p className="text-base leading-relaxed text-muted-foreground">

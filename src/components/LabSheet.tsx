@@ -13,9 +13,12 @@ import {
 import { EmptyState, Panel, Score, Scoreboard, SPLIT_COPY, SPLIT_ROW, SwatchLegend } from "@/components/ui/Panel";
 import { Progress } from "@/components/ui/progress";
 import {
-  NativeSelect,
-  NativeSelectOption,
-} from "@/components/ui/native-select";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { LabDeepLink } from "@/components/OverviewDashboard";
 import {
   correlationGrid,
@@ -295,10 +298,10 @@ export const LabSheet = memo(function LabSheet({
 
   return (
     <div className="flex flex-col gap-6">
-      <Panel padded={false} className="px-6 py-4">
+      <Panel padded={false} className="px-4 py-3 sm:px-6 sm:py-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
-            <h2 className="shrink-0 text-sm font-medium tracking-tight text-foreground">Lab</h2>
+            <h2 className="shrink-0 text-foreground">Lab</h2>
             <div
               role="tablist"
               aria-label="Lab sections"
@@ -359,32 +362,59 @@ export const LabSheet = memo(function LabSheet({
               )}
             </div>
           </div>
-          <label className="flex shrink-0 items-center gap-2">
-            <span className="shrink-0 text-sm font-medium text-muted-foreground">
+          {/*
+            * A real Select, not a native `<select>`.
+            *
+            * iOS Safari zooms the whole page when a form control under
+            * 16px takes focus, so the app forces `input, select, textarea`
+            * to 16px below `md` to stop that. A `<select>` picks that up
+            * along with the text fields it was written for — which is why
+            * this one control sat two steps larger than the "Looking at"
+            * label glued to its left and the tab pills above it, reading
+            * as a stray piece of a different design rather than a scope
+            * filter.
+            *
+            * A Radix trigger is a `<button>`, so the rule does not reach
+            * it and it can stay `text-sm` on a phone; the panel it opens
+            * is app chrome and sizes itself. No zoom either way, because
+            * nothing here takes text.
+            */}
+          <div className="flex min-w-0 shrink-0 items-center gap-2">
+            <span
+              className="shrink-0 text-sm font-medium text-muted-foreground"
+              id="lab-scope-label"
+            >
               Looking at
             </span>
-            <NativeSelect
+            <Select
               value={scopeId}
-              onChange={(e) => setScopeId(e.target.value)}
+              onValueChange={setScopeId}
               disabled={!scopeApplies}
-              className={cn(
-                "min-w-0 max-w-[min(100%,16rem)]",
-                !scopeApplies && "cursor-not-allowed opacity-40"
-              )}
-              title={
-                scopeApplies
-                  ? "Narrow these tools down to one portfolio"
-                  : "This tool always uses your whole portfolio"
-              }
             >
-              <NativeSelectOption value="book">Everything</NativeSelectOption>
-              {portfolios.map((p) => (
-                <NativeSelectOption key={p.id} value={p.id}>
-                  {p.name}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
-          </label>
+              <SelectTrigger
+                aria-labelledby="lab-scope-label"
+                className={cn(
+                  "min-w-0 max-w-[min(100%,16rem)]",
+                  !scopeApplies && "cursor-not-allowed opacity-40"
+                )}
+                title={
+                  scopeApplies
+                    ? "Narrow these tools down to one portfolio"
+                    : "This tool always uses your whole portfolio"
+                }
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="book">Everything</SelectItem>
+                {portfolios.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </Panel>
 
@@ -401,7 +431,7 @@ export const LabSheet = memo(function LabSheet({
               <Panel tone="plain">
                 <div className={SPLIT_ROW}>
                   <div className={SPLIT_COPY}>
-                    <h3 className="text-sm font-medium tracking-tight text-foreground">
+                    <h3 className="text-foreground">
                       How spread out you are
                     </h3>
                     <p className="mt-1.5 text-sm text-muted-foreground">
@@ -491,7 +521,7 @@ export const LabSheet = memo(function LabSheet({
 
               {themes.length > 0 && (
                 <Panel tone="plain">
-                  <h3 className="text-sm font-medium tracking-tight text-foreground">
+                  <h3 className="text-foreground">
                     What you&apos;re actually betting on
                   </h3>
                   <p className="mt-1.5 mb-4 text-sm text-muted-foreground">
@@ -554,7 +584,7 @@ export const LabSheet = memo(function LabSheet({
         />
         <Panel tone="plain" className="flex flex-col gap-4">
           <div>
-            <h3 className="text-sm font-medium tracking-tight text-foreground">
+            <h3 className="text-foreground">
               Do these move together?
             </h3>
             <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
@@ -692,7 +722,7 @@ function AllocCard({
 }) {
   return (
     <Panel tone="plain">
-      <h3 className="mb-3 text-sm font-medium tracking-tight text-foreground">{title}</h3>
+      <h3 className="mb-3 text-foreground">{title}</h3>
       <div className="flex flex-col gap-2">
         {slices.map((s) => (
           <div key={s.label}>

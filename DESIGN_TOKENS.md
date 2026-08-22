@@ -952,3 +952,148 @@ with its glyph, the 6px gap, and `px-2` either side.
 **Before lowering `MAX_DOCK_CELLS` to make something fit, check it against a
 real book.** The seed household has four portfolios, so a cap of 8 would
 fold the dock for the person who asked for this.
+
+## The phone is its own room (2026-08-22)
+
+Everything above was measured on a desktop and then handed to the phone
+unchanged. Most of it survived that; four things did not, and they compound
+— which is why the report was a single one, "the yellow just bleeds into
+everything and the blue doesn't stand out at all", rather than four.
+
+### The lobes had reach and no peak
+
+The ambient pair is sized in `vw`/`vh` precisely so it holds its proportion
+at any width. That is the right instinct and it is what broke here: 170vw ×
+112vh is a lobe far wider than a phone, so on a 390 × 844 field the page
+middle sits about two thirds of the way along each ramp and *both* lights
+reach it. The warm one washes over everything and the blue arrives at the
+same middle from the other side and cancels into it. Neither corner reads
+as a corner.
+
+So below `md` the phone trades reach for peak — 130vw × 70vh, peaks up from
+28%/31% to 60%/66%. Same ratio between the two (sRGB's blue primary carries
+a fraction of the luminance of its green, so the cool side needs the extra
+alpha to sit level), same five-stop falloff, same anchors just off the
+corner.
+
+Measured over black at 390 × 844, field alone with the frame's children
+hidden:
+
+| Sample | Desktop numbers on a phone | Phone numbers |
+|---|---|---|
+| top-left corner | 43 | **77** |
+| bottom-right corner | 55 | **99** |
+| top-right corner | ~0 | 3 |
+| bottom-left corner | ~0 | 4 |
+| page middle | 7 | **1** |
+
+The middle is the number that matters. Corners nearly twice as bright *and*
+a middle seven times darker is a wider spread, not a brighter page — which
+is the whole difference between "lit from two corners" and "tinted".
+
+The desktop note warns that 60%/34% was a failure once. It was, with 1700px
+lobes: that lit 99% of the field and put the middle at 32. The peak was
+never the problem. Reach was.
+
+### The panes over it
+
+On a phone the panels *are* the page — a card runs gutter to gutter, so
+there is almost no bare field left for the corner lights to show up in. At
+the desktop `.glass` fill (55%) the glow was visible only in the margins.
+Below `md`: `.glass` 66%, `.glass-well` 74%, blur 40px → 30px (at that
+opacity the extra radius buys nothing you can see and it is per-frame work
+on the weakest GPU the app runs on), saturate up rather than down since the
+colour getting through is the point.
+
+A thinner fill is a weaker edge, and a card with no edge on a black field
+stops being a card — so the border stroke goes to full `--border` and the
+top specular a step brighter. On a phone the edge is doing even more of the
+work than the desktop note describes.
+
+### 24px of gutter on a 390px screen
+
+`PAGE_GUTTER_CLASS` was a flat `px-6`. That is 48px of a phone's width gone
+before any content starts, and it compounds with `PANEL_PAD` (another 48)
+and `SCORE_CELL` (another 48) — a two-up score cell inside a panel had
+about 118px to set a 24px mono figure in. Nine characters. `$1,822,306` is
+ten.
+
+All three step down one below `sm` (16px), and the figure styles step down
+one size with them (`text-xl sm:text-2xl`). The page gutter now also
+matches the phone chrome, which sits at 16px — the top bar's wordmark and
+the dock had never lined up with the cards between them.
+
+### Nothing may leave its box
+
+`DISPLAY` carried `whitespace-nowrap`, so a figure that could not fit its
+cell ran out through the side of the card and off the page — Circle's
+"Modeled year" read as `23.0% a ye`. Wrapping is the honest answer at a
+width you cannot control, so the figure styles wrap now, with `break-words`
+under that as a backstop.
+
+Wrapping is a fallback, not a plan. Where a value needs a unit, put the
+number in the figure and the unit in the line below it — "23.0%" over "A
+year, +8.3% vs an index fund", not "23.0% a year". And `Scoreboard` takes
+`mobileCols={1}` for any row whose cells carry a sentence: two 123px
+columns turn one line of explanation into eight.
+
+### A size class on a heading now does something
+
+`h1`–`h4` are styled by element rules in `globals.css`. Those rules used to
+sit **outside any cascade layer**, and an un-layered declaration beats a
+layered one whatever its specificity — while Tailwind emits `text-sm`,
+`font-medium` and `tracking-tight` from `@layer utilities`. So every
+typographic class written on a heading was silently discarded. Measured on
+the running app before the fix:
+
+| written | rendered |
+|---|---|
+| `<h3 class="text-sm font-medium tracking-tight">` | 16px / 600 / -0.02em |
+| `<h2 class="text-2xl font-semibold">` | 18px |
+| `<p class="text-sm">` (for contrast) | 14px, as asked |
+
+That is how a circle's name arrived in the phone top bar at the size of a
+page title, and it held for all six properties the block sets: family,
+size, line-height, weight, tracking, wrap.
+
+**The fix is two halves, and only both together are safe.** Moving the
+block into `@layer base` on its own wakes up 53 call sites nobody reviewed,
+and most of them *shrink* — `<h3 className="text-sm">` panel titles across
+Lab and Pulse drop 16px → 14px and stop reading as titles. That was tried
+first and backed out on sight. So the same commit moved the block **and**
+stripped the classes it woke up, leaving each heading on the scale it had
+been rendering at all along. Four shadcn primitives that render a real
+`<h2>` — `DialogTitle`, `AlertDialogTitle`, `SheetTitle`, `DrawerTitle` —
+were pinned the same way; their upstream sizes had never applied here
+either.
+
+Proved rather than eyeballed: computed size, line-height, weight, tracking,
+family and wrap captured for all **214 headings** across ten pages at 390px
+and 1440px, before and after. Two headings differ, both on purpose:
+
+- `PanelHeader`'s `hero` branch, 18px → 24px. It is an `<h2>` asking for
+  the h1 step for the one panel that opens a page, it says so in its own
+  comment, and it had never once got it — the prop was decorative. Two call
+  sites, both checked.
+- An `sr-only` `<h1>` picked up the `white-space: nowrap` that `sr-only`
+  always wanted. It is a 1×1px clipped box; nothing renders.
+
+`src/lib/heading-scale.test.ts` holds both halves: it fails if a heading
+grows a typography class that disagrees with the scale, and if the element
+rules ever leave `@layer base` (without which the first check means
+nothing). Deliberate overrides go in its `ALLOWED` list with a note.
+
+To size one heading now: name the class and it works. The old workaround —
+put it on a child, the way `SheetPicker` and `MobileTopBar` do — is still
+fine and still there, since both also want the `<h1>` to stay a heading for
+a screen reader while looking like chrome.
+
+### Two bounces, one property
+
+The phone top bar "kept going down" on a pull, and the floating tab bar cut
+in half for a moment when you pushed past the end of a page. Those are the
+same bug from opposite ends: WebKit translates the visual viewport during
+an overscroll bounce and `fixed`/`sticky` elements ride along with it.
+`overscroll-behavior-y: none` on `html, body` stops the document
+overscrolling at all, and both bars stay welded to the viewport edges.
+Scroll containers inside the page keep their own behaviour.

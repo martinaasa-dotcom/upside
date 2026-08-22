@@ -26,7 +26,7 @@ export default function Error({
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background px-4 text-center">
       <UpsideLogo variant="icon" />
       <div className="flex max-w-sm flex-col gap-2">
-        <h1 className="text-base font-medium tracking-tight text-foreground">
+        <h1 className="text-foreground">
           Something broke on this screen
         </h1>
         <p className="text-sm leading-relaxed text-muted-foreground">
