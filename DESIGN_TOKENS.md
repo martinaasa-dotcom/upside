@@ -10,42 +10,6 @@ correct and already shared with the landing page. The one real gap was
 `--primary`, which was gold — everything below documents that change and
 nothing else moves.
 
-## Verified-correct, unchanged
-
-These were checked against the landing page's actual source and are
-already consistent app-wide. Do not "fix" them again in a future pass —
-they're not the gap.
-
-| Token | Value | Note |
-|---|---|---|
-| `--background` | `oklch(0 0 0)` | True black already. Not the grayish-charcoal the brief worried about — that description was actually about `--card`, and `--card` is already correct too (next row). |
-| `--card` / `--popover` | `oklch(0.205 0 0)` | shadcn's own official dark-mode default (see the comment above it in `globals.css`). The landing page's own `Panel` (the `BookStill` sample card) uses this exact same `bg-card` class — no separate "landing page shade" exists. |
-| `--border` | `oklch(1 0 0 / 16%)` | White at 16% alpha — a hairline, not a filled color. This is how the landing page defines its card edges (`ring-1 ring-foreground/10`-style patterns) instead of a lightness step. |
-| `--radius` | `0.625rem` | Unchanged; standard shadcn scale, already used everywhere. |
-| `--gain` / `--loss` | `oklch(0.696 0.17 162.48)` / `oklch(0.645 0.246 16.439)` | Semantic, not brand — explicitly out of scope for the accent retirement. Crisp emerald/rose, used only for gains/losses. |
-
-## Pass 1: gold → violet (superseded — see Pass 2 below)
-
-Old: `oklch(0.762 0.102 80)` — "Gold Delta," hue 80° (gold/amber territory).
-This is the color the muddy `bg-amber-950/20`-style tinted card washes and
-dull gold buttons were built from — a real, confirmed gap, not a
-misreading.
-
-New: `oklch(0.62 0.24 291)` — a saturated violet. Distinct from
-gain-green (162°) and loss-rose (16°) so it never gets confused with a
-financial signal; high chroma so it stays vivid on true black instead of
-reading as a muted brand tint. `--primary-foreground` moves from
-near-black (`oklch(0.145 0 0)`, needed for readable text on light gold) to
-near-white (`oklch(0.985 0 0)`, needed for readable text on a mid-dark
-violet).
-
-Everything that referenced `--primary` — buttons, focus rings, the
-sidebar accent, the `--select`/`--brand*` aliases, the landing page's own
-ambient glow and card ring (`bg-primary/20`, `ring-primary/15`,
-`shadow-[..._var(--primary)]`) — inherits this automatically, since they
-were already token references, not hardcoded gold values. That's the
-whole fix for 90% of the gold surface area.
-
 ## Warning/caution semantic
 
 `--warning` (and `--chart-3`, which shared its value) was also gold-hued
@@ -163,11 +127,10 @@ source for literal strings, so building them from a template literal makes
 the classes silently stop existing. Verify against the compiled bundle,
 not the source.
 
-## Pass 2: violet → subtle warm yellow, plus glass surfaces
+## The accent: a subtle warm yellow
 
-The violet from Pass 1 (above) tested live and didn't land — the request
-this time was explicitly "white, or a subtle yellowish tone," landing on
-the yellow option. New value: `--primary: oklch(0.8 0.09 90)` (was
+An earlier saturated violet tested live and didn't land; the request was
+explicitly "white, or a subtle yellowish tone." Current value: `--primary: oklch(0.8 0.09 90)` (was
 `oklch(0.62 0.24 291)`). Lower chroma and a hue further from orange than
 the original "Gold Delta" (`oklch(0.762 0.102 80)`, hue 80°) — this reads
 as a quiet warm neutral, not a bright brand color, and sits far enough
@@ -224,14 +187,6 @@ and gray" (this pass); the former was about affordance, this one is about
 the gradient having enough dynamic range to read as a lit surface instead
 of two adjacent shades of pale.
 
-## Removed as dead code
-
-`--accent-amber` and `--mustard` were defined in `globals.css` but never
-consumed by any component (`grep` confirms zero usages of the
-`accent-amber`/`mustard` Tailwind utilities anywhere in `src/`). Deleted
-outright rather than recolored, since renaming/recoloring something
-nothing reads from would just be more dead weight with a less-honest name.
-
 ## Gradient/glow pattern (from the landing page, now shared app-wide)
 
 Two large, heavily blurred radial shapes, **both in `--primary`**, shared
@@ -245,41 +200,6 @@ places on the signed-out page (`bg-gain/10` at `blur(130px)`, and a
 the right against rgb(37,34,21) warm on the left. That was the
 "unexplained green glow" the design reviews kept flagging. Both are now
 `--primary`.
-
-## Explicitly out of scope for this pass
-
-- **`src/lib/book-shock.ts`**'s `"gold"` sector key (GLD/IAU/SLV/GDX/GDXJ) —
-  this is the literal commodity, a portfolio-classification label, not a
-  color token. Untouched.
-- **Email** — mail clients do not do `oklch`, custom properties, or
-  `backdrop-filter`, so the Sunday letter carries its own hex palette in
-  `EMAIL` (`src/lib/email-letter.ts`). That is a conversion of these tokens,
-  not a second palette: `gold: "#d4bc79"` is `--primary`, `gain: "#00bc7d"`
-  is `--gain`, and so on. Move a token here and re-convert rather than
-  eyeballing a near-match. *(This entry used to say the templates held a
-  stray `#d6ad69` and name a second file, src/lib/note-report.ts (unbackticked
-  here because it is not a path you can open). Neither
-  survives: the hex is gone from the repo, and that file went with the
-  weekday and after-close notes on 2026-08-19.)*
-- **The logo mark** (`/public/upside-mark.png`, referenced from
-  `UpsideLogo.tsx`) — a static raster asset (also used as the favicon, OG
-  image, and X profile image), not a CSS-token-driven element. Recoloring
-  it is a graphic-design task outside a token/component pass, and nobody
-  asked for the brand mark itself to change, only the app's UI color
-  system. Left as gold intentionally.
-- ~~**`src/lib/portfolio-personality.ts`**'s `ANIMAL_CARD_TONE` is dead
-  code~~ — **no longer true, and it was the single worst colour offender
-  found in the Round 2 audit.** Six modules import from this file
-  (`LabSheet`, `CommunityView`, `UpsidePortfolioPage`, `TickerDrawer`,
-  `allocation`, `book-insights`), and the power-animal work made the tone
-  table live. It is a 21-hue rainbow — `bg-purple-400`, `bg-violet-400`,
-  `bg-fuchsia-400`, `bg-indigo-400` among them — each with a
-  `wash: "bg-<hue>-500/10"` tinted card background, which is the exact
-  pattern `AGENTS.md` bans by name. Its sibling `THEME_COLOR` was fixed in
-  Round 2 (see "Categorical data ramp" below); `ANIMAL_CARD_TONE` is
-  **still open** and is tracked in
-  `docs/audit/01-visual-cohesion-fix-log.md`.
-
 
 ## Why the glass is mostly *edge*, not blur (2026-08-20)
 
@@ -550,67 +470,67 @@ was decoration. Worth revisiting only if a surface appears where a reader
 landing mid-page genuinely cannot tell what section they are in.
 
 
-## Reach, and the chrome that was eating it (2026-08-21)
+## Chrome and field: the current numbers
 
-Two separate complaints, one symptom: the glow felt boxed into a band in the
-middle of the page.
+The chrome is **one pane** — one wrapper, one fill, one blur, both rows
+inside it. Two sibling `fixed` elements each with their own blur do not read
+as one sheet: each samples a different slice of what is behind it, so the
+bands come out at different tones with a seam. The only edge the chrome
+carries is the one at its bottom, where it meets the page.
 
-### The chrome was clipping the field
+All four chrome surfaces (desktop header, desktop dock, phone top bar, phone
+tab bar) are `bg-background/35` with `backdrop-blur-2xl`. `--background` is
+pure black, so each is a black veil and its alpha is exactly how much of the
+field it eats — at `/95` the dock was effectively opaque and clipped the glow
+at a hard edge. **The blur carries legibility, not the opacity.** Header text
+measures 18.5 contrast against it, so do not raise these back toward opaque
+to "fix" contrast without measuring first.
 
-`.page-frame::before` is `position: fixed; inset: 0`, so it always spanned the
-whole viewport. What cut it was the chrome painted on top:
+There is one `<AppStatusStrip>` instance, deliberately: it holds a
+one-second interval and polls quotes, so rendering it per breakpoint would
+run two of each.
 
-| Surface | Was | This pass | Today |
-|---|---|---|---|
-| Desktop header | `bg-background/75` | `bg-background/55` | `bg-background/35` |
-| Status strip | `bg-background/75` | `bg-background/55` | *(merged into the header — see "One pane" below)* |
-| **Desktop dock** (`PortfolioTabs`) | **`bg-background/95`** | `bg-background/60` | `bg-background/35` |
-| Mobile top bar | `bg-background/75` | `bg-background/55` | `bg-background/35` |
-| Mobile tab bar | `bg-background/75` | `bg-background/60` | `bg-background/35` |
+`PAGE_CHROME_SPACER_CLASS` reserves **85px, not 84** — the status strip's
+`border-b` is part of the chrome's height. It is written as
+`calc(5.25rem_+_1px)` so the arithmetic is visible, and written out
+literally rather than composed from a constant, because Tailwind extracts
+classes by scanning source text and a template literal yields a class that
+never gets a rule.
 
-The fourth column is where these actually sit now, two passes later. The
-numbers in the third are kept because the reasoning below is about *that*
-step; the values it names stopped being current the same day.
+### The field, measured
 
-`--background` is pure black, so each of these is a black veil and its alpha
-is *exactly* how much of the light underneath it eats. At `/95` the dock was
-effectively opaque. Both bands sit over the brightest parts of the field —
-the warm corner at the top, the blue at the bottom — so that is precisely
-where the clipping showed. Measured on the running app, the luminance step
-across the header edge went from a hard bar to **7.1**, and across the dock
-edge to **2.9**.
+Field alone — the frame's children and the chrome hidden, and the scrollbar
+gutter excluded, because that gutter is compositor paint and sampling it
+reports a false black corner.
 
-The blur carries legibility here, not the opacity: `backdrop-blur-xl` turns
-anything scrolling under into a soft wash, and the field it sits on peaks at
-40/255 at the time (43 today — see "Chrome: one pane" below). Header text
-measures **18.5** contrast against it. Don't raise these back toward opaque to
-"fix" contrast without measuring first.
-
-### The lobes got reach, not brightness
-
-Peak alpha did not move — 28% warm, 31% cool, same as before. Only the radii
-and the tail did: `95vw 58vh` → `130vw 82vh`, with a fourth stop added to
-each lobe (28 → 13 → 5.5 → 2 → 0) so the extra distance is spent almost
-entirely in the very dim end.
-
-| | Before | After |
+| | Desktop 1440×900 | Phone 390×844 |
 |---|---|---|
-| Lit field (≥ 4/255) | 27.2% | **48.1%** |
-| Field under 2/255 | 68.1% | **32.6%** |
-| Top-left / bottom-right peak | 40 / 52 | 43 / 55 |
-| The two opposite corners | 0 / 0 | 1 / 2 |
-| Muted text on glass | 8.19 | 7.84 |
+| Top-left peak (warm) | **43** | **77** |
+| Bottom-right peak (blue) | **55** | **99** |
+| Top-right / bottom-left | 5 / 6 | 3 / 4 |
+| Page middle | **7** | **1** |
 
-Lit area nearly doubles, the corners are within a couple of levels of where
-they were, a third of the page is still true black, and the diagonal still
-reads — the dark corners sit at 1–2 against the lit pair's 43 and 55.
+The desktop corners come out identical at any width, which is the check that
+sizing the lobes in `vw`/`vh` is doing its job. The phone column is a
+different lamp — see "The phone is its own room".
 
-**Brightness and coverage are separate dials, and they fail the same way.**
-The earlier overshoot pushed *alpha* (60%/34%) and lit 99% of the field. One
-more size step here — `145vw × 92vh` — takes the black share from 33% to
-1.8%. Same failure, other route. Whichever dial moves, the number that
-catches it is the share of field under 2/255.
+**The black-share metric is finished.** It was the honest guard through
+three widenings, and at this reach it reads 0.1% while the page still looks
+like a dark room. What carries that read is the middle against the lit
+corners, with the two opposite corners holding the diagonal. Judge a change
+on those three. Brightness and coverage are separate dials and they fail the
+same way; the failure mode is *alpha* — 60%/34% once put the middle at 32
+and the corners at 111.
 
+### The Margus button clears the dock
+
+`CcAdvisorChat`'s FAB carried a flat `lg:bottom-8` while the dock is `fixed
+bottom-0` at every width, so on desktop it sat *underneath* the dock: the
+dock's blur smeared its warm fill across the corner as a yellow haze, and
+clicks in that corner hit the dock, making Margus unreachable. Both were
+hidden while the dock was near-opaque. Anchor to `--dock-pad`, the live
+measured dock height — never a flat offset. The consent banner needs the
+same clearance.
 
 ## Label voice: mono caps, two tiers (2026-08-21)
 
@@ -652,156 +572,6 @@ opening with the words "Breaks if". That is now the label.
 plain paragraph: a single labelled row is a label with nothing to distinguish
 itself from. Labels are plain language — "BREAKS IF", never "INVALIDATION".
 
-
-## Glass pass: one pane, deeper refraction, wider field (2026-08-21)
-
-Four reports, from a signed-in screenshot.
-
-### "Two weird layers of glass, it's not one smooth unit"
-
-The header row and the status strip were two sibling `fixed` elements, each
-with its own `bg-background/*` fill and its own `backdrop-blur`. Two blurs on
-two backdrops do not read as one sheet: each samples a different slice of what
-is behind it, so the bands came out at visibly different tones with a seam
-between them.
-
-Fixed structurally rather than tonally — one wrapper, one fill, one blur, both
-rows inside it, a hairline where they meet. Verified on the running app: the
-top chrome is now a single `div top=0 backdrop-filter: blur(40px)`, 85px
-tall (it was 98px before the rows were tightened; see "One pane" below).
-
-Still **one** `<AppStatusStrip>` instance. It holds a one-second interval and a
-visibilitychange listener, so rendering it once per breakpoint would run two of
-each; the single wrapper changes behaviour at `md` instead.
-
-### "The yellow glow on the footer is terrible"
-
-Not a glow. It was the Margus button.
-
-`CcAdvisorChat`'s FAB carried `lg:bottom-8`, a flat 2rem offset, while the dock
-is `fixed inset-x-0 bottom-0` at every width. So on desktop the button sat
-*underneath* the dock. Two consequences, both hidden while the dock was
-near-opaque and both exposed the moment it became translucent:
-
-1. The dock's backdrop blur (24px then, 40px now) sampled the button's warm
-   fill and smeared it
-   across the corner as a soft yellow haze.
-2. Clicks in that corner hit the dock. **Margus was unreachable on desktop.**
-
-`--dock-pad` is the live measured dock height and the non-`lg` branch was
-already using it, so the fix is to drop the override. The consent banner needed
-the same clearance — it anchors to `--dock-pad` too and was landing on the
-button once the button moved up.
-
-### "Increase the glassiness … refract like Apple's new glass"
-
-| | Was | Now |
-|---|---|---|
-| `.glass` fill | `transparent 38%` | `transparent 55%` |
-| `.glass` blur / saturate | `28px` / `1.6` | `40px` / `1.9` |
-| `.glass` top rim | white @ 24% | white @ 30% |
-| `.glass-well` fill | `transparent 50%` | `transparent 64%` |
-| `.glass-well` blur / saturate | `16px` / `1.4` | `24px` / `1.7` |
-| Chrome veils | `/55`–`/60`, `blur-xl` | `/50`, `blur-2xl` — and `/35` a pass later |
-
-More of the field passes through, and the heavier blur plus saturation lift is
-what makes it refract rather than just tint.
-
-Contrast re-measured on the running app afterwards, because a more transparent
-card means text sits closer to the light: muted on card **7.3–8.39**, foreground
-on card **16.8**, foreground on the header **18.6**. On a phone the bar's own
-glass over the brightest part of the field measures `rgb(19,17,11)` — foreground
-**18.2**, muted **9.1**. All far above AAA.
-
-*(Measuring that last one needs the bar's own children hidden first. Every point
-in the mobile bar is covered by some child's box, so a naive pixel scan returns
-the gold logo mark — a deliberate brand element, not a background — and reports
-a false 3.66.)*
-
-### "The background glow could cover an even bigger area"
-
-`130vw 82vh` → `150vw 96vh`, with a fifth tail stop. Peak alpha unchanged for
-the third widening running: 28% warm, 31% cool.
-
-| | Before | After |
-|---|---|---|
-| Lit field (≥ 4/255) | 43.9% | **60.1%** |
-| Corner peaks | 40 / 51 | 40 / 51 |
-| The two opposite corners | 1 / 2 | 3 / 3 |
-| Page middle | 2.1 | 5.7 |
-
-The middle at ~6/255 is *spread*, not lit — it still reads black against 40 and
-51 in the corners, and the opposite corners at 3 keep the diagonal. The share
-under 2/255 drops to 6.7%, which is why that metric alone stops being the whole
-story at this reach; read it together with the middle and the corner spread.
-
-One further step (`165vw × 108vh`) puts the middle at 7.6 and lit at 91.5%, and
-that is the wall.
-
-*(It was not the wall. The next pass went to `170vw × 112vh` — see below.)*
-
-## Chrome: one pane, and the field's current numbers (2026-08-21)
-
-Three follow-ups, plus a re-measurement that supersedes every figure above.
-
-### The hairline survived the merge
-
-Merging the header row and the status strip into one wrapper fixed the *fills*,
-but `border-b` stayed on the header element, so a rule still ran between the two
-rows and the chrome still read as two stacked panes — which was the original
-complaint. The only edge the chrome carries now is the one at its bottom, where
-it meets the page.
-
-Walking the band top to bottom at a text-free column, luminance goes `15.0 →
-12.9` with a biggest single-pixel step of **0.93/255**. No seam, no banding; the
-gentle falloff is the field itself getting darker downward.
-
-### Veils to `/35`, rows tighter
-
-All four chrome veils went `/50` → `/35` with `backdrop-blur-2xl`. Desktop
-chrome tightened from 96px to 84px of rows — header `3.5rem → 3rem`, status
-`2.5rem → 2.25rem` — because at the old heights the markets bar sat a clear step
-below the header rather than reading as its second line.
-
-**The spacer that reserves it is 85px, not 84.** The status strip carries a
-`border-b`, and the hairline is part of the chrome's height whether or not
-anyone counts it; at a flat `h-21` the page's top pixel row sat under that edge.
-`PAGE_CHROME_SPACER_CLASS` is now written as `calc(5.25rem_+_1px)` so the
-arithmetic is visible — and written out literally rather than composed from a
-constant, because Tailwind extracts classes by scanning source text and a
-template literal yields a class that never gets a rule.
-
-### The field, re-measured
-
-`150vw 96vh` → `170vw 112vh`, a fifth tail stop, peak alpha unchanged for the
-fourth widening running: 28% warm, 31% cool.
-
-Everything in the sections above was sampled with page content on screen. These
-were taken with the field alone — the frame's children and the chrome hidden —
-and with the scrollbar gutter down the right edge excluded, because that gutter
-is compositor paint rather than field and sampling it reports a false black
-corner. That is why these differ by a point or two from the numbers above; where
-they disagree, **these are the ones to trust.**
-
-| | Desktop 1440×900 | Phone 390×844 |
-|---|---|---|
-| Top-left peak (warm) | `rgb(43,38,24)` → **43** | `rgb(43,38,24)` → **43** |
-| Bottom-right peak (blue) | `rgb(22,38,55)` → **55** | `rgb(22,38,55)` → **55** |
-| Top-right / bottom-left | 5 / 6 | 5 / 6 |
-| Page middle | **7** | **9** |
-| Lit field (≥ 4/255) | 99.9% | 99.8% |
-| Field under 2/255 | 0.1% | 0.2% |
-
-The corners come out identical at both sizes, which is the check that sizing the
-lobes in `vw`/`vh` is doing its job.
-
-**The black-share metric is finished.** It was the guard that kept this honest
-through three widenings, and at this reach it reads 0.1% while the page still
-looks like a dark room. What carries that read now is the middle at 7 against
-lit corners at 43 and 55, with the two opposite corners at 5 and 6 holding the
-diagonal. Judge it on those three; brightness and coverage stay separate dials,
-and the failure mode is still *alpha* — 60%/34% once put the middle at 32 and
-the corners at 111.
 
 ## The dock: one well, one cell per place (2026-08-21)
 
@@ -1043,87 +813,54 @@ columns turn one line of explanation into eight.
 sit **outside any cascade layer**, and an un-layered declaration beats a
 layered one whatever its specificity — while Tailwind emits `text-sm`,
 `font-medium` and `tracking-tight` from `@layer utilities`. So every
-typographic class written on a heading was silently discarded. Measured on
-the running app before the fix:
+typographic class written on a heading was silently discarded. Measured
+before the fix: `<h3 class="text-sm font-medium tracking-tight">` computed to
+16px / 600 / -0.02em; the same classes on a `<p>` worked.
 
-| written | rendered |
-|---|---|
-| `<h3 class="text-sm font-medium tracking-tight">` | 16px / 600 / -0.02em |
-| `<h2 class="text-2xl font-semibold">` | 18px |
-| `<p class="text-sm">` (for contrast) | 14px, as asked |
+**The fix is two halves, and only both together are safe.** Moving the block
+into `@layer base` alone wakes 53 unreviewed call sites and most of them
+*shrink* — `<h3 className="text-sm">` panel titles across Lab and Pulse drop
+16px → 14px and stop reading as titles. So the same commit moved the block
+**and** stripped the classes it woke, leaving every heading on the scale it
+was already rendering at. Four shadcn primitives that render a real `<h2>`
+(`DialogTitle`, `AlertDialogTitle`, `SheetTitle`, `DrawerTitle`) were pinned
+the same way.
 
-That is how a circle's name arrived in the phone top bar at the size of a
-page title, and it held for all six properties the block sets: family,
-size, line-height, weight, tracking, wrap.
-
-**The fix is two halves, and only both together are safe.** Moving the
-block into `@layer base` on its own wakes up 53 call sites nobody reviewed,
-and most of them *shrink* — `<h3 className="text-sm">` panel titles across
-Lab and Pulse drop 16px → 14px and stop reading as titles. That was tried
-first and backed out on sight. So the same commit moved the block **and**
-stripped the classes it woke up, leaving each heading on the scale it had
-been rendering at all along. Four shadcn primitives that render a real
-`<h2>` — `DialogTitle`, `AlertDialogTitle`, `SheetTitle`, `DrawerTitle` —
-were pinned the same way; their upstream sizes had never applied here
-either.
-
-Proved rather than eyeballed: computed size, line-height, weight, tracking,
-family and wrap captured for all **214 headings** across ten pages at 390px
-and 1440px, before and after. Two headings differ, both on purpose:
-
-- `PanelHeader`'s `hero` branch, 18px → 24px. It is an `<h2>` asking for
-  the h1 step for the one panel that opens a page, it says so in its own
-  comment, and it had never once got it — the prop was decorative. Two call
-  sites, both checked.
-- An `sr-only` `<h1>` picked up the `white-space: nowrap` that `sr-only`
-  always wanted. It is a 1×1px clipped box; nothing renders.
+Verified by capturing computed size, line-height, weight, tracking, family
+and wrap for all 214 headings across ten pages at two widths, before and
+after. Two differ, both on purpose: `PanelHeader`'s `hero` branch (18px →
+24px — an `<h2>` asking for the h1 step, which had never once got it), and
+an `sr-only` `<h1>` picking up the `white-space: nowrap` that `sr-only`
+always wanted.
 
 `src/lib/heading-scale.test.ts` holds both halves: it fails if a heading
-grows a typography class that disagrees with the scale, and if the element
-rules ever leave `@layer base` (without which the first check means
-nothing). Deliberate overrides go in its `ALLOWED` list with a note.
-
-To size one heading now: name the class and it works. The old workaround —
-put it on a child, the way `SheetPicker` and `MobileTopBar` do — is still
-fine and still there, since both also want the `<h1>` to stay a heading for
-a screen reader while looking like chrome.
+grows a typography class that disagrees with the scale, and if the rules
+ever leave `@layer base`.
 
 ### Two spread rows, never two stacked columns
 
 A Movers tile shows four things — ticker, percent, price, dollars — as
-ticker/percent on one line and price/dollars on the next. It was built as
-two *columns*, each stacked: ticker over price on the left, percent over
-dollars on the right. It reads identically either way, and it is wrong.
-
-Two columns share one width, and here one was `shrink-0` while the other
-was `flex-1 min-w-0`. So the left always gave. At 390px the tile is 157px,
-the percent column takes 85, and `$640.80` was handed 32px of the 59 it
-needs — the reader saw half a price, mid-digit, with no ellipsis to say so.
-It clipped on every phone width tested (6 of 6 tiles at 360 and 390, 1 of 6
-at 430), and a comment in the file claimed it had been verified not to.
+ticker/percent on one line and price/dollars on the next. Built as two
+*columns* it reads identically and is wrong: columns share one width, and
+here one was `shrink-0` while the other was `flex-1 min-w-0`, so the left
+always gave. At 390px the tile is 157px, the percent column takes 85, and
+`$640.80` was handed 32px of the 59 it needs — half a price, mid-digit, no
+ellipsis. It clipped at every phone width tested.
 
 As two *rows*, each line spreads its own two items with `justify-between`
-and each item sizes to its own content, so neither can starve the other.
-Nothing clips at 360 / 390 / 430 / 1440 with a four-figure price and a
-five-character percent.
-
-The trend arrow is `hidden sm:block`: 20px on the tightest line for
-information the tile already carries twice — the figure is signed, and the
-edge bar is `--gain` or `--loss`.
+and each sizes to its own content, so neither can starve the other.
 
 **The general rule: when a small card has to fit two pairs of values, make
 them rows.** Columns look the same until one value grows, and then one of
 them silently loses.
 
-Rows fix the starving but not the arithmetic. A phone tile has ~133px
-inside its padding, and the first row has to hold a ticker chip and a
-percent. Three things buy that: `p-3` rather than `p-4`, a `text-xs` chip,
-and a `text-base` percent. The last one is what settled it — a minus sign
-is one more character, so `-2.32%` needs 7px more than `9.23%`, and at
-`text-lg` that single glyph was the difference between a tidy grid and
-every red tile wrapping while the green ones did not. Both rows also
-`flex-wrap`, as a floor: below 390px they break to a second line rather
-than shrinking the two figures the tile exists to show.
+Rows fix the starving but not the arithmetic. A phone tile has ~133px inside
+its padding and the first row must hold a ticker chip and a percent: `p-3`
+rather than `p-4`, a `text-xs` chip and a `text-base` percent buy it. The
+last is what settled it — a minus sign is one more character, so `-2.32%`
+needs 7px more than `9.23%`, and at `text-lg` that single glyph was the
+difference between a tidy grid and every red tile wrapping while the green
+ones did not. Both rows also `flex-wrap` as a floor.
 
 #### The check that kept saying "clean"
 
@@ -1140,44 +877,34 @@ scrollers (`overflow-x: auto|scroll`), which are deliberate. That check is
 what found this, and re-running it across every page and overlay at 320 /
 360 / 390 found nothing else — which is the point of writing it down.
 
-### A chip hangs; its label is what aligns
+### A chip hangs, so its edge is what aligns
 
-A `Badge` is `px-2` plus a 1px transparent border, so its label sits **9px
-inside its own box**. Align the chip's box with the column under it — the
-default, and what four cards were doing — and the label lands 9px right of
-every plain-text line beneath it.
+A fully-rounded chip only reaches its own box edge at one point — the
+vertical middle. Above and below, the background curves away, so a chip whose
+box is flush with the text below it *reads* as indented: the eye averages the
+whole curve, not the single leftmost pixel. On a Movers tile the grey pill
+and the `$23.56` under it were mathematically flush at the same x and still
+looked out of line.
 
-On a Movers tile that put the `$` of `$BMNR` 9px right of the `$` of
-`$23.56`, while the two figures down the right-hand side lined up
-perfectly, because those are plain text aligned to each other. One side of
-the card looked set and the other looked nudged, which is exactly how it
-was reported.
+The compensation is the chip's mean left boundary. For a stadium of height h
+the radius is r = h/2, the boundary at vertical offset y is
+`x(y) = r − √(r² − y²)`, and its mean over the height is
 
-`.chip-hang` pulls the chip back by its own inset so the **ink** is what
-aligns, on both sides. This is hanging punctuation: an opening quote sits
-in the margin so the sentence still starts on the line. The chip's
-background is decoration and may sit outside the text column; its label may
-not.
+    (1/2r) ∫[−r..r] (r − √(r² − y²)) dy  =  r(1 − π/4)
 
-Measured after, at 390px and 1440px: chip ink, price ink and the card's
-content edge all land on the same x, drift 0.0px, across every hung chip on
-every page.
+so pulling the chip back by `r(1 − π/4)` puts its *average* edge on the
+text's edge — 2.575px for the `h-6` pill these call sites use. Same reason a
+typeface overshoots its round letters past the baseline: equal measurement,
+unequal appearance. Confirmed by eye at 4× against 0px and 6px: 0 sits
+visibly right of the `$`, 6 visibly left.
 
-Three rules come with it:
+`--chip-radius` defaults to the `h-6` case; a chip of another height sets it
+(`[--chip-radius:0.625rem]` for `h-5`). It only holds for a *fully rounded*
+chip, where r really is h/2.
 
-- **Opt-in, never on `Badge` itself.** A chip in a *row* of chips has no
-  column to align to, and hanging it would just push it off the edge.
-- **The container needs room.** A hung chip reaches into the padding, so
-  anything drawn there has to be cleared by the container's own inline
-  padding. The Movers tile carries a `w-1` accent bar at its left edge, so
-  it takes `pl-4` rather than `p-3` — the chip clears the bar by 3px on a
-  phone and 11px on desktop.
-- **It is the one sanctioned exception to "nothing outside the padding
-  box".** A layout audit written to the rule above will flag hung chips;
-  skip `.chip-hang` rather than "fixing" them.
-
-The 9px tracks `Badge`'s own geometry. If that padding changes, this has to
-change with it.
+Opt-in, never on `Badge` itself — a chip in a row of chips has no column to
+align to. It puts a couple of pixels of background outside the container's
+padding box, so a layout audit checking for that should skip `.chip-hang`.
 
 ### Every tap target, not just the buttons
 

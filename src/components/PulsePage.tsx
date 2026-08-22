@@ -291,30 +291,19 @@ function PulseCard({
       {/*
         * The verdict row moves under the price line on a phone.
         *
-        * shadcn's CardHeader switches to `grid-cols-[1fr_auto]` the moment
-        * a CardAction is present, and the action here is a whole row of
-        * chrome — the verdict badge, the thesis pill, the re-check button.
-        * On a phone that `auto` track took most of the width, so the
-        * ticker and the day's move — the two things you came to read —
-        * were the two things wearing the squeeze: `$VST` and
-        * `+1.1% After-hours` crushed into what was left of the column.
+        * `CardHeader` switches to `grid-cols-[1fr_auto]` as soon as a
+        * CardAction is present, and the action here is a whole row of
+        * chrome — so on a phone the ticker and the day's move, the two
+        * things you came to read, wore the squeeze. Below `sm` the action
+        * is hidden and the same row is rendered again underneath.
         *
-        * Below `sm` the CardAction is hidden and the same row is rendered
-        * again underneath, full width, where the pills wrap instead of
-        * laddering. Hidden rather than removed on purpose: `CardHeader`
-        * picks its column count with `has-[data-slot=card-action]`, which
-        * is a two-class selector and outranks any `max-sm:grid-cols-1`
-        * written here — but a `display: none` child collapses the `auto`
-        * track to zero, so the first column gets the full width anyway
-        * and the primitive is left alone.
-        *
-        * The title and the price line are then placed by hand. A
-        * `display: none` child is not laid out in a grid at all, so the
-        * action stops reserving the second column — and auto-placement
-        * cheerfully put the price line up there instead, right-aligned
-        * beside the ticker rather than under it. Naming the cell costs two
-        * classes and changes nothing on desktop, where auto-placement was
-        * landing on those same two cells anyway.
+        * Hidden rather than removed: the column count is chosen with
+        * `has-[data-slot=card-action]`, a two-class selector that outranks
+        * any `max-sm:grid-cols-1` written here, but a `display: none` child
+        * collapses the `auto` track to zero. That also means it stops
+        * reserving the second column, so the title and price line are
+        * placed by hand — otherwise auto-placement puts the price up beside
+        * the ticker instead of under it.
         */}
       <CardHeader>
         <CardTitle className="col-start-1 row-start-1 flex flex-wrap items-center gap-2">

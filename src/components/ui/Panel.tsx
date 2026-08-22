@@ -44,94 +44,67 @@ import {
 } from "react";
 
 /**
- * The Upside Lab design system, in one file.
- *
- * Before this existed every panel rolled its own shell, and the app drifted
- * into three visual dialects: Overview on rounded-3xl with text-xl headings,
- * Pulse/Forecast/Lab on rounded-xl with text-sm headings, and the
- * drawer/simulator/compound sheets on 9-11px type with Title Case
- * "Forecast Trajectory Model" style labels. Same product, three fonts scales,
- * four corner radii, six card backgrounds.
- *
- * The rules, so a new surface can't drift again:
+ * The Upside Lab design system, in one file. The rules, so a new surface
+ * cannot drift back into its own dialect:
  *
  *   Radius     shell rounded-xl · nested muted rounded-lg · control rounded-lg
- *   Shell      black field, lifted cards. Primary is warm yellow. Nested is muted.
- *              Green is an up number, not a wash.
- *   Stack      field is bg-background (true black, and the ambient glow
- *              lives on it). A box on the field is .glass -- translucent
+ *   Stack      the field is bg-background (true black; the ambient glow
+ *              lives on it). A box on the field is `.glass` — translucent
  *              bg-card plus blur, so the glow reads through the pane.
  *              Never a flat opaque bg-card there; that punches a hole in
- *              the field. Floating menus are bg-popover, never muted
- *              (muted is hover). Nested is .glass-well. Never a card
- *              inside a card.
+ *              the field. Nested is `.glass-well`, never a card inside a
+ *              card. Floating menus are bg-popover, never muted (muted is
+ *              hover).
  *   Card       ring-1 ring-foreground/20. Nested wells carry their own
- *              inset hairline from .glass-well, so no second ring.
- *              Static facts are not nested pills. Use Item, Table, or
- *              SwatchLegend. A filled rounded box reads as a button.
- *   Type scale, the only sizes a person should see. Down a block they
- *   go largest to smallest, never a 24px word between a caption and a
+ *              inset hairline, so no second ring. Static facts are not
+ *              nested pills — use Item, Table or SwatchLegend; a filled
+ *              rounded box reads as a button.
+ *   Type scale, the only sizes a person should see. Down a block they go
+ *   largest to smallest, never a 24px word between a caption and a
  *   paragraph:
- *   text-2xl   24  page titles, and scoreboard figures that are money
- *                  or a percent. Not a status word.
+ *   text-2xl   24  page titles, and scoreboard figures that are money or a
+ *                  percent (text-xl on a phone). Not a status word.
  *   text-lg    18  panel titles, status words on a reading tile
  *   text-base  16  card titles, tickers
  *   text-sm    14  body, chrome, labels, inputs, buttons, nav, tables
  *   text-xs    12  chart ticks, Badge, kbd shortcuts, listing chips
- *              Chart ticks are HTML (ChartYAxis). Never SVG <text>,
- *              which scales with the viewBox and blows up on a wide screen.
- *              No text-[Npx]. No sm:text-xl jumps on titles.
- *              No text-4xl. The logo lockup is the exception.
- *   Headings   text-lg font-semibold, hero text-2xl · sentence case.
- *              Tracking is a scale, not a constant: -0.035em on the hero,
- *              -0.028em on a panel title. Bigger type needs more negative
- *              tracking to hold the same optical rhythm.
- *   Type       Geist for titles, body, and labels. Geist Mono for money.
- *   Micro      MicroLabel: font-mono text-xs font-medium uppercase
- *              tracking-[0.1em] text-muted-foreground. Mono caps are the
- *              scaffolding voice -- the same one every table header uses --
- *              and they read as structure rather than as something to
- *              read. Micro sits above a figure, never above a paragraph.
- *              NoteRows is the same voice one tier up in emphasis:
- *              text-[11px] and text-primary, for a label beside prose.
- *              Caps are those two plus the logo, and nothing else: never
- *              a sentence, a button, or a heading.
- *   Metrics    A row of numbers is separate cards (Scoreboard) with air
- *              between them (Score, gap-6). Do not nest four Stat tiles in a panel.
- *              Stat is the same cell, used alone. Figures are text-2xl.
- *              A Score with bullets is a reading tile: label text-sm
- *              semibold, status text-lg, bullets text-sm. Do not use
- *              the 24px figure style on a word like "Weakening".
- *              Do not park a paragraph in the sub line.
- *              Do not park unlabeled numbers on the far right of a row.
- *   Reading    a bordered card, one-step-up label (text-base, over a
- *              text-sm sentence) so the heading doesn't blend into its
- *              own body copy. Thesis and Worth noticing live in a box.
- *              Not a cream slab, and not loose type on the field.
- *   Body       text-sm leading-relaxed text-muted-foreground for chrome
+ *              Chart ticks are HTML (ChartYAxis), never SVG <text>, which
+ *              scales with the viewBox and blows up on a wide screen.
+ *              No text-[Npx]. No text-4xl. The logo lockup is the exception.
+ *   Headings   sentence case. Tracking is a scale, not a constant — bigger
+ *              type needs more negative tracking for the same optical
+ *              rhythm. The scale itself is in globals.css.
+ *   Type       Geist for titles, body and labels. Geist Mono for money.
+ *   Micro      MicroLabel is the scaffolding voice, the same one every
+ *              table header uses: mono caps read as structure rather than
+ *              as something to read. It sits above a figure, never above a
+ *              paragraph. NoteRows is that voice one tier up, for a label
+ *              beside prose. Caps are those two plus the logo, and nothing
+ *              else — never a sentence, a button or a heading.
+ *   Metrics    A row of numbers is separate cards (Scoreboard/Score) with
+ *              air between them; Stat is the same cell used alone. A Score
+ *              with bullets is a reading tile — do not use the figure style
+ *              on a word like "Weakening", do not park a paragraph in the
+ *              sub line, and do not leave unlabeled numbers on the far
+ *              right of a row.
+ *   Reading    a bordered card with a one-step-up label so the heading does
+ *              not blend into its own body copy.
  *   Floor      reading copy is text-sm. text-xs is ticks, Badge, kbd.
  *   Air        padding and gaps do the explaining. Do not stack a subtitle,
- *              a blurb, and a hint that all say the same thing.
- *   Measure    copy inside a panel fills the panel. Do not pinch it to a
- *              reading column. That leaves a dead strip of empty card and
- *              wraps a sentence for no reason.
+ *              a blurb and a hint that all say the same thing.
+ *   Measure    copy inside a panel fills the panel. Pinching it to a
+ *              reading column leaves a dead strip and wraps for no reason.
  *   Split      title/copy + controls use SPLIT_ROW / SPLIT_COPY /
  *              SPLIT_ACTIONS. Never `flex-wrap` + `min-w-0 flex-1` next to
- *              shrink-0 chrome. On a phone that leftover strip is ~80px
- *              and the sentence wraps one word per line.
- *   Inset      page gutter and panel pad are p-6. Nested
- *              cards are p-6. Score cells use p-6 so the
- *              figures have air. Same on a phone. Do not invent
- *              a second pad. Label to figure is mt-2. InfoTip must
- *              not stretch that row.
- *              A row of numbers is Scoreboard, never a loose
- *              MicroLabel grid with its own padding.
- *   Hairline   gap-px + bg-border grids (Segmented fill,
- *              HairlineGrid) paint every track. The last row must be
- *              full. Never an empty leftover box. Snap columns with
- *              filledGridColumns / filledCardColumns. Do not hand-roll
- *              grid-cols-N on that pattern. Scoreboard is a gap-6 card
- *              grid, not a hairline bar.
+ *              shrink-0 chrome: on a phone that leftover strip is ~80px and
+ *              the sentence wraps one word per line.
+ *   Inset      PANEL_PAD / NESTED_PAD / SCORE_CELL, which step down on a
+ *              phone (see AGENTS.md). Do not invent a second pad. Label to
+ *              figure is mt-2, and InfoTip must not stretch that row.
+ *   Hairline   gap-px + bg-border grids paint every track, so the last row
+ *              must be full — snap columns with filledGridColumns /
+ *              filledCardColumns, never a hand-rolled grid-cols-N.
+ *              Scoreboard is a card grid, not a hairline bar.
  *
  * Sentence case is not cosmetic. "Year-by-Year Target Roadmap" reads like a
  * consultant's slide; "Price path" reads like a person wrote it.

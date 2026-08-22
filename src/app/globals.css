@@ -60,35 +60,16 @@
    */
   --loss: oklch(0.645 0.21 16.439);
   /*
-   * Categorical data ramp — for encoding *categories in a chart* and
-   * nothing else. See DESIGN_TOKENS.md "Categorical data ramp".
+   * Categorical data ramp — for encoding *categories in a chart*, and
+   * nothing else. Never for chrome, status, or anything a person reads as
+   * good/bad; gain/loss/warning own that. See DESIGN_TOKENS.md.
    *
-   * The Accent Palette is a ceiling for decorative colour, but a bar
-   * showing eleven themes side by side genuinely cannot be encoded in
-   * four colours — so this is the documented exception, and it is
-   * deliberately built to stay quiet rather than to be a second palette.
-   * Low chroma throughout (0.09-0.11, near `--primary`'s own 0.09), so it
-   * reads as one restrained tonal family rather than a rainbow.
-   *
-   * Five hues at two lightness steps (0.78 and 0.62), not ten hues at one.
-   * Ten distinguishable hues is not actually available here: violet
-   * through magenta (270-330) is banned app-wide, and four more hues are
-   * spoken for by semantic colours that must never be confused with a
-   * category — loss 16, warning 45, primary 90, gain 162. Excluding those
-   * plus a safety margin leaves well under 180 degrees of wheel, which
-   * would put ten hues ~14 degrees apart: indistinguishable at this
-   * chroma. Splitting the lightness instead gets ten separable steps
-   * honestly. This was found the hard way — an earlier all-one-lightness
-   * version put crypto on the brand accent and data-center power on the
-   * warning orange, so the Dragon card was the same colour as the Fox card
-   * and the Rhino card was the same colour as the Shark card.
-   *
-   * Every hue here clears all four semantic hues by at least 18 degrees,
-   * and none falls in the banned violet arc. Keep both properties if you
-   * change a value.
-   *
-   * Never use these for chrome, status, or anything a person reads as
-   * good/bad — gain/loss/warning own that job.
+   * Five hues at two lightness steps, not ten hues at one: violet through
+   * magenta is banned app-wide and four more hues are spoken for by the
+   * semantic colours, which leaves too little wheel for ten distinguishable
+   * hues at this chroma. Two invariants to keep if you change a value —
+   * every hue clears all four semantic hues by 18 degrees, and none falls
+   * in the banned violet arc.
    */
   --cat-1: oklch(0.78 0.1 195);
   --cat-2: oklch(0.62 0.11 230);
@@ -282,23 +263,16 @@ body {
 }
 
 /*
- * Ambient glow shared by every signed-in page — a warm-yellow key light off
- * the top-left corner and a cool teal counter-lobe off the bottom-right,
- * tall enough to sit behind the fixed header too (so the header's own glass
- * fill has something to refract instead of the glow visibly stopping at its
- * edge). `.page-frame` (PAGE_FRAME_CLASS) wraps every screen and paints its
- * own opaque bg-background, which would otherwise hide a glow set on body.
- * `isolation: isolate` gives it a stacking context so the negative z-index
- * pseudo below sits above that fill but under the page's real content. Fixed
- * position so it reads as the room's light while scrolling, not a decoration
- * tied to page length.
+ * Ambient glow shared by every signed-in page. `.page-frame` paints its own
+ * opaque background, so the glow has to live on a pseudo inside it rather
+ * than on `body`; `isolation: isolate` gives it a stacking context so the
+ * negative-z pseudo sits above that fill and under the content. Fixed, so
+ * it reads as the room's light rather than a decoration tied to page
+ * length, and tall enough to sit behind the chrome so the header's glass
+ * has something to refract.
  *
- * This used to be one colour, on the grounds that "gain-green is a financial
- * signal, not decoration". That reasoning stands, and it is why the second
- * hue is `--ambient-cool` (blue, hue 250) and not any near neighbour of
- * `--gain` (emerald, 162): 88 degrees clear, so a corner wash cannot read as
- * the app commenting on performance. See DESIGN_TOKENS.md "Ambient
- * counter-lobe" for the measurements behind both lobes.
+ * The cool hue is 88 degrees clear of `--gain` on purpose: a corner wash
+ * must never read as the app commenting on performance.
  */
 .page-frame {
   position: relative;
@@ -311,88 +285,26 @@ body {
   z-index: -1;
   pointer-events: none;
   /*
-   * Two corner lobes on a black field — warm off the top-left, blue off
-   * the bottom-right (hue 250; the teal this started as is long gone, and
-   * is only mentioned further down as the reason the two alphas differ).
-   * What separates them is the dark middle, and that is the design rather
-   * than the leftover: it is what keeps the two lights reading as corners
-   * of a dark room instead of a tint laid over the whole page.
+   * Two corner lobes on a black field, warm off the top-left and blue off
+   * the bottom-right. The dark middle between them is the design, not the
+   * leftover: it is what keeps these reading as corners of a dark room
+   * rather than a tint over the page.
    *
-   * The lobes are now wide enough that almost no pixel is pure black —
-   * 0.1% of the field measures under 2/255. That number used to be about
-   * three quarters, and reading it as "the black is gone" is the mistake
-   * this comment exists to prevent: what makes the page read dark at this
-   * reach is the *middle* sitting near 7/255 against lit corners at 43 and
-   * 55, not the count of untouched pixels. See the last paragraph.
+   * Sized in `vw`/`vh`, never `px`, so the lobe holds its proportion at
+   * every width — at a fixed size it was wider than a phone and both
+   * lights flooded the middle. Anchored just off-screen so only the
+   * falloff is visible; on the corner it reads as a lamp. Five stops, not
+   * two, because a single colour-to-transparent ramp has an edge you can
+   * see.
    *
-   * Sized in `vw`/`vh`, not `px`, and that is the mobile fix. At a fixed
-   * 1250x1000 the lobe was wider than a phone, so both lights flooded the
-   * whole screen and stacked into horizontal bands: measured on a 390x844
-   * viewport, the old key light left the *top-right* corner at 58/255 and
-   * the middle of the page at 29/255 — no black anywhere, and no diagonal.
-   * A lobe measured against the viewport keeps the same proportion at
-   * every width, so the warm-to-teal read runs corner to corner on a phone
-   * exactly as it does on a desktop. The check for that is the other two
-   * corners: top-right and bottom-left both measure 0 at both sizes.
+   * The two alphas differ (28% warm, 31% cool) because sRGB's blue
+   * primary carries a fraction of the luminance of its green. They were
+   * matched by measurement, so changing the cool hue means re-solving the
+   * pair.
    *
-   * Anchored just off-screen (-8%/-10%, 108%/110%) so the brightest point
-   * of each lobe is outside the frame and only its falloff is visible.
-   * Anchored exactly on the corner instead, the hottest pixel sits in the
-   * frame and reads as a lamp rather than as spill.
-   *
-   * Five stops each, not two. A single colour-to-transparent ramp drops
-   * off in a way you can see the edge of — the lobe reads as a shape
-   * sitting on the page rather than as light. Falling 28 → 15 → 7.5 → 3.2
-   * → 1.4 → 0 spends most of the distance in the very dim end, so it thins
-   * out into the black with no boundary anywhere. A stop was added at each
-   * widening; that is what buys reach without a visible edge.
-   *
-   * Reach is what those tail stops buy. Each lobe covers 170vw × 112vh —
-   * far wider than the frame — but the peak alpha has never moved across
-   * four separate widenings, so the corners are as bright as they ever
-   * were and only the *area* grew: lit field (≥ 4/255) 27% → 44% → 60% →
-   * 99.9%.
-   *
-   * Brightness and coverage are separate dials. Keep them separate. Almost
-   * the whole frame now carries some light, but the page middle measures
-   * 7/255 against 43 and 55 in the lit corners and 5–6 in the two opposite
-   * ones, so it still reads as a dark room lit from two corners rather
-   * than a tinted page. What went wrong the one time this was got badly
-   * wrong was *alpha*: 60%/34% put the middle at 32/255 and the corners at
-   * 111.
-   *
-   * Deliberately dim: peaks land at 43/255 warm and 55/255 blue, below the
-   * 94/255 this had before it was ever touched. The blue reads higher only
-   * because that figure is the brightest channel of `rgb(22,38,55)`; by
-   * eye the warm corner is still the key light and the blue is the
-   * counter-lobe, which is the point — one lamp plus a bounce, not two.
-   *
-   * The two alphas differ (28% warm, 31% cool) because sRGB is not
-   * symmetrical: its blue primary carries roughly a fourteenth of the
-   * luminance of its green, so the cool side has far less headroom at a
-   * given lightness. The numbers are matched by *measurement*, not by
-   * being written the same. Changing the cool hue means re-solving this
-   * alpha — the old teal at hue 200 sat at 25% for the same result.
-   *
-   * Every number here is measurable, so re-measure rather than eyeball if
-   * these change: corner peaks, the two *opposite* corners staying far
-   * below the lit pair (which is what makes it diagonal), and the page
-   * middle. Brightening this is the easy mistake — an earlier pass at
-   * 60%/34% with 1700px lobes lit 99% of the field *and* put the middle at
-   * 32/255, which is the failure. Coverage alone is not: the field is
-   * effectively 100% lit now and still reads dark, because the middle sits
-   * at 7. Judge it on the middle and the corner spread, not on the black
-   * share, once the lobes are this wide — the black share stopped being
-   * informative two widenings ago. One more size step (190vw × 126vh)
-   * gains nothing measurable in coverage and lifts the middle, so there is
-   * nothing left to win.
-   *
-   * How to take these numbers, since the method changes them: render the
-   * field alone (hide the frame's children and the chrome), and exclude
-   * the scrollbar gutter down the right edge — it is compositor paint, not
-   * field, and sampling it reports a false black corner. Measured that way
-   * at 1440x900 and at 390x844 the corners come out identical, which is
-   * the check that the vw/vh sizing is doing its job.
+   * Judge a change on the page middle and the corner spread, never on how
+   * much of the field is lit — brightening is the easy mistake. Numbers,
+   * and how to take them, in DESIGN_TOKENS.md.
    */
   background-image:
     radial-gradient(
@@ -416,38 +328,14 @@ body {
 }
 
 /*
- * The phone gets a different lamp, not a scaled-down copy of the desktop
- * one.
+ * The phone gets a different lamp, not a scaled-down copy.
  *
- * Two lobes each 170vw wide is a deliberate desktop choice: on a 1440px
- * field that reach is what keeps the falloff invisible. Carried onto a
- * 390px phone the same proportion puts the page middle roughly two thirds
- * of the way along each ramp, so *both* lights reach the centre of the
- * screen at once. What that looks like in the hand is the warm side
- * washing over the whole page while the blue, arriving at the same middle
- * from the other corner, cancels into it and never reads as blue at all.
- * That is the "the yellow bleeds into everything and the blue doesn't
- * stand out" report, and the cause is reach, not brightness -- turning
- * either lobe up on the desktop numbers would only spread more of it.
- *
- * So the phone trades reach for peak. The lobes come in to 130vw x 70vh,
- * which lands the page middle at ~96% along the ramp (effectively zero),
- * and the peaks go up by the same factor the alphas were carrying before
- * (60%/66%, from 28%/31%). Measured over black at 390x844, field alone
- * with the frame's children hidden: top-left corner 77/255 on its
- * brightest channel against 43 before, bottom-right 99 against 55, the
- * two *opposite* corners at 3 and 4, and the page middle at 1 (it was 7
- * on the desktop numbers, which is the bleed this removes). Corner spread
- * is what makes it read as a lit room, and
- * this widens that spread rather than lifting the floor -- the mistake
- * the desktop note warns about (60%/34% with 1700px lobes) was those
- * peaks with the *long* reach, which lit 99% of the field and put the
- * middle at 32.
- *
- * The 10% ratio between the two peaks is kept, not re-picked: sRGB's blue
- * primary carries a fraction of the luminance of its green, so the cool
- * side needs the extra alpha to sit level with the warm one. Re-measure
- * that pair if `--ambient-cool` ever moves, exactly as on desktop.
+ * Two lobes each 170vw wide is a desktop choice; at that proportion on a
+ * 390px screen both lights reach the page middle and cancel — the warm
+ * one washing over everything, the blue never reading as blue. So the
+ * phone trades reach for peak: lobes in to 130vw x 70vh, peaks up by the
+ * same factor (60%/66%). Same 10% ratio between the two, for the sRGB
+ * reason above. Measurements in DESIGN_TOKENS.md.
  */
 @media (max-width: 767px) {
   .page-frame::before {
@@ -496,28 +384,17 @@ body {
   }
 
   /*
-   * Glass surface — the standard translucent treatment for every top-level
-   * card/panel, plus the crisp all-round edge line and outer lift shadow
-   * that make it read as a genuinely distinct pane instead of translucency
-   * fading into the black field (the same two-stroke idea PopoverContent
-   * uses with a real `border`). Backdrop-filter with no fallback is fine:
-   * browsers without support just render the translucent fill, which still
-   * reads fine over the mostly-flat black field.
+   * Glass surface — the translucent treatment for every top-level card,
+   * plus the edge line and lift shadow that make it read as a distinct pane
+   * rather than translucency fading into the field.
    *
-   * The edge/shadow live on `box-shadow`, never a real `border` property:
-   * `border` is a shorthand for all four sides, so a call site that adds
-   * its own directional border utility on top (e.g. PulseCard's
-   * `border-l-4 border-destructive` accent bar) would have that silently
-   * swallowed by whichever of the two same-specificity classes happens to
-   * come later in the compiled stylesheet — `box-shadow` never touches
-   * `border`/`border-*`, so directional border utilities keep working
-   * untouched on any `.glass` call site.
+   * The edge lives on `box-shadow`, never a real `border`: `border` is a
+   * four-side shorthand, so a call site adding its own directional border
+   * (PulseCard's `border-l-4`) would have it silently swallowed.
    *
-   * `.card-sheen.glass` (both classes on one element, true at every call
-   * site that also wants the top-highlight) layers all three shadows in
-   * one box-shadow list — `box-shadow` is atomic, so `.card-sheen` and
-   * `.glass` each setting it separately would just have the later one in
-   * the stylesheet replace the other instead of combining.
+   * `.card-sheen.glass` layers all three shadows in one list, because
+   * `box-shadow` is atomic and two classes each setting it would have the
+   * later one replace the other.
    */
   .glass {
     /* 38%, not 48%. The old value was tuned to compensate for a blur that
@@ -559,18 +436,13 @@ body {
    * Hover veil for anything that already has a surface — a glass card, a
    * well, a filled row.
    *
-   * It has to be `background-image`, not `background-color`. Painting a
-   * highlight into `background-color` *replaces* whatever the element
-   * already had, which is the whole bug this is fixing: a `.glass` card
-   * hovered to an opaque grey lost its translucency, and hovering it to a
-   * translucent grey lost its base tone instead (measured +1.7/255 — you
-   * could not see it at all). `background-image` composites over
-   * `background-color`, so the card keeps its own fill and simply catches
-   * more light.
+   * `background-image`, not `background-color`: a colour *replaces* what the
+   * element had, so a glass card hovered to grey lost its translucency, and
+   * to a translucent grey lost its own tone (measured +1.7/255 — invisible).
+   * An image composites over the fill instead.
    *
    * Surfaceless controls — ghost buttons, menu rows — have no base to
-   * preserve and keep using `hover:bg-hover`, where a background-color is
-   * exactly right.
+   * preserve and keep using `hover:bg-hover`.
    */
   .veil-hover {
     transition: background-image 150ms ease-out;
@@ -597,35 +469,17 @@ body {
    * surface keeps its own `background-color`.
    */
   /*
-   * Dim text keeps its *relationship* to whatever it sits on.
+   * Dim text keeps its relationship to whatever it sits on. Inside a filled
+   * `--primary` pill, `text-muted-foreground` becomes mid-grey on light
+   * yellow and all but disappears, so it resolves against
+   * `--primary-foreground` there instead.
    *
-   * `text-muted-foreground` is a grey tuned for the dark field. Drop it
-   * inside a filled `--primary` pill -- a selected tab, an active chip --
-   * and it becomes mid-grey on light yellow, which is roughly invisible.
-   * That is what happened to the count in "All portfolios 3".
-   *
-   * Rather than trusting every future call site to notice, secondary text
-   * on a primary fill resolves against `--primary-foreground` instead, so
-   * it stays a step quieter than the label beside it without vanishing.
-   *
-   * The selector must name the *fill*, never a variant name. This used to
-   * read `.bg-primary .text-muted-foreground, [data-variant="default"]
-   * .text-muted-foreground` -- and `data-variant="default"` is not a
-   * primary fill, it is the default variant of nine separate shadcn
-   * primitives: `Item`, `ItemMedia`, `Empty`, `Field`, `Badge`, `Button`,
-   * `TabsList`, `ToggleGroup`, `DropdownMenuItem`. Only two of those
-   * (`Badge`, `Button`) actually paint `--primary` when default, and both
-   * carry a literal `bg-primary` class, so the first selector already had
-   * them covered. The other seven paint nothing, `bg-muted`, or the card
-   * -- so every piece of secondary text inside them resolved to
-   * `--primary-foreground` (oklch 0.145, near-black) at 65% alpha and went
-   * effectively invisible on the black field: the ranks and the "(you)"
-   * tag in the community leaderboard, the silver medal beside second
-   * place, menu shortcuts, field hints, empty-state copy.
-   *
-   * If a future call site paints a primary fill some other way (a
-   * `data-active:bg-primary` variant, an inline style), give it the plain
-   * `bg-primary` class too rather than widening this selector again.
+   * The selector must name the *fill*, never a variant name. It once read
+   * `[data-variant="default"]` too, which is the default variant of nine
+   * shadcn primitives — only two of which paint `--primary`, and both carry
+   * a literal `bg-primary`. The other seven turned their secondary text
+   * near-black on the black field. If a future call site paints a primary
+   * fill some other way, give it `bg-primary` rather than widening this.
    */
   .bg-primary .text-muted-foreground {
     color: color-mix(in oklch, var(--primary-foreground), transparent 35%);
@@ -641,36 +495,38 @@ body {
   }
 
   /*
-   * Hang a ticker chip so its TEXT lines up with the text column under it.
+   * Optically align a pill chip's EDGE with the text column under it.
    *
-   * A `Badge` is `px-2` plus a 1px transparent border, so its label sits 9px
-   * inside its own box. Align the chip's *box* with the column — which is
-   * what happens by default — and the label lands 9px to the right of every
-   * plain-text line beneath it. On a Movers tile that put the `$` of
-   * `$BMNR` 9px right of the `$` of `$23.56`, while the two figures down
-   * the right-hand side lined up perfectly, because those are plain text
-   * aligned to each other. One side of the card looked set, the other
-   * looked nudged.
+   * A fully-rounded chip only reaches its own box edge at one point — the
+   * vertical middle. Above and below that the background curves away, so
+   * a chip whose box is flush with the text below it *reads* as indented:
+   * the eye averages the whole curve, not the single leftmost pixel. On a
+   * Movers tile the grey pill and the `$23.56` under it were mathematically
+   * flush at the same x and still looked out of line.
    *
-   * Pulling the chip back by its own inset makes the *ink* the thing that
-   * aligns, on both sides. This is hanging punctuation, the same idea as
-   * letting an opening quote sit in the margin so the sentence still starts
-   * on the line: the chip's background is decoration and may sit outside
-   * the text column, the label may not.
+   * The compensation is the chip's mean left boundary. For a stadium of
+   * height h the radius is r = h/2, the boundary at vertical offset y is
+   * `x(y) = r - sqrt(r² - y²)`, and its mean over the height is
    *
-   * The 9px is the chip's padding plus its border, so it tracks `Badge`'s
-   * own geometry — if that padding ever changes this has to change with it.
+   *     (1/2r) ∫[-r..r] (r - sqrt(r² - y²)) dy  =  r(1 - π/4)
    *
-   * Opt-in, never on `Badge` itself. A chip in a *row* of chips has no
-   * column to align to, and hanging it would just push it off the edge.
-   * Use this only where a chip heads a stack of text.
+   * so pulling the chip back by `r(1 - π/4)` puts its *average* edge on the
+   * text's edge. That is 2.575px for the `h-6` pill these call sites use —
+   * a nudge, not a hang. The same reason a typeface overshoots its round
+   * letters past the baseline: equal measurement, unequal appearance.
    *
-   * A hung chip needs its container to have room: it reaches into the
-   * padding, so anything drawn there (a `w-1` accent bar, say) has to be
-   * cleared by the container's own inline padding.
+   * `--chip-radius` is the pill's radius and defaults to the `h-6` case.
+   * A chip of another height sets it: `[--chip-radius:0.625rem]` for `h-5`.
+   * It only holds for a *fully rounded* chip, where r really is h/2.
+   *
+   * Opt-in, never on `Badge` itself: a chip in a row of chips has no column
+   * to align to. This deliberately puts a couple of pixels of background
+   * outside the container's padding box, so a layout audit that checks for
+   * that should skip `.chip-hang` rather than "fix" it.
    */
   .chip-hang {
-    margin-inline-start: calc(-0.5rem - 1px);
+    --chip-radius: 0.75rem;
+    margin-inline-start: calc(var(--chip-radius) * -0.2146018366);
   }
 
   .glass-well {
@@ -690,26 +546,11 @@ body {
   /*
    * Thinner glass on a phone, and a harder edge to pay for it.
    *
-   * The panel fill is what decides how much of the field reaches your
-   * eye, and on a phone the panels *are* the page -- a card runs gutter to
-   * gutter, so at the desktop 55% there is almost no bare field left for
-   * the corner lights to show up in. The lights ended up visible only in
-   * the thin margins, which is the other half of "the colour doesn't come
-   * through": the glow was fine, the panes over it were not.
-   *
-   * 66%/74% lets the warm corner read through the cards nearest it and
-   * the blue through the ones at the foot of the page, so the diagonal
-   * runs across the content rather than around it. A thinner fill is a
-   * weaker edge, though, and a card with no edge on a black field stops
-   * being a card -- so the border stroke goes to full `--border` and the
-   * top specular a step brighter, which is what actually sells glass at
-   * this opacity. Text sits on the blur, not on the fill, and the field
-   * under it peaks at 102/255, so body copy stays far above AAA.
-   *
-   * The blur drops 40px -> 30px: at 66% fill the extra radius buys
-   * nothing you can see, and it is per-frame work on the weakest GPU the
-   * app runs on. Saturate goes the other way, since the whole point here
-   * is the colour that gets through.
+   * On a phone the panels *are* the page — a card runs gutter to gutter —
+   * so at the desktop fill there is almost no bare field left for the
+   * corner lights to show in. A thinner fill is a weaker edge, though, and
+   * a card with no edge on a black field stops being a card: hence the
+   * full-strength border stroke and brighter top specular.
    */
   @media (max-width: 767px) {
     .glass {
@@ -740,43 +581,16 @@ body {
 }
 
 /*
- * Headings are `--font-heading`, not `--font-sans`. They always were in
- * intent -- the `font-heading` utility is on ~20 call sites -- but this
- * element rule named `--font-sans`, and while both tokens pointed at Geist
- * nothing gave the mismatch away. A bare `<h2>` and a `<h2 class="font-heading">`
- * now resolve to the same face, which is what the two tokens were for.
+ * Headings are `--font-heading`, and tracking tightens as size grows —
+ * letterfit is optical, so the spacing that reads right at 14px reads loose
+ * at 24px.
  *
- * Tracking tightens as size grows rather than sitting flat at -0.025em.
- * Letterfit is optical: the spacing that looks right at 14px looks loose at
- * 24px, because tracking is a fraction of the em and the gaps grow with it.
- * `text-wrap: balance` keeps a two-line heading from leaving one orphan word
- * on the second line -- the browser evens the lines instead.
- *
- * `@layer base`, and that is load-bearing rather than tidiness.
- *
- * Written un-layered, as these were until 2026-08-22, an element rule beats
- * every Tailwind utility in the app: an un-layered declaration wins over a
- * layered one regardless of specificity or source order, and Tailwind emits
- * `text-sm`/`font-medium`/`tracking-tight` inside `@layer utilities`. So a
- * size named on a heading was silently discarded --
- * `<h1 className="text-sm">` in the phone top bar rendered at 1.5rem/600,
- * which is how a circle's name arrived in the bar at the size of a page
- * title. It held for every typographic property this block sets: font
- * family, size, line-height, weight, tracking, wrap. Measured on the
- * running app before the fix: `<h3 class="text-sm font-medium
- * tracking-tight">` computed to 16px / 600 / -0.02em, none of which it
- * asked for.
- *
- * Base layer keeps the defaults for a bare `<h2>` exactly as they were and
- * lets a call site that names a size get the size it named. The 53 call
- * sites whose classes this brought to life were stripped of them in the
- * same commit, so nothing re-rendered: every heading in the app still
- * measures what it measured, and from here a class on a heading does what
- * it says. Verified by capturing computed size/line-height/weight/tracking
- * for all 214 headings across ten pages at two widths, before and after.
- *
- * The one exception is `PanelHeader`'s `hero` branch, which asks for the
- * h1 scale on its `<h2>` and had never once got it.
+ * `@layer base` is load-bearing. Un-layered, these element rules beat every
+ * Tailwind utility whatever its specificity, so a size named on a heading
+ * was silently discarded — `<h1 className="text-sm">` rendered at
+ * 1.5rem/600. Layered, a bare `<h2>` keeps these defaults and a call site
+ * that names a size gets it. `src/lib/heading-scale.test.ts` guards both
+ * halves.
  */
 @layer base {
   h1,
@@ -847,100 +661,31 @@ html[data-keyboard="open"] .keyboard-chrome:focus-within {
   padding-bottom: 0.25rem;
 }
 
-/* Comfortable touch targets on anything you tap.
- * Do not put this on inline chrome next to a label (InfoTip).
- * min-height here stretches the whole row and the figure below
- * sits in a hole that no other metric uses. Expand the hit area
- * with an absolute inset instead.
+/* Everything you tap is at least 44px on a touch pointer.
  *
- * Gated on the pointer, not the viewport. A width query missed every
- * touch device wide enough to be a "desktop" — an iPad in landscape, a
- * touchscreen laptop — which is exactly where a 28px control is hardest
- * to hit. `pointer: coarse` catches those and still leaves a mouse
- * untouched, so no desktop pixel moves. */
-@media (max-width: 1023px), (pointer: coarse) {
-  .touch-target {
-    min-height: 2.75rem;
-    min-width: 2.75rem;
-  }
-}
-
-/* Pass 5 M1: icon-sm (size-7, 28px) and icon-xs (size-6, 24px) are below
- * the ~44pt HIG / 48dp Material minimums, and that is every icon button
- * in the app by default (src/components/ui/button.tsx), not just the
- * high-traffic surfaces that got `.touch-target` by hand. Rather than
- * bump the visual size for a mouse -- which would cost desktop
- * information density for a problem mice don't have -- this grows the
- * hit area the same way `.touch-target` does, gated on the same pointer
- * query, automatically for every Button using these sizes via the
- * data-size attribute Button already emits. No call site needs to opt
- * in, and no desktop pixel moves. */
-@media (max-width: 1023px), (pointer: coarse) {
-  [data-slot="button"][data-size="icon-sm"],
-  [data-slot="button"][data-size="icon-xs"] {
-    min-height: 2.75rem;
-    min-width: 2.75rem;
-  }
-}
-
-/* Round 2, Pass 1 F-High-2: the rule above only ever covered the two
- * icon sizes, so it closed roughly half the problem and the fix was
- * logged as done. Every *text* button was still short of both platform
- * minimums on a phone — `default` and `icon` are h-8/size-8 (32px), `sm`
- * is h-7 (28px), `xs` is h-6 (24px), `lg`/`icon-lg` are h-9 (36px), all
- * under iOS HIG's 44pt and Material's 48dp. Re-measured on a Pixel 7 and
- * an iPhone 14 Pro: "Import CSV" 117x32, "Ask Margus" 120x32, "Add
- * holding manually" 183x32, "Cash $0.00" 96x28.
+ * Gated on the pointer, not the viewport: a width query misses touch
+ * devices wide enough to be a "desktop" — an iPad in landscape, a
+ * touchscreen laptop — which is exactly where a small control is hardest
+ * to hit. A mouse keeps the dense control, so no desktop pixel moves.
  *
- * Same mechanism, same pointer gate, so no desktop pixel moves: a mouse
- * keeps the dense 32px control, and only a finger gets the 44px one.
- * Height rather than a pseudo-element on purpose — an overlaid hit area
- * this much taller than its button would reach into whatever sits above
- * and below it and start stealing taps from its neighbours. */
-@media (max-width: 1023px), (pointer: coarse) {
-  [data-slot="button"],
-  /* A Radix select trigger is a `<button>` that carries its own slot name,
-   * so neither the button rule beside it nor the `select` rule below ever
-   * reached it — it sat at `h-8` between two families of control that had
-   * both been fixed. Lab's scope picker is the current call site. */
-  [data-slot="select-trigger"] {
-    min-height: 2.75rem;
-  }
-  [data-slot="button"][data-size^="icon"] {
-    min-width: 2.75rem;
-  }
-}
-
-/* The same rule, for the controls the button pass did not cover.
+ * Height, never an overlaid pseudo-element: a hit area much taller than
+ * its control reaches into the rows above and below and steals their
+ * taps. That is also why checkbox, radio and range are left out —
+ * `Checkbox` and `Switch` already carry an `after:-inset-*` inside a
+ * clickable `<label>`, and widening that would do exactly this.
  *
- * Every text field, number field and native select in the app is `h-8`
- * (32px) — the base layer sets it a few rules down — which is under iOS
- * HIG's 44pt and Material's 48dp exactly as the buttons were. It went
- * unnoticed because the three passes above all searched for buttons.
- * Measured on a 390px viewport: the Compound calculator is five stacked
- * 326x32 fields plus a 326x32 portfolio select, which is the single
- * densest run of under-sized targets in the app, and Pulse's ticker
- * search, Circle's invite field and Account's two name fields are the
- * same control.
- *
- * Same pointer gate as the rules above, so a mouse keeps the dense 32px
- * field and only a finger gets the 44px one. No desktop pixel moves.
- *
- * `.inline-edit` is excluded, and that exclusion is load-bearing rather
- * than tidy: those are the editable cells inside holdings/covered-call
- * tables, every row of which is a fixed `h-10` by design (see AGENTS.md).
- * A 44px min-height on them would push every row 4px taller on touch and
- * break the one table rule that is written down. They are already opted
- * out of the `h-8` base styling for the same reason.
- *
- * Checkboxes, radios and ranges are excluded because they are not text
- * fields and are sized by their own primitives; both `Checkbox` and
- * `Switch` already carry an `after:-inset-*` hit area and sit inside a
- * clickable `<label>`. Widening those further would have the pseudo reach
- * into the rows above and below and start stealing their taps — the trap
- * the button note above describes.
+ * `.inline-edit` is excluded because those are the editable cells in the
+ * holdings and covered-call tables, whose rows are a fixed `h-10` by
+ * design (AGENTS.md). `.touch-target` stays opt-in for chrome the
+ * selectors here cannot name; never put it on inline chrome beside a
+ * label (InfoTip), where a min-height stretches the whole row.
  */
 @media (max-width: 1023px), (pointer: coarse) {
+  .touch-target,
+  [data-slot="button"],
+  /* A Radix select trigger is a button with its own slot name, so neither
+   * the button selector nor `select` would otherwise reach it. */
+  [data-slot="select-trigger"],
   input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
       [type="file"]
     ):not([type="hidden"]):not([type="button"]):not([type="submit"]):not(
@@ -948,6 +693,10 @@ html[data-keyboard="open"] .keyboard-chrome:focus-within {
     ):not(.inline-edit),
   select {
     min-height: 2.75rem;
+  }
+  .touch-target,
+  [data-slot="button"][data-size^="icon"] {
+    min-width: 2.75rem;
   }
 }
 
@@ -1195,26 +944,15 @@ button:disabled,
     @apply font-sans;
   }
   /*
-   * No rubber band on the document, and that is a layout fix rather than a
-   * taste one.
+   * No rubber band on the document. WebKit translates the whole visual
+   * viewport during an overscroll bounce and `fixed`/`sticky` elements ride
+   * along, so a pull at the top dragged the phone top bar down and a push
+   * past the bottom slid the tab bar half off screen — the same bounce from
+   * two ends.
    *
-   * WebKit translates the whole visual viewport during an overscroll
-   * bounce, and `position: fixed`/`sticky` elements ride along with it --
-   * they are pinned to the layout viewport, not to the glass. So pulling
-   * down at the top of a page dragged the phone top bar down with the
-   * page (reported as "the whole header keeps going down"), and pushing
-   * past the bottom slid the floating tab bar half off the screen for the
-   * length of the bounce before it snapped back. Both are the same
-   * bounce, seen from the two ends.
-   *
-   * `overscroll-behavior-y: none` stops the document itself from
-   * overscrolling, so the two bars stay welded to the viewport edges.
-   * Scroll containers *inside* the page keep their own behaviour: this is
-   * the root scroller only, and `.overflow-x-auto` further up still opts
-   * its own axis into containment separately.
-   *
-   * Set on both elements on purpose -- which one is the root scroller
-   * differs between engines, and the property is not inherited.
+   * Root scroller only; containers inside the page keep their own
+   * behaviour. Set on both elements because which one is the root scroller
+   * differs between engines and the property does not inherit.
    */
   html,
   body {

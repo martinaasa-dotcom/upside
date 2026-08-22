@@ -279,21 +279,12 @@ export function TickerDrawer({
                 Year by year. Tap to change.
               </MicroLabel>
               {/*
-                * Tighter cells on a phone, not fewer of them.
-                *
-                * Five fixed years in five columns is the right shape — the
-                * row reads as a timeline — but at the desktop `gap-2` and
-                * `px-2` a cell on a 360px screen has 38px of content and a
-                * four-figure price needs 44. `$1,058` was rendering as
-                * `$1,05`, and at 320px every price clipped, not just the
-                * long ones.
-                *
-                * The gap and the cell padding each drop a step below `sm`,
-                * and the price takes the same `text-xs sm:text-sm` step the
-                * figures elsewhere take. That buys 43px of content at
-                * 320px and 51px at 360px against a 36px worst case, so the
-                * row still fits five years with room rather than trading
-                * two of them for a swipe.
+                * Tighter cells on a phone, not fewer of them. At the desktop
+                * gap and padding a cell has 38px of content on a 360px screen
+                * and a four-figure price needs 44, so `$1,058` rendered as
+                * `$1,05`. The gap, the cell padding and the price each drop a
+                * step below `sm`, which keeps all five years rather than
+                * trading two of them for a swipe.
                 */}
               <div className="grid grid-cols-5 gap-1 sm:gap-2">
                 {FORECAST_YEARS.map((yr) => {

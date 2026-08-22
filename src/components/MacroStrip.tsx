@@ -159,16 +159,11 @@ export function MacroStrip() {
 
   return (
     /*
-     * On a phone this row is wider than the screen and scrolls, so its
-     * last number is always half-cut at the right edge. A hard cut reads
-     * as a rendering fault; a short fade reads as "there is more, push
-     * it". The mask is mobile-only — from `sm` the row sits at its natural
-     * width with room to spare and there is nothing to fade.
-     *
-     * The pill chrome goes with it below `sm`. Boxed and filled, four
-     * market numbers looked like a control you could press, sitting inside
-     * a chrome row that is already a bounded band of its own; unboxed they
-     * read as what they are, a line of figures under the header.
+     * On a phone this row is wider than the screen and scrolls, so a short
+     * mask fades its last number instead of hard-cutting it. The pill chrome
+     * goes with it below `sm`: boxed and filled, four market numbers looked
+     * like a control you could press, inside a chrome row that is already a
+     * bounded band of its own.
      */
     <div
       className="scrollbar-none min-w-0 flex-1 overflow-x-auto [mask-image:linear-gradient(to_right,black_calc(100%-1.5rem),transparent)] sm:ml-auto sm:w-fit sm:flex-none sm:[mask-image:none]"
