@@ -4,7 +4,18 @@
  * the side gutters or the page pad.
  */
 export const PAGE_MAX_CLASS = "max-w-[1200px]";
-export const PAGE_GUTTER_CLASS = "px-6";
+/**
+ * 16px on a phone, 24px from `sm` up.
+ *
+ * A flat 24px was 48px of the 390px a phone actually has — an eighth of
+ * the screen spent on margin before a card's own padding starts, which is
+ * where several of the "it bleeds outside the box" readings came from:
+ * a two-up score cell was left with about 118px of content. It also put
+ * the page column on a different edge from the phone chrome, which sits at
+ * 16px, so the top bar's wordmark and the dock never lined up with the
+ * cards between them. Both are the same 8px.
+ */
+export const PAGE_GUTTER_CLASS = "px-4 sm:px-6";
 export const PAGE_COLUMN_CLASS = `mx-auto w-full min-w-0 ${PAGE_MAX_CLASS} ${PAGE_GUTTER_CLASS}`;
 
 export const PAGE_FRAME_CLASS =

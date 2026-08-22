@@ -89,12 +89,23 @@ export function AppHeader({
        * where the rows meet.
        *
        * Still one `<AppStatusStrip>` instance, deliberately: it holds a
-       * one-second interval and a visibilitychange listener, so rendering
-       * it once per breakpoint would run two of each. Instead this single
-       * wrapper changes behaviour at `md` — below it the header row is
-       * hidden and the wrapper is just the strip sticking under the mobile
-       * top bar; at and above it the wrapper pins to the top and carries
-       * both rows.
+       * one-second interval and a visibilitychange listener, and the macro
+       * numbers inside it poll quotes, so rendering it once per breakpoint
+       * would run two of each. Instead this single wrapper changes
+       * behaviour at `md` — below it the header row is hidden and the
+       * wrapper is just the strip sticking under the mobile top bar; at
+       * and above it the wrapper pins to the top and carries both rows.
+       *
+       * That mobile half only actually reached a screen on 2026-08-22.
+       * Every call site was passing `className="hidden md:block"`, which
+       * lands on this wrapper and `display: none`s the strip along with
+       * the header row — so the market numbers were absent from every
+       * phone screen in the app while still mounted, polling, and
+       * invisible. The class is gone from all seven call sites; the
+       * `hidden md:block` that hides the desktop row lives on the
+       * `<header>` below, where it can only hide the row it belongs to.
+       * Do not reintroduce a breakpoint class on this wrapper — hide a
+       * row, never the pane.
        */}
       <div
         className={cn(

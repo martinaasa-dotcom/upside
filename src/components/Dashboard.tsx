@@ -3535,7 +3535,6 @@ export function Dashboard() {
           avatar={headerAvatar}
         />
           <AppHeader
-          className="hidden md:block"
           showWorkspaceNav={source === "supabase"}
           title="Overview"
           end={accountEnd}
@@ -3599,7 +3598,6 @@ export function Dashboard() {
         }
       />
       <AppHeader
-        className="hidden md:block"
         showWorkspaceNav={source === "supabase"}
         title={
           isOverview

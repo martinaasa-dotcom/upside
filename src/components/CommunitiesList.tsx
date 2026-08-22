@@ -242,7 +242,7 @@ export function CommunitiesList() {
     <SignInGate>
       <div className={PAGE_FRAME_CLASS}>
         <MobileChrome title="" active="circle" />
-        <AppHeader className="hidden md:block" title="Circle" />
+        <AppHeader title="Circle" />
         <main id="main" className={PAGE_MAIN_CLASS}>
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">

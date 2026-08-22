@@ -193,7 +193,7 @@ export function AdminPage() {
     <SignInGate>
       <div className={PAGE_FRAME_CLASS}>
         <MobileChrome title="Admin" active={null} />
-        <AppHeader className="hidden md:block" title="Admin" />
+        <AppHeader title="Admin" />
 
         <main id="main" className={PAGE_MAIN_CLASS}>
           <div className="flex items-start gap-3">

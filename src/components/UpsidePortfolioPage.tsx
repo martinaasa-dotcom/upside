@@ -1220,7 +1220,7 @@ export function UpsidePortfolioPage() {
   return (
     <div className={PAGE_FRAME_CLASS}>
       <MobileChrome title="Fund" active={null} />
-      <AppHeader className="hidden md:block" title="Upside Fund">
+      <AppHeader title="Upside Fund">
         <FundFreshness quotesAt={quotesAt} />
       </AppHeader>
 

@@ -1519,15 +1519,23 @@ export function CommunityView({ communityId }: Props) {
           title={community?.name ?? "Community"}
           active="circle"
           end={
+            /*
+             * `ghost`/`icon-sm`, matching the feedback and account controls
+             * beside it. As `outline`/`icon` this was the only boxed
+             * button in the phone header — a bordered 32px square sitting
+             * between two borderless 28px glyphs, which read as a stray
+             * control rather than part of the bar.
+             */
             isAdmin && community ? (
               <Button
                 type="button"
-                variant="outline"
-                size="icon"
+                variant="ghost"
+                size="icon-sm"
                 onClick={openSettings}
                 aria-expanded={settingsOpen}
                 aria-label="Settings"
                 title="Settings"
+                className="touch-target"
               >
                 <Settings />
               </Button>
@@ -1535,7 +1543,6 @@ export function CommunityView({ communityId }: Props) {
           }
         />
         <AppHeader
-          className="hidden md:block"
           title={
             <span className="flex min-w-0 items-center gap-1.5">
               <span className="truncate">{community?.name ?? "Community"}</span>
@@ -2398,7 +2405,7 @@ export function CommunityView({ communityId }: Props) {
                   </section>
 
                   {isAdmin && joinRequests.length > 0 && (
-                    <section className="flex flex-col gap-3 rounded-xl bg-card p-6 ring-1 ring-foreground/20">
+                    <section className="card-sheen glass flex flex-col gap-3 rounded-xl p-4 ring-1 ring-foreground/20 sm:p-6">
                       <h2 className="flex items-center gap-2 text-sm font-medium text-foreground">
                         <UserCheck className="size-4 text-muted-foreground" />
                         Join requests
@@ -2451,7 +2458,7 @@ export function CommunityView({ communityId }: Props) {
                   )}
 
                   {isAdmin && (
-                    <section className="flex flex-col gap-3 rounded-xl bg-card p-6 ring-1 ring-foreground/20">
+                    <section className="card-sheen glass flex flex-col gap-3 rounded-xl p-4 ring-1 ring-foreground/20 sm:p-6">
                       <h2 className="text-sm font-medium text-foreground">
                         Admin - invite
                       </h2>
@@ -2644,7 +2651,7 @@ export function CommunityView({ communityId }: Props) {
                 <ArrowLeft data-icon="inline-start" />
                 Back to community
               </Button>
-              <div className="flex flex-col sticky top-24 z-20 gap-3 rounded-xl bg-card p-6 shadow-sm ring-1 ring-foreground/20 backdrop-blur-sm">
+              <div className="card-sheen glass sticky top-24 z-20 flex flex-col gap-3 rounded-xl p-4 shadow-sm ring-1 ring-foreground/20 sm:p-6">
                 <p className="text-sm font-semibold text-foreground">
                   Read-only - owned by{" "}
                   {memberStats.find((m) => m.id === selectedOwnerId)?.name ??
@@ -2935,7 +2942,7 @@ export function CommunityView({ communityId }: Props) {
                 return (
                   <div
                     key={a.id}
-                    className="relative overflow-hidden rounded-xl border border-border bg-card p-4 pl-5"
+                    className="card-sheen glass relative overflow-hidden rounded-xl p-4 pl-5 ring-1 ring-foreground/20"
                   >
                     <span
                       className={cn("absolute inset-y-0 left-0 w-1", tone.bar)}
@@ -3022,7 +3029,15 @@ function PowerAnimalCard({
     <button
       type="button"
       onClick={onOpen}
-      className="veil-hover relative flex flex-col gap-4 overflow-hidden rounded-xl border border-border bg-card p-6 pl-6 text-left transition hover:scale-[1.01] hover:border-primary/30 active:scale-[0.995] lg:grid lg:h-auto lg:grid-rows-subgrid lg:row-span-6"
+      /*
+       * `.glass`, not a flat `bg-card`. This is a top-level card on the
+       * page and it was the last opaque one — a solid slab that stopped
+       * the ambient corner light dead where every panel around it lets it
+       * through. `.glass` carries its own edge on `box-shadow`, so the
+       * `border` goes with the fill; the accent bar down the left is a
+       * separate absolute element and is untouched by that.
+       */
+      className="veil-hover card-sheen glass relative flex flex-col gap-4 overflow-hidden rounded-xl p-4 pl-4 text-left ring-1 ring-foreground/20 transition hover:scale-[1.01] active:scale-[0.995] sm:p-6 sm:pl-6 lg:grid lg:h-auto lg:grid-rows-subgrid lg:row-span-6"
     >
       <span
         className={cn("absolute inset-y-0 left-0 w-1.5", tone.bar)}
@@ -3091,7 +3106,19 @@ function PowerAnimalCard({
             </p>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 rounded-lg border border-border/40 bg-muted/30 p-3">
+          {/*
+            * `grid-rows-subgrid`, not three independent stacks.
+            *
+            * Each read is four lines — label, figure, band, sentence — and
+            * as three plain flow columns each one started its own second
+            * line wherever its own first line happened to end. "How spread
+            * out" wraps to two lines on a phone and the other two labels do
+            * not, so its figure sat a row lower than theirs and the three
+            * cells read as three unrelated things. Subgrid puts all four
+            * rows on the parent, so every read's figure is on the figure
+            * row and every band is on the band row whatever the labels do.
+            */}
+          <div className="glass-well grid grid-cols-3 grid-rows-[auto_auto_auto_auto] gap-x-2 gap-y-1 rounded-lg p-3">
             <ScoreRead
               label="How spread out"
               value={`${Math.round(personality.diversificationScore)}/100`}
@@ -3116,21 +3143,37 @@ function PowerAnimalCard({
             />
           </div>
 
-          <Scoreboard className="min-h-min shrink-0 lg:h-full" cols={2}>
+          {/*
+            * One column on a phone, and shorter words in it.
+            *
+            * Two-up, each of these cells had about 120px to work with:
+            * "23.0% a year" ran straight out through the side of the card,
+            * and the bad-year sentence under the other one stacked into a
+            * nine-line ribbon taller than everything above it. The figure
+            * is now just the number, the unit moved into the line under it
+            * where there is room for words, and the pair stacks below `sm`.
+            * The "not a forecast" half of that sentence is a disclaimer and
+            * stays whatever else is trimmed.
+            */}
+          <Scoreboard
+            className="min-h-min shrink-0 lg:h-full"
+            cols={2}
+            mobileCols={1}
+          >
             <Score
               label="Modeled year"
               value={
                 Number.isFinite(personality.expectedAnnualReturnPct)
-                  ? `${personality.expectedAnnualReturnPct.toFixed(1)}% a year`
+                  ? `${personality.expectedAnnualReturnPct.toFixed(1)}%`
                   : "—"
               }
-              sub={`${signedPctPoints(personality.modeledAlphaPct)} vs index`}
+              sub={`A year, ${signedPctPoints(personality.modeledAlphaPct)} vs an index fund`}
               subClassName={signedTone(personality.modeledAlphaPct, "text-muted-foreground")}
             />
             <Score
-              label="Stretch (a rough bad year)"
-              value={`${personality.maxDrawdownPct}%`}
-              sub="How far these kinds of stocks have fallen in ugly years. Illustrative, not a forecast."
+              label="A rough year"
+              value={`-${personality.maxDrawdownPct}%`}
+              sub="How far names like these have fallen before. Illustrative, not a forecast."
               valueClassName="text-loss"
             />
           </Scoreboard>
@@ -3166,6 +3209,12 @@ function PowerAnimalCard({
   );
 }
 
+/**
+ * Four rows of one read, handed to the parent grid rather than stacked
+ * inside a box of its own — see the note at the call site for why. The
+ * per-line `mt-*` are gone with it: row spacing is the parent's `gap-y`
+ * now, or the three columns would drift apart again.
+ */
 function ScoreRead({
   label,
   value,
@@ -3178,13 +3227,13 @@ function ScoreRead({
   detail: string;
 }) {
   return (
-    <div className="min-w-0">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-1 font-mono text-sm font-semibold leading-none tabular-nums text-foreground">
+    <div className="row-span-4 grid min-w-0 grid-rows-subgrid">
+      <p className="text-xs leading-snug text-muted-foreground">{label}</p>
+      <p className="font-mono text-sm font-semibold leading-snug tabular-nums text-foreground">
         {value}
       </p>
-      <p className="mt-1.5 text-xs font-medium text-foreground">{band}</p>
-      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{detail}</p>
+      <p className="text-xs font-medium leading-snug text-foreground">{band}</p>
+      <p className="text-xs leading-relaxed text-muted-foreground">{detail}</p>
     </div>
   );
 }
