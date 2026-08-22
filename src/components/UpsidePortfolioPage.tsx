@@ -573,7 +573,7 @@ function FundPosition({
     <div className={cn(BOX, "flex flex-col gap-4 p-6")}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <Badge variant="secondary" className="h-6 font-heading text-sm font-semibold">
+          <Badge variant="secondary" className="chip-hang h-6 font-heading text-sm font-semibold">
             {cashtag(holding.ticker)}
           </Badge>
           <p className="mt-1.5 text-sm text-muted-foreground">

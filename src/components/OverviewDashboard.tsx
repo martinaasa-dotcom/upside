@@ -328,7 +328,7 @@ function DriverTile({
         className={cn("absolute inset-y-0 left-0 w-1", isUp ? "bg-gain" : "bg-loss")}
         aria-hidden
       />
-      <Badge variant="secondary" className="w-fit font-heading text-sm font-semibold">
+      <Badge variant="secondary" className="chip-hang w-fit font-heading text-sm font-semibold">
         {cashtag(ticker)}
       </Badge>
       <span
@@ -503,7 +503,7 @@ function MoverTile({
       onClick={onOpen}
       title={sheets || undefined}
       className={cn(
-        "veil-hover card-sheen glass group relative flex h-full w-full min-w-0 flex-col justify-center gap-1.5 overflow-hidden rounded-lg p-3 text-left ring-1 transition hover:scale-[1.01] sm:p-6",
+        "veil-hover card-sheen glass group relative flex h-full w-full min-w-0 flex-col justify-center gap-1.5 overflow-hidden rounded-lg p-3 pl-4 text-left ring-1 transition hover:scale-[1.01] sm:p-6",
         isUp ? "ring-gain/20 hover:ring-gain/40" : "ring-loss/20 hover:ring-loss/40"
       )}
     >
@@ -566,7 +566,7 @@ function MoverTile({
       <span className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5">
         <Badge
           variant="secondary"
-          className="h-6 font-heading text-xs font-semibold sm:text-sm"
+          className="chip-hang h-6 font-heading text-xs font-semibold sm:text-sm"
         >
           {cashtag(ticker.ticker)}
         </Badge>

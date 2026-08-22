@@ -640,6 +640,39 @@ body {
     );
   }
 
+  /*
+   * Hang a ticker chip so its TEXT lines up with the text column under it.
+   *
+   * A `Badge` is `px-2` plus a 1px transparent border, so its label sits 9px
+   * inside its own box. Align the chip's *box* with the column — which is
+   * what happens by default — and the label lands 9px to the right of every
+   * plain-text line beneath it. On a Movers tile that put the `$` of
+   * `$BMNR` 9px right of the `$` of `$23.56`, while the two figures down
+   * the right-hand side lined up perfectly, because those are plain text
+   * aligned to each other. One side of the card looked set, the other
+   * looked nudged.
+   *
+   * Pulling the chip back by its own inset makes the *ink* the thing that
+   * aligns, on both sides. This is hanging punctuation, the same idea as
+   * letting an opening quote sit in the margin so the sentence still starts
+   * on the line: the chip's background is decoration and may sit outside
+   * the text column, the label may not.
+   *
+   * The 9px is the chip's padding plus its border, so it tracks `Badge`'s
+   * own geometry — if that padding ever changes this has to change with it.
+   *
+   * Opt-in, never on `Badge` itself. A chip in a *row* of chips has no
+   * column to align to, and hanging it would just push it off the edge.
+   * Use this only where a chip heads a stack of text.
+   *
+   * A hung chip needs its container to have room: it reaches into the
+   * padding, so anything drawn there (a `w-1` accent bar, say) has to be
+   * cleared by the container's own inline padding.
+   */
+  .chip-hang {
+    margin-inline-start: calc(-0.5rem - 1px);
+  }
+
   .glass-well {
     background-color: color-mix(in oklch, var(--muted), transparent 64%);
     /* Prefixed first, standard last — see the note on `.glass` above. */
