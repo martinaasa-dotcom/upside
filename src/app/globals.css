@@ -865,11 +865,56 @@ html[data-keyboard="open"] .keyboard-chrome:focus-within {
  * this much taller than its button would reach into whatever sits above
  * and below it and start stealing taps from its neighbours. */
 @media (max-width: 1023px), (pointer: coarse) {
-  [data-slot="button"] {
+  [data-slot="button"],
+  /* A Radix select trigger is a `<button>` that carries its own slot name,
+   * so neither the button rule beside it nor the `select` rule below ever
+   * reached it — it sat at `h-8` between two families of control that had
+   * both been fixed. Lab's scope picker is the current call site. */
+  [data-slot="select-trigger"] {
     min-height: 2.75rem;
   }
   [data-slot="button"][data-size^="icon"] {
     min-width: 2.75rem;
+  }
+}
+
+/* The same rule, for the controls the button pass did not cover.
+ *
+ * Every text field, number field and native select in the app is `h-8`
+ * (32px) — the base layer sets it a few rules down — which is under iOS
+ * HIG's 44pt and Material's 48dp exactly as the buttons were. It went
+ * unnoticed because the three passes above all searched for buttons.
+ * Measured on a 390px viewport: the Compound calculator is five stacked
+ * 326x32 fields plus a 326x32 portfolio select, which is the single
+ * densest run of under-sized targets in the app, and Pulse's ticker
+ * search, Circle's invite field and Account's two name fields are the
+ * same control.
+ *
+ * Same pointer gate as the rules above, so a mouse keeps the dense 32px
+ * field and only a finger gets the 44px one. No desktop pixel moves.
+ *
+ * `.inline-edit` is excluded, and that exclusion is load-bearing rather
+ * than tidy: those are the editable cells inside holdings/covered-call
+ * tables, every row of which is a fixed `h-10` by design (see AGENTS.md).
+ * A 44px min-height on them would push every row 4px taller on touch and
+ * break the one table rule that is written down. They are already opted
+ * out of the `h-8` base styling for the same reason.
+ *
+ * Checkboxes, radios and ranges are excluded because they are not text
+ * fields and are sized by their own primitives; both `Checkbox` and
+ * `Switch` already carry an `after:-inset-*` hit area and sit inside a
+ * clickable `<label>`. Widening those further would have the pseudo reach
+ * into the rows above and below and start stealing their taps — the trap
+ * the button note above describes.
+ */
+@media (max-width: 1023px), (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
+      [type="file"]
+    ):not([type="hidden"]):not([type="button"]):not([type="submit"]):not(
+      [type="reset"]
+    ):not(.inline-edit),
+  select {
+    min-height: 2.75rem;
   }
 }
 

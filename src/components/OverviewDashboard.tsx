@@ -502,7 +502,7 @@ function MoverTile({
       onClick={onOpen}
       title={sheets || undefined}
       className={cn(
-        "veil-hover card-sheen glass group relative flex h-full w-full min-w-0 items-center justify-between gap-2 overflow-hidden rounded-lg p-4 text-left ring-1 transition hover:scale-[1.01] sm:gap-3 sm:p-6",
+        "veil-hover card-sheen glass group relative flex h-full w-full min-w-0 flex-col justify-center gap-1.5 overflow-hidden rounded-lg p-4 text-left ring-1 transition hover:scale-[1.01] sm:p-6",
         isUp ? "ring-gain/20 hover:ring-gain/40" : "ring-loss/20 hover:ring-loss/40"
       )}
     >
@@ -513,29 +513,53 @@ function MoverTile({
         )}
         aria-hidden
       />
-      <span className="min-w-0 flex-1">
+      {/*
+        * Two spread rows, not two stacked columns.
+        *
+        * This used to be a left column (ticker over price) and a right
+        * column (percent over dollars) inside one flex row. It reads the
+        * same either way — ticker and percent on the first line, price and
+        * dollars on the second — but as columns they compete for one
+        * width, and the right one was `shrink-0` while the left was
+        * `flex-1 min-w-0`. So the left gave, every time, and since the
+        * tile is `overflow-hidden` the price was cut off mid-number with
+        * nothing to show for it. Measured at 390px: the tile is 157px, the
+        * percent column takes 85, and `$640.80` was handed 32px of the 59
+        * it needs — the reader saw about half a price and no ellipsis.
+        *
+        * As rows each line spreads its own two items and each item sizes
+        * to its own content, so neither can starve the other. Verified at
+        * 360 / 390 / 430 px with a four-figure price and a five-character
+        * percent: nothing clips, and the widest row has room to spare.
+        *
+        * The trend arrow is desktop-only. It costs 20px on the tightest
+        * line for information the tile already carries twice — the figure
+        * is signed, and the edge bar down the left is `--gain` or
+        * `--loss`.
+        */}
+      <span className="flex items-center justify-between gap-2">
         <Badge variant="secondary" className="h-6 font-heading text-sm font-semibold">
           {cashtag(ticker.ticker)}
         </Badge>
-        <span className="mt-1.5 block font-mono text-sm tabular-nums text-muted-foreground">
-          {currency(ticker.price)}
-        </span>
-      </span>
-      <span className="shrink-0 whitespace-nowrap text-right">
         <span
           className={cn(
-            "flex items-center justify-end gap-1 font-mono text-lg font-semibold tabular-nums",
+            "flex shrink-0 items-center gap-1 font-mono text-lg font-semibold tabular-nums",
             tone(pct)
           )}
         >
           {isUp ? (
-            <TrendingUp className="size-4 shrink-0" />
+            <TrendingUp className="hidden size-4 shrink-0 sm:block" />
           ) : (
-            <TrendingDown className="size-4 shrink-0" />
+            <TrendingDown className="hidden size-4 shrink-0 sm:block" />
           )}
           {pct != null ? percent(pct, lifetime ? 1 : 2) : "—"}
         </span>
-        <span className={cn("mt-0.5 block font-mono text-sm tabular-nums", tone(dollars))}>
+      </span>
+      <span className="flex items-baseline justify-between gap-2 font-mono text-sm tabular-nums">
+        <span className="min-w-0 truncate text-muted-foreground">
+          {currency(ticker.price)}
+        </span>
+        <span className={cn("shrink-0", tone(dollars))}>
           {signedCurrency(dollars, 0)}
         </span>
       </span>
@@ -998,8 +1022,15 @@ export const OverviewDashboard = memo(function OverviewDashboard({
           * affordance.
           *
           * Verified rather than assumed: rendered at 360, 390 and 430 px,
-          * the tile lands at 151/166/186 px wide with nothing clipped, and
-          * six fit in three tidy rows.
+          * the tile lands at 142/157/177 px wide and six fit in three tidy
+          * rows.
+          *
+          * "With nothing clipped" is what this used to claim, and it was
+          * measured — but on the tile's old two-column layout and against
+          * whatever prices were on screen that day. It stopped being true
+          * as soon as a four-figure price met a five-character percent, and
+          * nothing re-checked it. The tile is two rows now precisely so the
+          * claim cannot rot again; the note lives on `MoverTile`.
           */}
         {movers.length === 0 ? (
           <p className="text-sm text-muted-foreground">

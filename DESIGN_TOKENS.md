@@ -1088,6 +1088,65 @@ put it on a child, the way `SheetPicker` and `MobileTopBar` do — is still
 fine and still there, since both also want the `<h1>` to stay a heading for
 a screen reader while looking like chrome.
 
+### Two spread rows, never two stacked columns
+
+A Movers tile shows four things — ticker, percent, price, dollars — as
+ticker/percent on one line and price/dollars on the next. It was built as
+two *columns*, each stacked: ticker over price on the left, percent over
+dollars on the right. It reads identically either way, and it is wrong.
+
+Two columns share one width, and here one was `shrink-0` while the other
+was `flex-1 min-w-0`. So the left always gave. At 390px the tile is 157px,
+the percent column takes 85, and `$640.80` was handed 32px of the 59 it
+needs — the reader saw half a price, mid-digit, with no ellipsis to say so.
+It clipped on every phone width tested (6 of 6 tiles at 360 and 390, 1 of 6
+at 430), and a comment in the file claimed it had been verified not to.
+
+As two *rows*, each line spreads its own two items with `justify-between`
+and each item sizes to its own content, so neither can starve the other.
+Nothing clips at 360 / 390 / 430 / 1440 with a four-figure price and a
+five-character percent.
+
+The trend arrow is `hidden sm:block`: 20px on the tightest line for
+information the tile already carries twice — the figure is signed, and the
+edge bar is `--gain` or `--loss`.
+
+**The general rule: when a small card has to fit two pairs of values, make
+them rows.** Columns look the same until one value grows, and then one of
+them silently loses.
+
+### Every tap target, not just the buttons
+
+Three earlier passes grew touch targets to the 44pt/48dp minimum and all
+three searched for buttons. What they left behind:
+
+| control | was | covered by |
+|---|---|---|
+| text / number fields | 326×32 | `input:not(...)` min-height |
+| native `<select>` | 326×32 | `select` min-height |
+| Radix select trigger | 110×32 | `[data-slot="select-trigger"]` |
+| `<summary>` disclosure | 326×28 | `.touch-target` at the call site |
+
+All on the same `(max-width: 1023px), (pointer: coarse)` gate as the button
+rules, so a mouse keeps the dense control and no desktop pixel moves.
+
+Two exclusions are load-bearing. **`.inline-edit`** is every editable cell
+in the holdings and covered-call tables, whose rows are a fixed `h-10` by
+design — a 44px minimum there would push every row taller and break the one
+table rule that is written down. **Checkboxes, radios and ranges** are left
+alone: `Checkbox` and `Switch` already carry an `after:-inset-*` hit area
+and sit inside a clickable `<label>`, and widening the pseudo further would
+have it reach into the rows above and below and start stealing their taps.
+
+The summary is the interesting one. A global `summary { padding-block }`
+looks right and does nothing useful: the one summary that needed fixing
+sets its own `py-1`, so a *layered* rule loses to it — and an *un-layered*
+rule would instead have beaten the two call sites already at `py-3`/`py-2.5`
+and made those **shorter**. Either way the global rule moves the wrong
+summaries. `.touch-target` at the one call site that needs it is the fix;
+it sets `min-height`, which no call site names, and that summary is already
+`flex items-center` so the label stays centred.
+
 ### Two bounces, one property
 
 The phone top bar "kept going down" on a pull, and the floating tab bar cut
