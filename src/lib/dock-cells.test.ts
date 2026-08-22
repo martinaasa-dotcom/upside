@@ -11,8 +11,10 @@ import { describe, expect, it } from "vitest";
 import {
   ADD_CELL_PX,
   dockFoldsSheets,
+  GAP_PX,
   MAX_DOCK_CELLS,
   MIN_CELL_PX,
+  PAD_PX,
 } from "@/lib/dock-cells";
 
 /** Every section showing: Home, Pulse, Lab, Growth. */
@@ -55,9 +57,14 @@ describe("dockFoldsSheets", () => {
     expect(dockFoldsSheets(ALL_MODES, 4, WIDE, true)).toBe(false);
   });
 
-  it("folds at exactly one pixel under the cells it needs", () => {
+  it("folds at exactly one pixel under the room it needs", () => {
     const cells = ALL_MODES + 1 + 3;
-    const exact = cells * MIN_CELL_PX + ADD_CELL_PX;
+    // The pill's own padding and the gaps between tracks count too: the dock
+    // floats over the page rather than filling a bar, so that chrome is width
+    // the cells never get.
+    const tracks = cells + 1; // the add cell
+    const exact =
+      cells * MIN_CELL_PX + ADD_CELL_PX + PAD_PX + (tracks - 1) * GAP_PX;
     expect(dockFoldsSheets(ALL_MODES, 3, exact, true)).toBe(false);
     expect(dockFoldsSheets(ALL_MODES, 3, exact - 1, true)).toBe(true);
   });

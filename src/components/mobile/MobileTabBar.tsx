@@ -121,15 +121,21 @@ export function MobileTabBar({
       ref={dockRef}
       aria-label="App"
       className={cn(
-        "keyboard-chrome fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/35 pb-[env(safe-area-inset-bottom)] backdrop-blur-2xl md:hidden",
+        /*
+         * Same as the desktop dock: no band, just a centring container.
+         * `pointer-events-none` here and `pointer-events-auto` on the bar
+         * itself, or this full-width element eats every tap along the
+         * bottom of the page even though nothing is drawn there.
+         */
+        "keyboard-chrome pointer-events-none fixed inset-x-0 bottom-0 z-40 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:hidden",
         className
       )}
     >
-      <div className="px-4 py-2">
+      <div className="px-4">
         <div
           role="tablist"
           className={cn(
-            "grid h-12 w-full overflow-hidden rounded-lg glass-well",
+            "card-sheen glass pointer-events-auto grid w-full gap-1 rounded-xl p-1 ring-1 ring-foreground/20",
             cols === 3 && "grid-cols-3",
             cols === 4 && "grid-cols-4",
             cols === 5 && "grid-cols-5"
@@ -161,7 +167,7 @@ export function MobileTabBar({
                   if (onSelect(id)) e.preventDefault();
                 }}
                 className={cn(
-                  "flex h-full min-h-0 min-w-0 appearance-none flex-col items-center justify-center gap-0.5 rounded-none px-0.5 text-xs font-medium transition-colors",
+                  "flex h-12 min-h-0 min-w-0 appearance-none flex-col items-center justify-center gap-0.5 rounded-lg px-0.5 text-xs font-medium transition-colors",
                   on
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:text-foreground"

@@ -3,6 +3,7 @@
 import { useAuth } from "@/components/AuthProvider";
 import { MobileTabBar, type MobileTabId } from "@/components/mobile/MobileTabBar";
 import { MobileTopBar } from "@/components/mobile/MobileTopBar";
+import { useHiddenMetaTabIds } from "@/lib/use-hidden-meta-tabs";
 import type { ReactNode } from "react";
 
 /** Sticky top bar and the same gold-well dock as desktop. */
@@ -17,9 +18,12 @@ export function MobileChrome({
   active: MobileTabId | null;
   alertCount?: number;
   end?: ReactNode;
+  /** Omit it. Defaults to this viewer's tier, which every page must agree on. */
   hiddenModeIds?: string[];
 }) {
   const { profile, user } = useAuth();
+  const tierHidden = useHiddenMetaTabIds();
+  const hidden = hiddenModeIds ?? tierHidden;
   const initial = (profile?.display_name || user?.email || "?")
     .trim()
     .charAt(0)
@@ -36,7 +40,7 @@ export function MobileChrome({
       <MobileTabBar
         active={active}
         alertCount={alertCount}
-        hiddenModeIds={hiddenModeIds}
+        hiddenModeIds={hidden}
       />
     </>
   );

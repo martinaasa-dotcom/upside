@@ -91,11 +91,25 @@ export function PortfolioTabs({
     <nav
       ref={dockRef}
       className={cn(
-        "keyboard-chrome fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/35 pb-[max(0.25rem,env(safe-area-inset-bottom))] backdrop-blur-2xl",
+        /*
+         * No band. The dock used to be a full-width bar -- a black veil, a
+         * blur, and a hairline across the top -- with the well sitting in
+         * it. That bar was a horizon line drawn across the ambient field
+         * for no reason: the well already carries its own glass, so the
+         * band was a second sheet of it doing nothing but cutting the page
+         * in two. What is left is a centring container with nothing in it,
+         * and the dock floats over the page the way it does in Arena.
+         *
+         * `pointer-events-none` because this element still spans the full
+         * width: transparent or not, it would otherwise swallow every
+         * click along the bottom of the page. The dock itself turns them
+         * back on.
+         */
+        "keyboard-chrome pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center pb-[max(0.75rem,env(safe-area-inset-bottom))]",
         className
       )}
     >
-      <div className={cn(PAGE_COLUMN_CLASS, "py-2 sm:py-2.5")}>
+      <div className={cn(PAGE_COLUMN_CLASS, "flex justify-center")}>
         <BookModeDock
           activeId={activeId}
           onSelectMode={(id) => {

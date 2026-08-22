@@ -31,6 +31,18 @@ export const MIN_CELL_PX = 96;
 export const ADD_CELL_PX = 40;
 
 /**
+ * The pill's own padding and the gaps between its cells.
+ *
+ * These exist because the dock floats over the page rather than sitting in a
+ * bar: the cells are inset from a rounded card by `p-1` with `gap-1` between
+ * them, the way a floating dock reads. They are small, and they are still
+ * width the cells do not get — at nine cells the gaps alone are a third of a
+ * cell, which is enough to push a row that "fits" into truncating.
+ */
+export const PAD_PX = 8;
+export const GAP_PX = 4;
+
+/**
  * `modeCount` is the app sections actually showing (the viewer's tier can
  * hide some); the `+ 1` is Circle, which is always there.
  *
@@ -48,5 +60,9 @@ export function dockFoldsSheets(
   const cells = modeCount + 1 + sheetCount;
   if (cells > MAX_DOCK_CELLS) return true;
   if (availablePx == null || availablePx <= 0) return false;
-  return cells * MIN_CELL_PX + (hasAddCell ? ADD_CELL_PX : 0) > availablePx;
+  const tracks = cells + (hasAddCell ? 1 : 0);
+  const chrome = PAD_PX + Math.max(0, tracks - 1) * GAP_PX;
+  return (
+    cells * MIN_CELL_PX + (hasAddCell ? ADD_CELL_PX : 0) + chrome > availablePx
+  );
 }

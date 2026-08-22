@@ -863,6 +863,41 @@ punched in the glow. Measured on the running app the well surface reads
 **17.54** and muted at **7.09**, both above AAA. The mobile bar's well moved
 to `.glass-well` with it, so both docks are the same material.
 
+### No band behind it (2026-08-22)
+
+The dock used to be a full-width bar — `bg-background/35`, `backdrop-blur-2xl`
+and a `border-t` hairline — with the well sitting inside it. Two sheets of
+glass stacked for one control, and the hairline drew a horizon line across the
+ambient field for no reason.
+
+Now the `nav` is a centring container with nothing in it, and the dock floats
+over the page. Matching Arena's `BottomDock`, which is the same idea: the
+`nav` is `fixed inset-x-0 bottom-0 flex justify-center` plus bottom padding,
+and the pill carries the material.
+
+| | Was | Now |
+|---|---|---|
+| `nav` | veil + blur + `border-t` | nothing, just centring |
+| The pill | `.glass-well rounded-lg`, cells edge to edge | `.glass card-sheen rounded-xl p-1 gap-1 ring-1 ring-foreground/20`, cells `rounded-lg h-11` |
+| Desktop dock height | 73px | **64px** |
+| `--dock-pad` | 105px | **96px** |
+| Phone bar height | 65px | 68px (it floats clear of the edge now) |
+
+`.glass`, not `.glass-well`. The well is the *recessed* treatment; with
+nothing around it, a recess reads as a hole. A pane floating over content
+needs the raised one — sheen along the top edge, ring around it.
+
+**Anything full-width and transparent over content needs
+`pointer-events-none`.** The `nav` still spans the viewport; without it, every
+click along the bottom of the page lands on an element that draws nothing. The
+pill sets `pointer-events-auto` back. Verified with `elementFromPoint`: beside
+the dock resolves to `main`, on a cell to the dock.
+
+The pill's `p-1` and `gap-1` are width the cells do not get, so `PAD_PX` and
+`GAP_PX` are part of the fold arithmetic in `dock-cells.ts`. At nine cells the
+gaps alone come to a third of a cell — enough to push a row that "fits" into
+truncating if they went uncounted.
+
 ### The width is fixed, and that is a rule with teeth
 
 The well is `w-fit` and centred, so its width is the cell count times a

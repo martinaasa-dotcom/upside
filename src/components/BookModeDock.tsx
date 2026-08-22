@@ -101,7 +101,7 @@ export type SheetTone = "up" | "down" | null;
 const CELL_W = "7.5rem";
 
 const CELL =
-  "flex h-full w-full min-h-0 min-w-0 appearance-none items-center justify-center gap-1.5 rounded-none px-2 text-sm font-medium transition-colors";
+  "flex h-11 w-full min-h-0 min-w-0 appearance-none items-center justify-center gap-1.5 rounded-lg px-2 text-sm font-medium transition-colors";
 
 const OFF = "text-muted-foreground hover:bg-hover hover:text-foreground";
 const ON = "bg-primary text-primary-foreground";
@@ -211,8 +211,17 @@ export function BookModeDock({
     <div
       role="tablist"
       aria-label="App"
+      /*
+       * A floating card, not a well sunk into a bar. The dock has no band
+       * behind it any more (see `PortfolioTabs`), so it has to read as a
+       * pane lifted off the page: `.glass` with the sheen and the ring,
+       * rather than `.glass-well`, which is the recessed treatment and
+       * looks like a hole once there is nothing around it. Cells are inset
+       * by `p-1` with `gap-1`, so the active pill floats inside the card
+       * instead of running to its edges.
+       */
       className={cn(
-        "mx-auto grid h-12 w-fit max-w-full overflow-hidden rounded-lg glass-well",
+        "card-sheen glass pointer-events-auto mx-auto grid w-fit max-w-full gap-1 rounded-xl p-1 ring-1 ring-foreground/20",
         className
       )}
       style={{
