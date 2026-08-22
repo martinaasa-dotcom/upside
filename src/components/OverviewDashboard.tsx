@@ -328,7 +328,10 @@ function DriverTile({
         className={cn("absolute inset-y-0 left-0 w-1", isUp ? "bg-gain" : "bg-loss")}
         aria-hidden
       />
-      <Badge variant="secondary" className="chip-hang w-fit font-heading text-sm font-semibold">
+      <Badge
+        variant="secondary"
+        className="chip-hang w-fit font-heading text-sm font-semibold [--chip-radius:0.625rem]"
+      >
         {cashtag(ticker)}
       </Badge>
       <span
@@ -503,7 +506,7 @@ function MoverTile({
       onClick={onOpen}
       title={sheets || undefined}
       className={cn(
-        "veil-hover card-sheen glass group relative flex h-full w-full min-w-0 flex-col justify-center gap-1.5 overflow-hidden rounded-lg p-3 pl-4 text-left ring-1 transition hover:scale-[1.01] sm:p-6",
+        "veil-hover card-sheen glass group relative flex h-full w-full min-w-0 flex-col justify-center gap-1.5 overflow-hidden rounded-lg p-3 text-left ring-1 transition hover:scale-[1.01] sm:p-6",
         isUp ? "ring-gain/20 hover:ring-gain/40" : "ring-loss/20 hover:ring-loss/40"
       )}
     >
@@ -515,53 +518,22 @@ function MoverTile({
         aria-hidden
       />
       {/*
-        * Two spread rows, not two stacked columns.
+        * Two spread rows, not two stacked columns — see AGENTS.md.
         *
-        * This used to be a left column (ticker over price) and a right
-        * column (percent over dollars) inside one flex row. It reads the
-        * same either way — ticker and percent on the first line, price and
-        * dollars on the second — but as columns they compete for one
-        * width, and the right one was `shrink-0` while the left was
-        * `flex-1 min-w-0`. So the left gave, every time, and since the
-        * tile is `overflow-hidden` the price was cut off mid-number with
-        * nothing to show for it. Measured at 390px: the tile is 157px, the
-        * percent column takes 85, and `$640.80` was handed 32px of the 59
-        * it needs — the reader saw about half a price and no ellipsis.
+        * As columns (ticker over price, percent over dollars) the two share
+        * one width; the right was `shrink-0` and the left `flex-1 min-w-0`,
+        * so the left always gave and the price was cut mid-number with
+        * nothing to show for it. As rows each line spreads its own two
+        * items and each sizes to its own content.
         *
-        * As rows each line spreads its own two items and each item sizes
-        * to its own content, so neither can starve the other.
+        * The row is also sized to fit rather than relying on the wrap: on a
+        * phone `p-3`, a `text-xs` chip and a `text-base` percent buy the
+        * ~133px it needs. A minus sign is one more character, so `-2.32%`
+        * costs 7px more than `9.23%` — at `text-lg` that one glyph was the
+        * difference between a tidy grid and every red tile wrapping.
         *
-        * Both rows wrap, and that is the second half of it. Rows alone fix
-        * the starving but not the arithmetic: a tile is 125px wide inside
-        * its padding at 390px, and `$ABEA.DE` plus `1.64%` needs 146 — the
-        * percent was running 18px past the edge, on the commonest phone
-        * width there is. Truncating the ticker would hide the one thing
-        * that says which company this is, and truncating the price gives
-        * you `$…`. Wrapping costs a line on the few tiles that need one
-        * and loses nothing, which is the right trade for a tile whose
-        * whole job is four numbers.
-        *
-        * Wrapping is the floor, not the plan, so the first row is also
-        * sized to clear it. On a phone the tile is `p-3` rather than
-        * `p-4`, the ticker chip is `text-xs`, and the percent is
-        * `text-base`. That is 133px of room against a 125px worst case at
-        * 390px — every ticker in the book on one line, `ABEA.DE` and a
-        * negative percent included. The last of those three is what
-        * settled it: a minus sign is one more character, so `-2.32%`
-        * needs 7px more than `9.23%`, and at `text-lg` that one glyph was
-        * the difference between a tidy grid and every red tile wrapping
-        * while the green ones did not.
-        *
-        * Below 390px the row wraps rather than shrinking the two figures
-        * the tile exists to show.
-        *
-        * Measured at 320 / 360 / 390 / 430 px against the longest ticker
-        * and price in the seed book: nothing spills, nothing ellipsizes.
-        *
-        * The trend arrow is desktop-only. It costs 20px on the tightest
-        * line for information the tile already carries twice — the figure
-        * is signed, and the edge bar down the left is `--gain` or
-        * `--loss`.
+        * The trend arrow is desktop-only: 20px on the tightest line for
+        * information the tile already carries in the sign and the edge bar.
         */}
       <span className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5">
         <Badge
@@ -628,20 +600,12 @@ function PortfolioLane({
               {sheet.portfolio.name}
             </p>
             {/*
-              * `break-words`, and the total steps down a size on a phone.
-              *
-              * This row is a `min-w-0` name column against a `shrink-0`
-              * total — the same shape that was cutting Movers prices in
-              * half, and it fails the same way once the total is long
-              * enough. At 320px with a seven-figure total the column was
-              * down to 44px, and `$14,500` is a single unbreakable token
-              * 55px wide, so it hard-clipped: the reader saw "6 holdings ·
-              * $14,5" and no ellipsis.
-              *
-              * The name above already truncates, which is honest. This
-              * line wraps, so it only needed permission to break inside
-              * that token as a last resort. The padding step and the
-              * smaller total buy back the room that makes it rare.
+              * A `min-w-0` name column against a `shrink-0` total — the same
+              * shape that was cutting Movers prices in half. At 320px the
+              * column was down to 44px and `$14,500` is a single unbreakable
+              * 55px token, so it hard-clipped with no ellipsis. The name
+              * above truncates; this line only needed permission to break
+              * inside that token as a last resort.
               */}
             <p className="mt-1 break-words text-sm text-muted-foreground">
               {plural(sheet.holdingCount, "holding")}

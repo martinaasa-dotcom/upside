@@ -1089,23 +1089,12 @@ export const CompoundInterestSheet = memo(function CompoundInterestSheet({
             </p>
           )}
           {/*
-            * One ladder at every width, not a phone list and a desktop
-            * table.
-            *
-            * The two disagreed about the thing the panel is for. The phone
-            * showed only what is still ahead, highlighted the next round
-            * number, and folded everything already crossed behind an "8
-            * already crossed" summary. The desktop showed all twenty-odd
-            * rows in a scrolling table and auto-scrolled you to your place
-            * in it — so the answer to "what's next" was somewhere in the
-            * middle of a wall of dates, and every number you had already
-            * passed competed with it. The phone reading is the better one
-            * and it is now the only one; the desktop table, its scroll
-            * container, and the auto-scroll that positioned it are gone.
-            *
-            * The rows themselves stretch rather than change: the ladder is
-            * a flex row, so the amount takes the slack a wide screen gives
-            * it and the date column stays where it is.
+            * One ladder at every width. The phone list and the desktop table
+            * disagreed about what the panel is for: the phone showed what is
+            * still ahead with the next one highlighted and the rest folded
+            * away, the desktop showed all twenty-odd rows in a scroller and
+            * auto-scrolled you into the middle of them. The phone reading is
+            * the better one and is now the only one.
             */}
           <div className="mt-4">
             {upcomingMilestones.length > 0 ? (

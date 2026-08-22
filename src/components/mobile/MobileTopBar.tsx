@@ -86,25 +86,15 @@ export function MobileTopBar({
               <span className="h-3.5 w-px shrink-0 bg-border" aria-hidden />
               {typeof title === "string" ? (
                 /*
-                 * The size class goes on the span, never on the `<h1>`.
+                 * The size class goes on the span, not the `<h1>` — this is
+                 * chrome that happens to be a heading, and the two jobs are
+                 * cleaner apart: the `<h1>` carries the landmark, the span
+                 * carries the look.
                  *
-                 * Not because it would break otherwise — the heading
-                 * element rules moved into `@layer base` on 2026-08-22, so
-                 * a size class on the `<h1>` would now apply — but because
-                 * this is chrome that happens to be a heading, and the two
-                 * jobs are cleaner apart. The `<h1>` carries the landmark
-                 * for a screen reader; the span carries the look.
-                 *
-                 * It is also where the cascade bug surfaced. While those
-                 * rules were un-layered they beat every Tailwind utility
-                 * whatever its specificity, so the `text-sm font-medium`
-                 * here lost to `1.5rem/600` and the bar set a page's name
-                 * at the size of a page title — on Circle, the community's
-                 * name ("Monki") arriving larger and louder than the
-                 * wordmark beside it and squeezing the icons on the right.
-                 * `SheetPicker` had always put its classes on a button,
-                 * which is why the Dashboard's title was the one that
-                 * looked right.
+                 * It is also where the heading cascade bug surfaced. While
+                 * the element rules were un-layered they beat every utility,
+                 * so `text-sm font-medium` here lost to 1.5rem/600 and a
+                 * community's name arrived at the size of a page title.
                  */
                 <h1 className="min-w-0">
                   <span className="block truncate text-sm font-medium leading-none text-muted-foreground">
@@ -150,20 +140,12 @@ export function MobileTopBar({
           ) : null}
           {avatar ? (
             /*
-              * The hit area grows, the box does not.
-              *
-              * `.touch-target` sets `min-height`/`min-width: 2.75rem`, and
-              * this element is the one piece of header chrome that paints
-              * a visible border — so the 44px finger target was being
-              * drawn. The avatar came out as a 44px outlined square beside
-              * 28px borderless glyphs, reading as a button someone had
-              * emphasised rather than as the account picture. Every other
-              * control in this bar is a ghost `Button`, where the same
-              * inflation is invisible because there is no box on it.
-              *
-              * An absolute inset gives the finger the same 44px without
-              * moving the pixel the eye sees — the pattern `.row-action`
-              * and `InfoTip` already use for exactly this reason.
+              * The hit area grows, the box does not. `.touch-target` sets a
+              * 44px minimum, and this is the one piece of header chrome that
+              * paints a visible border, so the finger target was being drawn
+              * — a 44px outlined square beside 28px borderless glyphs. An
+              * absolute inset gives the finger the same reach without moving
+              * the pixel the eye sees.
               */
             <Link
               href="/account"

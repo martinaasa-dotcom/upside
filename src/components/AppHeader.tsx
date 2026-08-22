@@ -77,35 +77,21 @@ export function AppHeader({
   return (
     <>
       {/*
-       * One pane, not two.
+       * One pane, not two: one fill, one blur, both rows inside it, and a
+       * hairline where they meet. As two sibling fixed elements each with
+       * its own fill and blur they sampled different slices of the backdrop
+       * and came out at visibly different tones with a seam between them.
        *
-       * The header row and the status strip used to be two sibling fixed
-       * elements, each with its own `bg-background/*` fill and its own
-       * `backdrop-blur`. Two blurs stacked on two backdrops do not read as
-       * one sheet of glass: each samples a different slice of what is
-       * behind it, so the two bands came out at visibly different tones
-       * with a seam between them. The fix is structural rather than
-       * tonal — one fill, one blur, both rows inside it, and a hairline
-       * where the rows meet.
+       * One `<AppStatusStrip>` instance, deliberately — it holds a
+       * one-second interval and polls quotes, so rendering it per
+       * breakpoint would run two of each. This wrapper changes behaviour at
+       * `md` instead: below it the header row is hidden and the wrapper is
+       * just the strip under the mobile top bar.
        *
-       * Still one `<AppStatusStrip>` instance, deliberately: it holds a
-       * one-second interval and a visibilitychange listener, and the macro
-       * numbers inside it poll quotes, so rendering it once per breakpoint
-       * would run two of each. Instead this single wrapper changes
-       * behaviour at `md` — below it the header row is hidden and the
-       * wrapper is just the strip sticking under the mobile top bar; at
-       * and above it the wrapper pins to the top and carries both rows.
-       *
-       * That mobile half only actually reached a screen on 2026-08-22.
-       * Every call site was passing `className="hidden md:block"`, which
-       * lands on this wrapper and `display: none`s the strip along with
-       * the header row — so the market numbers were absent from every
-       * phone screen in the app while still mounted, polling, and
-       * invisible. The class is gone from all seven call sites; the
-       * `hidden md:block` that hides the desktop row lives on the
-       * `<header>` below, where it can only hide the row it belongs to.
-       * Do not reintroduce a breakpoint class on this wrapper — hide a
-       * row, never the pane.
+       * Do not put a breakpoint class on this wrapper. Every call site used
+       * to pass `hidden md:block`, which hid the strip along with the
+       * header row — the market numbers were absent from every phone screen
+       * while still mounted and polling. Hide a row, never the pane.
        */}
       <div
         className={cn(

@@ -363,21 +363,13 @@ export const LabSheet = memo(function LabSheet({
             </div>
           </div>
           {/*
-            * A real Select, not a native `<select>`.
-            *
-            * iOS Safari zooms the whole page when a form control under
-            * 16px takes focus, so the app forces `input, select, textarea`
-            * to 16px below `md` to stop that. A `<select>` picks that up
-            * along with the text fields it was written for — which is why
-            * this one control sat two steps larger than the "Looking at"
-            * label glued to its left and the tab pills above it, reading
-            * as a stray piece of a different design rather than a scope
-            * filter.
-            *
-            * A Radix trigger is a `<button>`, so the rule does not reach
-            * it and it can stay `text-sm` on a phone; the panel it opens
-            * is app chrome and sizes itself. No zoom either way, because
-            * nothing here takes text.
+            * A real Select, not a native `<select>`. iOS zooms the page when
+            * a form control under 16px takes focus, so the app forces
+            * `input, select, textarea` to 16px below `md` — and a `<select>`
+            * picks that up along with the text fields it was written for,
+            * leaving this the one control two steps larger than the label
+            * beside it. A Radix trigger is a `<button>`, so the rule does not
+            * reach it and it stays `text-sm`.
             */}
           <div className="flex min-w-0 shrink-0 items-center gap-2">
             <span
