@@ -278,7 +278,24 @@ export function TickerDrawer({
               <MicroLabel className="mb-2">
                 Year by year. Tap to change.
               </MicroLabel>
-              <div className="grid grid-cols-5 gap-2">
+              {/*
+                * Tighter cells on a phone, not fewer of them.
+                *
+                * Five fixed years in five columns is the right shape — the
+                * row reads as a timeline — but at the desktop `gap-2` and
+                * `px-2` a cell on a 360px screen has 38px of content and a
+                * four-figure price needs 44. `$1,058` was rendering as
+                * `$1,05`, and at 320px every price clipped, not just the
+                * long ones.
+                *
+                * The gap and the cell padding each drop a step below `sm`,
+                * and the price takes the same `text-xs sm:text-sm` step the
+                * figures elsewhere take. That buys 43px of content at
+                * 320px and 51px at 360px against a 36px worst case, so the
+                * row still fits five years with room rather than trading
+                * two of them for a swipe.
+                */}
+              <div className="grid grid-cols-5 gap-1 sm:gap-2">
                 {FORECAST_YEARS.map((yr) => {
                   const p = forecastSummary.eoyPrices[yr];
                   const g = forecastSummary.eoyGains[yr];
@@ -288,7 +305,7 @@ export function TickerDrawer({
                     return (
                       <div
                         key={yr}
-                        className="flex flex-col items-stretch gap-0.5 rounded-lg border border-input bg-background px-2 py-2"
+                        className="flex flex-col items-stretch gap-0.5 rounded-lg border border-input bg-background px-1 py-2 sm:px-2"
                       >
                         <p className="text-xs font-medium text-muted-foreground">
                           &apos;{String(yr).slice(2)}
@@ -321,12 +338,12 @@ export function TickerDrawer({
                         setYearDraftPrice(p.toFixed(2));
                       }}
                       title={`Change the end-of-${yr} price`}
-                      className="h-auto flex-col items-stretch gap-0.5 px-2 py-2"
+                      className="h-auto flex-col items-stretch gap-0.5 px-1 py-2 sm:px-2"
                     >
                       <span className="text-xs font-medium text-muted-foreground">
                         &apos;{String(yr).slice(2)}
                       </span>
-                      <span className="text-sm font-semibold tabular-nums text-foreground">
+                      <span className="text-xs font-semibold tabular-nums text-foreground sm:text-sm">
                         ${Math.round(p)}
                       </span>
                       <span
