@@ -3440,6 +3440,9 @@ export function Dashboard() {
     [quotesUpdatedAt, quotesDelayed, allTickers.length, missingTickers.length]
   );
 
+  /** Paper-class accounts cannot open a real book, so they get no add cell. */
+  const paperClassOnly = isPaperClassOnly(portfolios);
+
   const sheetPickerSheets = useMemo(
     () => portfolios.map((p) => ({ id: p.id, name: p.name })),
     [portfolios]
@@ -3495,7 +3498,14 @@ export function Dashboard() {
       onAdd={() => setCreatingSheet(true)}
       sheetTodayTone={sheetTodayTone}
       hiddenModeIds={hiddenMetaTabIds}
-      hideAdd={!onBook}
+      /*
+       * Account-level, never route-level. This used to be `!onBook`, which
+       * dropped the add cell the moment you left the book -- so the dock
+       * lost a cell, the centred well re-measured, and every label slid
+       * sideways on the way to Circle. Whether a cell exists has to depend
+       * on your data alone, or the bar moves under the cursor.
+       */
+      hideAdd={paperClassOnly}
       onRenameRequest={
         onBook ? (id, name) => setRenameTarget({ id, name }) : undefined
       }
@@ -3897,7 +3907,14 @@ export function Dashboard() {
         onSave={(name) => {
           if (creatingSheet) {
             setCreatingSheet(false);
-            void handleAddSheet(name);
+            void handleAddSheet(name).then((created) => {
+              // Created from Circle or Fund: go to the sheet, or the new
+              // portfolio is only reachable by finding it yourself.
+              if (created && !onBook) {
+                stashDockTab(created.id);
+                router.push(hrefForDockTarget(created.id, [created]));
+              }
+            });
             return;
           }
           if (!renameTarget) return;

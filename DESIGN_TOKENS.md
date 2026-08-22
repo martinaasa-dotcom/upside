@@ -863,6 +863,27 @@ punched in the glow. Measured on the running app the well surface reads
 **17.54** and muted at **7.09**, both above AAA. The mobile bar's well moved
 to `.glass-well` with it, so both docks are the same material.
 
+### The width is fixed, and that is a rule with teeth
+
+The well is `w-fit` and centred, so its width is the cell count times a
+fixed cell width. That makes the **cell count** the thing that must not move
+between pages: drop one cell and the whole bar resizes and re-centres, every
+label sliding sideways under the cursor mid-navigation.
+
+`hideAdd` was wired to `!onBook`, so the `+` cell vanished the moment you
+left the book and a nine-cell row became eight — visible as a jump every
+time you walked from a sheet to Circle. It is account-level now
+(`paperClassOnly`); paper-class accounts cannot open a real book, and that
+is a fact about the account, not the route.
+
+Measured on the two prop sets the Dashboard actually passes: left `213`,
+width `1000`, 9 cells, identical labels on both. Only the highlight moves.
+
+Route-dependent props that do *not* add or remove a cell — `activeId`, the
+context-menu handlers — stay route-dependent on purpose. Guarding those too
+would be a rule that isn't true. `src/lib/dock-stability.test.ts` holds the
+line, and fails if a width-determining prop is wired to a route check again.
+
 ### Folding, and why it is measured rather than guessed
 
 Two different things run out, and not at the same width:
