@@ -20,6 +20,7 @@ import {
 import { WidgetErrorBoundary } from "@/components/WidgetErrorBoundary";
 import {
   InsightText,
+  NESTED_PAD,
   Panel,
   PanelHeader,
   Pill,
@@ -502,7 +503,7 @@ function MoverTile({
       onClick={onOpen}
       title={sheets || undefined}
       className={cn(
-        "veil-hover card-sheen glass group relative flex h-full w-full min-w-0 flex-col justify-center gap-1.5 overflow-hidden rounded-lg p-4 text-left ring-1 transition hover:scale-[1.01] sm:p-6",
+        "veil-hover card-sheen glass group relative flex h-full w-full min-w-0 flex-col justify-center gap-1.5 overflow-hidden rounded-lg p-3 text-left ring-1 transition hover:scale-[1.01] sm:p-6",
         isUp ? "ring-gain/20 hover:ring-gain/40" : "ring-loss/20 hover:ring-loss/40"
       )}
     >
@@ -528,22 +529,50 @@ function MoverTile({
         * it needs — the reader saw about half a price and no ellipsis.
         *
         * As rows each line spreads its own two items and each item sizes
-        * to its own content, so neither can starve the other. Verified at
-        * 360 / 390 / 430 px with a four-figure price and a five-character
-        * percent: nothing clips, and the widest row has room to spare.
+        * to its own content, so neither can starve the other.
+        *
+        * Both rows wrap, and that is the second half of it. Rows alone fix
+        * the starving but not the arithmetic: a tile is 125px wide inside
+        * its padding at 390px, and `$ABEA.DE` plus `1.64%` needs 146 — the
+        * percent was running 18px past the edge, on the commonest phone
+        * width there is. Truncating the ticker would hide the one thing
+        * that says which company this is, and truncating the price gives
+        * you `$…`. Wrapping costs a line on the few tiles that need one
+        * and loses nothing, which is the right trade for a tile whose
+        * whole job is four numbers.
+        *
+        * Wrapping is the floor, not the plan, so the first row is also
+        * sized to clear it. On a phone the tile is `p-3` rather than
+        * `p-4`, the ticker chip is `text-xs`, and the percent is
+        * `text-base`. That is 133px of room against a 125px worst case at
+        * 390px — every ticker in the book on one line, `ABEA.DE` and a
+        * negative percent included. The last of those three is what
+        * settled it: a minus sign is one more character, so `-2.32%`
+        * needs 7px more than `9.23%`, and at `text-lg` that one glyph was
+        * the difference between a tidy grid and every red tile wrapping
+        * while the green ones did not.
+        *
+        * Below 390px the row wraps rather than shrinking the two figures
+        * the tile exists to show.
+        *
+        * Measured at 320 / 360 / 390 / 430 px against the longest ticker
+        * and price in the seed book: nothing spills, nothing ellipsizes.
         *
         * The trend arrow is desktop-only. It costs 20px on the tightest
         * line for information the tile already carries twice — the figure
         * is signed, and the edge bar down the left is `--gain` or
         * `--loss`.
         */}
-      <span className="flex items-center justify-between gap-2">
-        <Badge variant="secondary" className="h-6 font-heading text-sm font-semibold">
+      <span className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5">
+        <Badge
+          variant="secondary"
+          className="h-6 font-heading text-xs font-semibold sm:text-sm"
+        >
           {cashtag(ticker.ticker)}
         </Badge>
         <span
           className={cn(
-            "flex shrink-0 items-center gap-1 font-mono text-lg font-semibold tabular-nums",
+            "flex shrink-0 items-center gap-1 font-mono text-base font-semibold tabular-nums sm:text-lg",
             tone(pct)
           )}
         >
@@ -555,13 +584,9 @@ function MoverTile({
           {pct != null ? percent(pct, lifetime ? 1 : 2) : "—"}
         </span>
       </span>
-      <span className="flex items-baseline justify-between gap-2 font-mono text-sm tabular-nums">
-        <span className="min-w-0 truncate text-muted-foreground">
-          {currency(ticker.price)}
-        </span>
-        <span className={cn("shrink-0", tone(dollars))}>
-          {signedCurrency(dollars, 0)}
-        </span>
+      <span className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5 font-mono text-sm tabular-nums">
+        <span className="text-muted-foreground">{currency(ticker.price)}</span>
+        <span className={cn(tone(dollars))}>{signedCurrency(dollars, 0)}</span>
       </span>
     </button>
   );
@@ -585,7 +610,10 @@ function PortfolioLane({
     <button
       type="button"
       onClick={onOpen}
-      className="card-sheen glass-well group flex w-full flex-col gap-4 rounded-lg p-6 text-left ring-1 ring-foreground/20 transition hover:scale-[1.01] hover:bg-hover hover:ring-primary/25"
+      className={cn(
+        "card-sheen glass-well group flex w-full flex-col gap-4 rounded-lg text-left ring-1 ring-foreground/20 transition hover:scale-[1.01] hover:bg-hover hover:ring-primary/25",
+        NESTED_PAD
+      )}
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
@@ -599,7 +627,23 @@ function PortfolioLane({
             <p className="truncate font-heading text-base font-semibold text-foreground">
               {sheet.portfolio.name}
             </p>
-            <p className="mt-1 text-sm text-muted-foreground">
+            {/*
+              * `break-words`, and the total steps down a size on a phone.
+              *
+              * This row is a `min-w-0` name column against a `shrink-0`
+              * total — the same shape that was cutting Movers prices in
+              * half, and it fails the same way once the total is long
+              * enough. At 320px with a seven-figure total the column was
+              * down to 44px, and `$14,500` is a single unbreakable token
+              * 55px wide, so it hard-clipped: the reader saw "6 holdings ·
+              * $14,5" and no ellipsis.
+              *
+              * The name above already truncates, which is honest. This
+              * line wraps, so it only needed permission to break inside
+              * that token as a last resort. The padding step and the
+              * smaller total buy back the room that makes it rare.
+              */}
+            <p className="mt-1 break-words text-sm text-muted-foreground">
               {plural(sheet.holdingCount, "holding")}
               {sheetCashBalance(sheet.portfolio) !== 0
                 ? ` · ${currency(sheetCashBalance(sheet.portfolio), 0)} cash`
@@ -607,7 +651,7 @@ function PortfolioLane({
             </p>
           </div>
         </div>
-        <p className="shrink-0 text-right font-mono text-xl font-bold tabular-nums text-foreground">
+        <p className="shrink-0 text-right font-mono text-lg font-bold tabular-nums text-foreground sm:text-xl">
           {currency(sheet.totalValue, 0)}
         </p>
       </div>

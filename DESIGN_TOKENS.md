@@ -1115,6 +1115,31 @@ edge bar is `--gain` or `--loss`.
 them rows.** Columns look the same until one value grows, and then one of
 them silently loses.
 
+Rows fix the starving but not the arithmetic. A phone tile has ~133px
+inside its padding, and the first row has to hold a ticker chip and a
+percent. Three things buy that: `p-3` rather than `p-4`, a `text-xs` chip,
+and a `text-base` percent. The last one is what settled it — a minus sign
+is one more character, so `-2.32%` needs 7px more than `9.23%`, and at
+`text-lg` that single glyph was the difference between a tidy grid and
+every red tile wrapping while the green ones did not. Both rows also
+`flex-wrap`, as a floor: below 390px they break to a second line rather
+than shrinking the two figures the tile exists to show.
+
+#### The check that kept saying "clean"
+
+Three passes of the layout audit reported this tile fine while a percent
+ran 18px past its edge at the commonest phone width there is. The audit
+looked for two things: an element wider than *its own* box
+(`scrollWidth > clientWidth`), and an element outside the *viewport*. This
+was neither. The percent's own box measured fine; it was simply drawn
+outside an ancestor's `overflow: hidden`, and nothing in the chain noticed.
+
+**Any audit of this kind needs the third check:** walk up to the nearest
+clipping ancestor and compare edges against its padding box. Skip real
+scrollers (`overflow-x: auto|scroll`), which are deliberate. That check is
+what found this, and re-running it across every page and overlay at 320 /
+360 / 390 found nothing else — which is the point of writing it down.
+
 ### Every tap target, not just the buttons
 
 Three earlier passes grew touch targets to the 44pt/48dp minimum and all
