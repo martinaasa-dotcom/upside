@@ -61,7 +61,8 @@ function DefaultAccountEnd() {
  * The one header every signed-in page uses.
  *
  * Fixed on desktop so Book → Fund → Communities does not move the bar.
- * Header row is 3rem. Status row is 2.25rem. Spacer matches both.
+ * Header row is 3rem, status row 2.25rem, plus the strip's own hairline:
+ * 85px, which is what `PAGE_CHROME_SPACER_CLASS` reserves.
  * Tightened from 3.5/2.5: at those heights the markets bar sat a clear
  * step below the header row rather than reading as its second line.
  */
@@ -161,7 +162,8 @@ export function AppHeader({
          *
          * The blur does the legibility work, not the opacity: anything
          * scrolling under becomes a soft wash, and the field it sits on
-         * peaks around 40/255, so header text measures far above AAA
+         * peaks at 43/255 in the warm corner, so header text measures far
+         * above AAA
          * against it. Do not raise this back toward opaque to "fix"
          * contrast without measuring it first.
          */}

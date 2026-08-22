@@ -12,3 +12,15 @@ Hobby Vercel allows 100 deploys per rolling 24 hours. Every `git push origin mai
 - Push immediately only when Martin asks for live, or the change is a production-down hotfix.
 - After a push, still verify live SHA matches (see `vercel-live-matches-push.mdc`).
 - Be honest when local HEAD is ahead of production. Do not claim it is live.
+
+The cap is real and has been hit (2026-08-21). It shows up as a red **Vercel**
+commit status on every open PR in the account, not just the repo that spent the
+budget, reading:
+
+```
+Resource is limited - try again in 24 hours (more than 100, code: "api-deployments-free-per-day")
+```
+
+That is account-wide and no push fixes it. Do not chase it as a CI failure, do
+not re-run the job, and do not tell Martin a merge is live until the window
+resets and a real deployment lands.

@@ -251,11 +251,16 @@ the right against rgb(37,34,21) warm on the left. That was the
 - **`src/lib/book-shock.ts`**'s `"gold"` sector key (GLD/IAU/SLV/GDX/GDXJ) —
   this is the literal commodity, a portfolio-classification label, not a
   color token. Untouched.
-- **Email templates** (`src/lib/email-letter.ts`, `src/lib/note-report.ts`)
-  — hardcoded hex (`#d6ad69`) in raw HTML-email inline styles, a separate
-  rendering surface (Resend-sent mail, not the web app) that this sandbox
-  can't visually verify across mail clients. Left as-is; flagging as a
-  known follow-up rather than guessing at a fix I can't check.
+- **Email** — mail clients do not do `oklch`, custom properties, or
+  `backdrop-filter`, so the Sunday letter carries its own hex palette in
+  `EMAIL` (`src/lib/email-letter.ts`). That is a conversion of these tokens,
+  not a second palette: `gold: "#d4bc79"` is `--primary`, `gain: "#00bc7d"`
+  is `--gain`, and so on. Move a token here and re-convert rather than
+  eyeballing a near-match. *(This entry used to say the templates held a
+  stray `#d6ad69` and name a second file, src/lib/note-report.ts (unbackticked
+  here because it is not a path you can open). Neither
+  survives: the hex is gone from the repo, and that file went with the
+  weekday and after-close notes on 2026-08-19.)*
 - **The logo mark** (`/public/upside-mark.png`, referenced from
   `UpsideLogo.tsx`) — a static raster asset (also used as the favicon, OG
   image, and X profile image), not a CSS-token-driven element. Recoloring
@@ -555,13 +560,17 @@ middle of the page.
 `.page-frame::before` is `position: fixed; inset: 0`, so it always spanned the
 whole viewport. What cut it was the chrome painted on top:
 
-| Surface | Was | Now |
-|---|---|---|
-| Desktop header | `bg-background/75` | `bg-background/55` |
-| Status strip | `bg-background/75` | `bg-background/55` |
-| **Desktop dock** (`PortfolioTabs`) | **`bg-background/95`** | `bg-background/60` |
-| Mobile top bar | `bg-background/75` | `bg-background/55` |
-| Mobile tab bar | `bg-background/75` | `bg-background/60` |
+| Surface | Was | This pass | Today |
+|---|---|---|---|
+| Desktop header | `bg-background/75` | `bg-background/55` | `bg-background/35` |
+| Status strip | `bg-background/75` | `bg-background/55` | *(merged into the header — see "One pane" below)* |
+| **Desktop dock** (`PortfolioTabs`) | **`bg-background/95`** | `bg-background/60` | `bg-background/35` |
+| Mobile top bar | `bg-background/75` | `bg-background/55` | `bg-background/35` |
+| Mobile tab bar | `bg-background/75` | `bg-background/60` | `bg-background/35` |
+
+The fourth column is where these actually sit now, two passes later. The
+numbers in the third are kept because the reasoning below is about *that*
+step; the values it names stopped being current the same day.
 
 `--background` is pure black, so each of these is a black veil and its alpha
 is *exactly* how much of the light underneath it eats. At `/95` the dock was
@@ -573,8 +582,9 @@ edge to **2.9**.
 
 The blur carries legibility here, not the opacity: `backdrop-blur-xl` turns
 anything scrolling under into a soft wash, and the field it sits on peaks at
-40/255. Header text measures **18.5** contrast against it. Don't raise these
-back toward opaque to "fix" contrast without measuring first.
+40/255 at the time (43 today — see "Chrome: one pane" below). Header text
+measures **18.5** contrast against it. Don't raise these back toward opaque to
+"fix" contrast without measuring first.
 
 ### The lobes got reach, not brightness
 
@@ -657,7 +667,8 @@ between them.
 
 Fixed structurally rather than tonally — one wrapper, one fill, one blur, both
 rows inside it, a hairline where they meet. Verified on the running app: the
-top chrome is now a single `div top=0 h=98 backdrop-filter: blur(40px)`.
+top chrome is now a single `div top=0 backdrop-filter: blur(40px)`, 85px
+tall (it was 98px before the rows were tightened; see "One pane" below).
 
 Still **one** `<AppStatusStrip>` instance. It holds a one-second interval and a
 visibilitychange listener, so rendering it once per breakpoint would run two of
@@ -672,7 +683,8 @@ is `fixed inset-x-0 bottom-0` at every width. So on desktop the button sat
 *underneath* the dock. Two consequences, both hidden while the dock was
 near-opaque and both exposed the moment it became translucent:
 
-1. The dock's 24px backdrop blur sampled the button's warm fill and smeared it
+1. The dock's backdrop blur (24px then, 40px now) sampled the button's warm
+   fill and smeared it
    across the corner as a soft yellow haze.
 2. Clicks in that corner hit the dock. **Margus was unreachable on desktop.**
 
@@ -690,7 +702,7 @@ button once the button moved up.
 | `.glass` top rim | white @ 24% | white @ 30% |
 | `.glass-well` fill | `transparent 50%` | `transparent 64%` |
 | `.glass-well` blur / saturate | `16px` / `1.4` | `24px` / `1.7` |
-| Chrome veils | `/55`–`/60`, `blur-xl` | `/50`, `blur-2xl` |
+| Chrome veils | `/55`–`/60`, `blur-xl` | `/50`, `blur-2xl` — and `/35` a pass later |
 
 More of the field passes through, and the heavier blur plus saturation lift is
 what makes it refract rather than just tint.
@@ -726,6 +738,71 @@ story at this reach; read it together with the middle and the corner spread.
 One further step (`165vw × 108vh`) puts the middle at 7.6 and lit at 91.5%, and
 that is the wall.
 
+*(It was not the wall. The next pass went to `170vw × 112vh` — see below.)*
+
+## Chrome: one pane, and the field's current numbers (2026-08-21)
+
+Three follow-ups, plus a re-measurement that supersedes every figure above.
+
+### The hairline survived the merge
+
+Merging the header row and the status strip into one wrapper fixed the *fills*,
+but `border-b` stayed on the header element, so a rule still ran between the two
+rows and the chrome still read as two stacked panes — which was the original
+complaint. The only edge the chrome carries now is the one at its bottom, where
+it meets the page.
+
+Walking the band top to bottom at a text-free column, luminance goes `15.0 →
+12.9` with a biggest single-pixel step of **0.93/255**. No seam, no banding; the
+gentle falloff is the field itself getting darker downward.
+
+### Veils to `/35`, rows tighter
+
+All four chrome veils went `/50` → `/35` with `backdrop-blur-2xl`. Desktop
+chrome tightened from 96px to 84px of rows — header `3.5rem → 3rem`, status
+`2.5rem → 2.25rem` — because at the old heights the markets bar sat a clear step
+below the header rather than reading as its second line.
+
+**The spacer that reserves it is 85px, not 84.** The status strip carries a
+`border-b`, and the hairline is part of the chrome's height whether or not
+anyone counts it; at a flat `h-21` the page's top pixel row sat under that edge.
+`PAGE_CHROME_SPACER_CLASS` is now written as `calc(5.25rem_+_1px)` so the
+arithmetic is visible — and written out literally rather than composed from a
+constant, because Tailwind extracts classes by scanning source text and a
+template literal yields a class that never gets a rule.
+
+### The field, re-measured
+
+`150vw 96vh` → `170vw 112vh`, a fifth tail stop, peak alpha unchanged for the
+fourth widening running: 28% warm, 31% cool.
+
+Everything in the sections above was sampled with page content on screen. These
+were taken with the field alone — the frame's children and the chrome hidden —
+and with the scrollbar gutter down the right edge excluded, because that gutter
+is compositor paint rather than field and sampling it reports a false black
+corner. That is why these differ by a point or two from the numbers above; where
+they disagree, **these are the ones to trust.**
+
+| | Desktop 1440×900 | Phone 390×844 |
+|---|---|---|
+| Top-left peak (warm) | `rgb(43,38,24)` → **43** | `rgb(43,38,24)` → **43** |
+| Bottom-right peak (blue) | `rgb(22,38,55)` → **55** | `rgb(22,38,55)` → **55** |
+| Top-right / bottom-left | 5 / 6 | 5 / 6 |
+| Page middle | **7** | **9** |
+| Lit field (≥ 4/255) | 99.9% | 99.8% |
+| Field under 2/255 | 0.1% | 0.2% |
+
+The corners come out identical at both sizes, which is the check that sizing the
+lobes in `vw`/`vh` is doing its job.
+
+**The black-share metric is finished.** It was the guard that kept this honest
+through three widenings, and at this reach it reads 0.1% while the page still
+looks like a dark room. What carries that read now is the middle at 7 against
+lit corners at 43 and 55, with the two opposite corners at 5 and 6 holding the
+diagonal. Judge it on those three; brightness and coverage stay separate dials,
+and the failure mode is still *alpha* — 60%/34% once put the middle at 32 and
+the corners at 111.
+
 ## The dock: one well, one cell per place (2026-08-21)
 
 > *"in a way that doesnt assume that someone could have 6 sheets, usually
@@ -748,8 +825,8 @@ happens. Measured on the running app at 1440px with an empty book:
 |---|---|---|
 | Dock height | 95px | **73px** |
 | `--dock-pad` (page bottom clearance) | 127px | **105px** |
-| Wells in the bar | 2 (672px + 464px) | **1 (640px)** |
-| Width reserved for sheets, with zero sheets | **464px** (41% of the column) | **0** |
+| Wells in the bar | 2 (672px + 464px, plus a 16px gap = the whole 1152px column) | **1 (640px)** |
+| Width reserved for sheets, with zero sheets | **464px** (40% of the column) | **0** |
 
 Now every destination is the same cell in the same well: the sections, then
 one cell per portfolio, then Circle. One portfolio costs one cell. No
