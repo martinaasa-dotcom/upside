@@ -34,7 +34,7 @@ export default function TermsPage() {
 
       <main id="main" className="flex flex-col mx-auto min-w-0 max-w-3xl gap-6 px-6 py-10 text-sm leading-relaxed text-foreground">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Terms of Service</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Terms of Service</h1>
           <p className="mt-1 text-sm text-muted-foreground">Last updated {LAST_UPDATED}</p>
         </div>
 
@@ -233,7 +233,7 @@ function Section({
 }) {
   return (
     <section className="flex flex-col gap-2">
-      <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+      <h2 className="font-semibold text-foreground">{title}</h2>
       <p>{children}</p>
     </section>
   );

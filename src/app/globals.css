@@ -719,61 +719,64 @@ body {
  * `text-wrap: balance` keeps a two-line heading from leaving one orphan word
  * on the second line -- the browser evens the lines instead.
  *
- * These element rules are deliberately NOT in `@layer base`, and that is
- * worth knowing before touching them.
+ * `@layer base`, and that is load-bearing rather than tidiness.
  *
- * An un-layered declaration beats a layered one whatever its specificity,
- * and Tailwind emits `text-sm`/`text-lg` and friends inside
- * `@layer utilities` — so a size class written on a heading loses to the
- * size below. `<h1 className="text-sm">` renders at 1.5rem. That is real
- * and it is app-wide (roughly eighty call sites name a size on a heading
- * and do not get it), the same trap the three glass utilities carry a
- * note about further up.
+ * Written un-layered, as these were until 2026-08-22, an element rule beats
+ * every Tailwind utility in the app: an un-layered declaration wins over a
+ * layered one regardless of specificity or source order, and Tailwind emits
+ * `text-sm`/`font-medium`/`tracking-tight` inside `@layer utilities`. So a
+ * size named on a heading was silently discarded --
+ * `<h1 className="text-sm">` in the phone top bar rendered at 1.5rem/600,
+ * which is how a circle's name arrived in the bar at the size of a page
+ * title. It held for every typographic property this block sets: font
+ * family, size, line-height, weight, tracking, wrap. Measured on the
+ * running app before the fix: `<h3 class="text-sm font-medium
+ * tracking-tight">` computed to 16px / 600 / -0.02em, none of which it
+ * asked for.
  *
- * It is left as it is on purpose. Moving this block into `@layer base`
- * hands all eighty of those call sites the size they asked for in one
- * step, and most of them shrink: `<h3 className="text-sm">` panel titles
- * across Lab and Pulse drop from 16px to 14px and stop reading as titles.
- * That is a typographic pass on every screen in the app, not a bug fix,
- * and it wants to be made and looked at deliberately rather than as a
- * side effect. The route out is to move the block *and* lift those call
- * sites to the `PanelHeader` voice in the same change.
+ * Base layer keeps the defaults for a bare `<h2>` exactly as they were and
+ * lets a call site that names a size get the size it named. The 53 call
+ * sites whose classes this brought to life were stripped of them in the
+ * same commit, so nothing re-rendered: every heading in the app still
+ * measures what it measured, and from here a class on a heading does what
+ * it says. Verified by capturing computed size/line-height/weight/tracking
+ * for all 214 headings across ten pages at two widths, before and after.
  *
- * Until then: to size one heading, put the class on a child element
- * rather than on the `<h*>` — `<h1><span className="text-sm">` — which is
- * what `SheetPicker` and the phone top bar do. A size class directly on
- * the heading is silently ignored.
+ * The one exception is `PanelHeader`'s `hero` branch, which asks for the
+ * h1 scale on its `<h2>` and had never once got it.
  */
-h1,
-h2,
-h3,
-h4 {
-  font-family: var(--font-heading), ui-sans-serif, system-ui, sans-serif;
-  letter-spacing: -0.02em;
-  font-weight: 600;
-  text-wrap: balance;
-}
+@layer base {
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-heading), ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: -0.02em;
+    font-weight: 600;
+    text-wrap: balance;
+  }
 
-h1 {
-  font-size: 1.5rem;
-  line-height: 2rem;
-  letter-spacing: -0.035em;
-}
+  h1 {
+    font-size: 1.5rem;
+    line-height: 2rem;
+    letter-spacing: -0.035em;
+  }
 
-h2 {
-  font-size: 1.125rem;
-  line-height: 1.75rem;
-  letter-spacing: -0.028em;
-}
+  h2 {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+    letter-spacing: -0.028em;
+  }
 
-h3 {
-  font-size: 1rem;
-  line-height: 1.5rem;
-}
+  h3 {
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
 
-h4 {
-  font-size: 0.875rem;
-  line-height: 1.25rem;
+  h4 {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
 }
 
 /* Hide scrollbars in horizontal tab rails (still scrollable). */

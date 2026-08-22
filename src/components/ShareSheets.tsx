@@ -114,7 +114,7 @@ export function ShareSheets({
   return (
     <section className="flex flex-col gap-3 rounded-xl glass ring-1 ring-foreground/20 p-6">
       <div>
-        <h2 className="text-sm font-medium text-foreground">
+        <h2 className="text-foreground">
           Portfolios this circle can see
         </h2>
         <p className="mt-1 text-sm leading-relaxed text-muted-foreground">

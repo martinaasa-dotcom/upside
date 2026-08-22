@@ -85,7 +85,7 @@ function JoinInner() {
       <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-background px-6 text-foreground">
         <UpsideLogo variant="mark" className="h-10 w-10" />
         <div className="flex flex-col w-full max-w-sm gap-2 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Join with an invite</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Join with an invite</h1>
           <p className="text-sm leading-relaxed text-muted-foreground">
             A friend or a teacher sent this. Sign in with Google if you
             haven&apos;t yet. Then we put you in the circle or the class.

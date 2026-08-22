@@ -1603,7 +1603,7 @@ export function CommunityView({ communityId }: Props) {
           {!loading && !selectedOwnerId && (
             <>
               <section className="flex flex-col gap-3">
-                <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+                <h1 className="text-2xl font-semibold text-foreground">
                   {community?.name ?? "Community"}
                 </h1>
                 {isClassroom &&
@@ -1791,7 +1791,7 @@ export function CommunityView({ communityId }: Props) {
                             <Sparkles className="h-4 w-4" />
                           </div>
                           <div>
-                            <h3 className="text-sm font-medium tracking-tight text-foreground">
+                            <h3 className="text-foreground">
                               Power animals
                             </h3>
                             <p className="mt-0.5 text-sm text-muted-foreground">
@@ -1838,7 +1838,7 @@ export function CommunityView({ communityId }: Props) {
                           <Award className="size-4" />
                         </div>
                         <div>
-                          <h3 className="text-sm font-medium tracking-tight text-foreground">
+                          <h3 className="text-foreground">
                             Community superlatives
                           </h3>
                           <p className="mt-0.5 text-sm text-muted-foreground">
@@ -1893,7 +1893,7 @@ export function CommunityView({ communityId }: Props) {
                             <Trophy className="h-4 w-4" />
                           </div>
                           <div>
-                            <h3 className="text-sm font-medium tracking-tight text-foreground">
+                            <h3 className="text-foreground">
                               Today
                             </h3>
                             <p className="mt-0.5 text-sm text-muted-foreground">
@@ -2000,7 +2000,7 @@ export function CommunityView({ communityId }: Props) {
                           <Layers className="h-4 w-4" />
                         </div>
                         <div>
-                          <h3 className="text-sm font-medium tracking-tight text-foreground">
+                          <h3 className="text-foreground">
                             Shared names
                           </h3>
                           <p className="mt-0.5 text-sm text-muted-foreground">
@@ -2031,7 +2031,7 @@ export function CommunityView({ communityId }: Props) {
                           <PieChart className="h-4 w-4" />
                         </div>
                         <div>
-                          <h3 className="text-sm font-medium tracking-tight text-foreground">
+                          <h3 className="text-foreground">
                             What the circle owns
                           </h3>
                           <p className="mt-0.5 text-sm text-muted-foreground">
@@ -2073,7 +2073,7 @@ export function CommunityView({ communityId }: Props) {
                           <Lightbulb className="h-4 w-4" />
                         </div>
                         <div>
-                          <h3 className="text-sm font-medium tracking-tight text-foreground">
+                          <h3 className="text-foreground">
                             Community fun facts
                           </h3>
                           <p className="mt-0.5 text-sm text-muted-foreground">
@@ -2169,7 +2169,7 @@ export function CommunityView({ communityId }: Props) {
               {effectiveView === "members" && (
                 <>
                   <section className="flex flex-col gap-3">
-                    <h2 className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <h2 className="flex items-center gap-2 text-foreground">
                       <Users className="h-4 w-4 text-muted-foreground" />
                       Members
                     </h2>
@@ -2406,7 +2406,7 @@ export function CommunityView({ communityId }: Props) {
 
                   {isAdmin && joinRequests.length > 0 && (
                     <section className="card-sheen glass flex flex-col gap-3 rounded-xl p-4 ring-1 ring-foreground/20 sm:p-6">
-                      <h2 className="flex items-center gap-2 text-sm font-medium text-foreground">
+                      <h2 className="flex items-center gap-2 text-foreground">
                         <UserCheck className="size-4 text-muted-foreground" />
                         Join requests
                         <Badge variant="secondary">{joinRequests.length}</Badge>
@@ -2459,7 +2459,7 @@ export function CommunityView({ communityId }: Props) {
 
                   {isAdmin && (
                     <section className="card-sheen glass flex flex-col gap-3 rounded-xl p-4 ring-1 ring-foreground/20 sm:p-6">
-                      <h2 className="text-sm font-medium text-foreground">
+                      <h2 className="text-foreground">
                         Admin - invite
                       </h2>
                       <p className="text-sm text-muted-foreground">

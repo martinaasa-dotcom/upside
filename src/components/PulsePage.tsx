@@ -1265,7 +1265,7 @@ export const PulsePage = memo(function PulsePage({
 
       {pinnedCandidate && (
         <section>
-          <h3 className="mb-3 text-sm font-medium text-muted-foreground">
+          <h3 className="mb-3 text-muted-foreground">
             The one you asked about
           </h3>
           <ul className="flex flex-col gap-6">
@@ -1337,7 +1337,7 @@ export const PulsePage = memo(function PulsePage({
 
           {rest.length > 0 && (
             <section>
-              <h3 className="mb-3 text-sm font-medium text-muted-foreground">
+              <h3 className="mb-3 text-muted-foreground">
                 {attention.length > 0
                   ? "Everything else"
                   : `Your ${plural(rest.length, "biggest holding")}`}

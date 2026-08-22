@@ -153,7 +153,7 @@ export function ScenarioSimulator({ holdings, cash }: Props) {
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex min-w-0 items-center gap-2">
                 <DriverIcon className="h-4 w-4 shrink-0" aria-hidden />
-                <h3 className="text-sm font-semibold text-foreground">
+                <h3 className="font-semibold text-foreground">
                   {activeScenario.label}
                 </h3>
                 <Pill tone="neutral">{activeScenario.driver}</Pill>

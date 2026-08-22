@@ -172,7 +172,7 @@ export function CsvImportModal({
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <div className="flex items-center gap-2">
             <FileUp className="h-4 w-4 text-primary" />
-            <h2 className="text-sm font-semibold text-foreground">
+            <h2 className="font-semibold text-foreground">
               Import CSV - {portfolioName}
             </h2>
           </div>

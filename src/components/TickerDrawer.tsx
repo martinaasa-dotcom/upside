@@ -161,7 +161,7 @@ export function TickerDrawer({
         <div className="flex items-start justify-between gap-2 border-b border-border px-6 py-6 pt-[max(1.5rem,env(safe-area-inset-top))]">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 className="text-lg font-semibold tracking-tight text-foreground">
+              <h2 className="text-lg font-semibold text-foreground">
                 {cashtag(ticker)}
               </h2>
               <Pill tone="neutral">{THEME_LABEL[theme] ?? "other businesses"}</Pill>
@@ -231,7 +231,7 @@ export function TickerDrawer({
           <section className="flex flex-col gap-4">
             <div className={SPLIT_ROW}>
               <div className={SPLIT_COPY}>
-                <h3 className="text-base font-medium text-foreground">
+                <h3 className="text-base text-foreground">
                   Price path
                 </h3>
                 <p className="mt-1 text-sm text-muted-foreground">

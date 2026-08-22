@@ -50,7 +50,7 @@ export function ClassroomRoster({
   return (
     <section className="overflow-hidden rounded-xl glass ring-1 ring-foreground/20">
       <div className="border-b border-border px-6 py-6">
-        <h2 className="text-sm font-semibold text-foreground">Roster</h2>
+        <h2 className="font-semibold text-foreground">Roster</h2>
         <p className="mt-1.5 text-sm text-muted-foreground">
           Same start. Ranked by percent vs start. Who wrote a why, who is all-in on one name.
         </p>

@@ -1457,7 +1457,7 @@ export function UpsidePortfolioPage() {
             {openHoldings.length > 0 && (
               <WidgetErrorBoundary name="Fund positions">
               <section className="flex flex-col gap-4">
-                <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                <h2 className="font-semibold text-foreground">
                   Open positions - {openHoldings.length}
                 </h2>
                 <div className="flex flex-col gap-3">
@@ -1475,7 +1475,7 @@ export function UpsidePortfolioPage() {
 
             {weeklyRecaps.length > 0 && (
               <section className="flex flex-col gap-4">
-                <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                <h2 className="font-semibold text-foreground">
                   Weekly recap
                 </h2>
                 <div className="flex flex-col gap-3">
@@ -1530,7 +1530,7 @@ export function UpsidePortfolioPage() {
             )}
 
             <section className="flex flex-col gap-4">
-              <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+              <h2 className="font-semibold text-foreground">
                 Daily reports
               </h2>
               {reports.length === 0 ? (
@@ -1557,7 +1557,7 @@ export function UpsidePortfolioPage() {
                         <div className="flex flex-wrap items-baseline justify-between gap-2">
                           <ReportMeta r={r} />
                         </div>
-                        <h3 className="text-sm font-semibold text-foreground">
+                        <h3 className="font-semibold text-foreground">
                           {title}
                         </h3>
                         <ReportDetail r={r} />
@@ -1595,7 +1595,7 @@ export function UpsidePortfolioPage() {
 
             {closedHoldings.length > 0 && (
               <section className="flex flex-col gap-4">
-                <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                <h2 className="font-semibold text-foreground">
                   Closed positions - {closedHoldings.length}
                 </h2>
                 <ul className="divide-y divide-border overflow-hidden rounded-xl glass ring-1 ring-foreground/20">

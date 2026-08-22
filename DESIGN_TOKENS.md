@@ -1037,26 +1037,56 @@ year, +8.3% vs an index fund", not "23.0% a year". And `Scoreboard` takes
 `mobileCols={1}` for any row whose cells carry a sentence: two 123px
 columns turn one line of explanation into eight.
 
-### Known trap: a size class on a heading does nothing
+### A size class on a heading now does something
 
-`h1`–`h4` are styled by element rules in `globals.css` that sit **outside
-any cascade layer**. An un-layered declaration beats a layered one whatever
-its specificity, and Tailwind emits `text-sm`/`text-lg` from
-`@layer utilities` — so `<h1 className="text-sm">` renders at 1.5rem. That
-is how a circle's name arrived in the phone top bar at the size of a page
-title.
+`h1`–`h4` are styled by element rules in `globals.css`. Those rules used to
+sit **outside any cascade layer**, and an un-layered declaration beats a
+layered one whatever its specificity — while Tailwind emits `text-sm`,
+`font-medium` and `tracking-tight` from `@layer utilities`. So every
+typographic class written on a heading was silently discarded. Measured on
+the running app before the fix:
 
-Roughly eighty call sites name a size on a heading and do not get it.
-Moving the block into `@layer base` fixes all eighty at once and most of
-them *shrink* — `<h3 className="text-sm">` panel titles across Lab and
-Pulse drop from 16px to 14px and stop reading as titles. That is a
-typographic pass on every screen in the app and it wants to be made
-deliberately, together with lifting those call sites to the `PanelHeader`
-voice.
+| written | rendered |
+|---|---|
+| `<h3 class="text-sm font-medium tracking-tight">` | 16px / 600 / -0.02em |
+| `<h2 class="text-2xl font-semibold">` | 18px |
+| `<p class="text-sm">` (for contrast) | 14px, as asked |
 
-Until then: **put the size class on a child, not on the `<h*>`.**
-`SheetPicker` and `MobileTopBar` both do, which is why the Dashboard's
-title was the one that always looked right.
+That is how a circle's name arrived in the phone top bar at the size of a
+page title, and it held for all six properties the block sets: family,
+size, line-height, weight, tracking, wrap.
+
+**The fix is two halves, and only both together are safe.** Moving the
+block into `@layer base` on its own wakes up 53 call sites nobody reviewed,
+and most of them *shrink* — `<h3 className="text-sm">` panel titles across
+Lab and Pulse drop 16px → 14px and stop reading as titles. That was tried
+first and backed out on sight. So the same commit moved the block **and**
+stripped the classes it woke up, leaving each heading on the scale it had
+been rendering at all along. Four shadcn primitives that render a real
+`<h2>` — `DialogTitle`, `AlertDialogTitle`, `SheetTitle`, `DrawerTitle` —
+were pinned the same way; their upstream sizes had never applied here
+either.
+
+Proved rather than eyeballed: computed size, line-height, weight, tracking,
+family and wrap captured for all **214 headings** across ten pages at 390px
+and 1440px, before and after. Two headings differ, both on purpose:
+
+- `PanelHeader`'s `hero` branch, 18px → 24px. It is an `<h2>` asking for
+  the h1 step for the one panel that opens a page, it says so in its own
+  comment, and it had never once got it — the prop was decorative. Two call
+  sites, both checked.
+- An `sr-only` `<h1>` picked up the `white-space: nowrap` that `sr-only`
+  always wanted. It is a 1×1px clipped box; nothing renders.
+
+`src/lib/heading-scale.test.ts` holds both halves: it fails if a heading
+grows a typography class that disagrees with the scale, and if the element
+rules ever leave `@layer base` (without which the first check means
+nothing). Deliberate overrides go in its `ALLOWED` list with a note.
+
+To size one heading now: name the class and it works. The old workaround —
+put it on a child, the way `SheetPicker` and `MobileTopBar` do — is still
+fine and still there, since both also want the `<h1>` to stay a heading for
+a screen reader while looking like chrome.
 
 ### Two bounces, one property
 

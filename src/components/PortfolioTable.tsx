@@ -419,7 +419,7 @@ export const PortfolioTable = memo(function PortfolioTable({
     <section className="overflow-hidden rounded-xl glass ring-1 ring-foreground/20">
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border px-6 py-6">
         <div className="flex items-center gap-3">
-          <h2 className="text-base font-semibold text-foreground">Holdings</h2>
+          <h2 className="font-semibold text-foreground">Holdings</h2>
           {onDisplayCurrencyChange && (
             <div
               title={

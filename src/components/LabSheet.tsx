@@ -301,7 +301,7 @@ export const LabSheet = memo(function LabSheet({
       <Panel padded={false} className="px-4 py-3 sm:px-6 sm:py-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
-            <h2 className="shrink-0 text-sm font-medium tracking-tight text-foreground">Lab</h2>
+            <h2 className="shrink-0 text-foreground">Lab</h2>
             <div
               role="tablist"
               aria-label="Lab sections"
@@ -431,7 +431,7 @@ export const LabSheet = memo(function LabSheet({
               <Panel tone="plain">
                 <div className={SPLIT_ROW}>
                   <div className={SPLIT_COPY}>
-                    <h3 className="text-sm font-medium tracking-tight text-foreground">
+                    <h3 className="text-foreground">
                       How spread out you are
                     </h3>
                     <p className="mt-1.5 text-sm text-muted-foreground">
@@ -521,7 +521,7 @@ export const LabSheet = memo(function LabSheet({
 
               {themes.length > 0 && (
                 <Panel tone="plain">
-                  <h3 className="text-sm font-medium tracking-tight text-foreground">
+                  <h3 className="text-foreground">
                     What you&apos;re actually betting on
                   </h3>
                   <p className="mt-1.5 mb-4 text-sm text-muted-foreground">
@@ -584,7 +584,7 @@ export const LabSheet = memo(function LabSheet({
         />
         <Panel tone="plain" className="flex flex-col gap-4">
           <div>
-            <h3 className="text-sm font-medium tracking-tight text-foreground">
+            <h3 className="text-foreground">
               Do these move together?
             </h3>
             <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
@@ -722,7 +722,7 @@ function AllocCard({
 }) {
   return (
     <Panel tone="plain">
-      <h3 className="mb-3 text-sm font-medium tracking-tight text-foreground">{title}</h3>
+      <h3 className="mb-3 text-foreground">{title}</h3>
       <div className="flex flex-col gap-2">
         {slices.map((s) => (
           <div key={s.label}>

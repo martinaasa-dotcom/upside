@@ -62,7 +62,7 @@ function JoinInner() {
       <div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-background px-6 text-foreground">
         <UpsideLogo variant="icon" className="mb-2" />
         <div className="flex flex-col w-full max-w-sm gap-4 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight">Join a portfolio</h1>
+          <h1 className="text-2xl font-semibold">Join a portfolio</h1>
           <p className="text-sm text-muted-foreground">
             Your partner invited you to edit this portfolio together. Paste the
             code if the link did not fill it in.

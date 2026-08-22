@@ -201,7 +201,7 @@ export function AdminPage() {
               <Shield className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              <h1 className="text-2xl font-semibold text-foreground">
                 Superadmin
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -225,7 +225,7 @@ export function AdminPage() {
             <>
               {funnel && (
                 <section className="flex flex-col gap-2">
-                  <h2 className="text-sm font-semibold text-muted-foreground">
+                  <h2 className="font-semibold text-muted-foreground">
                     Activation
                   </h2>
                   <p className="text-sm text-muted-foreground">
@@ -249,7 +249,7 @@ export function AdminPage() {
 
               <section className="flex flex-col gap-3">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <h2 className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
+                  <h2 className="flex items-center gap-1.5 font-semibold text-muted-foreground">
                     <Bug className="h-3.5 w-3.5" />
                     Errors
                   </h2>
@@ -345,7 +345,7 @@ export function AdminPage() {
 
               <section className="flex flex-col gap-3">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
-                  <h2 className="text-sm font-semibold text-muted-foreground">
+                  <h2 className="font-semibold text-muted-foreground">
                     Users signed in
                   </h2>
                   <div className="flex items-center gap-2">
@@ -447,7 +447,7 @@ export function AdminPage() {
 
               <section className="flex flex-col gap-3">
                 <div className="flex items-baseline justify-between gap-2">
-                  <h2 className="text-sm font-semibold text-muted-foreground">
+                  <h2 className="font-semibold text-muted-foreground">
                     Communities
                   </h2>
                   <span className="text-sm text-muted-foreground">

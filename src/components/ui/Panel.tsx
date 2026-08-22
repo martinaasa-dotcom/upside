@@ -315,7 +315,17 @@ export function PanelHeader({
           <h2
             className={cn(
               /* Tracking is optical, so it tightens as the size grows —
-               * the fit that reads right at 18px reads loose at 24px. */
+               * the fit that reads right at 18px reads loose at 24px.
+               *
+               * These two pairs are the h1 and h2 steps of the scale in
+               * `globals.css`, written out because this is an `<h2>` that
+               * sometimes wants to be h1-sized. Until 2026-08-22 neither
+               * pair did anything: the heading element rules sat outside
+               * `@layer base` and outranked every utility, so `hero`
+               * rendered identically to the default and the prop was
+               * decorative. The non-hero pair is byte-for-byte the h2
+               * default, so only `hero` moved — two call sites, both
+               * panels that open a page. */
               "font-heading font-semibold text-balance text-foreground",
               hero ? "text-2xl tracking-[-0.035em]" : "text-lg tracking-[-0.028em]"
             )}
