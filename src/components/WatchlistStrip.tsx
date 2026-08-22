@@ -155,7 +155,7 @@ function WatchCard({
   return (
     <div className="card-sheen glass-well flex h-full flex-col gap-4 rounded-lg border border-border p-4">
       <div className="flex items-start justify-between gap-3">
-        <Badge variant="secondary" className="h-6 font-heading text-sm font-semibold">
+        <Badge variant="secondary" className="chip-hang h-6 font-heading text-sm font-semibold">
           {cashtag(ticker)}
         </Badge>
         <Button

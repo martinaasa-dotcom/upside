@@ -1140,6 +1140,45 @@ scrollers (`overflow-x: auto|scroll`), which are deliberate. That check is
 what found this, and re-running it across every page and overlay at 320 /
 360 / 390 found nothing else — which is the point of writing it down.
 
+### A chip hangs; its label is what aligns
+
+A `Badge` is `px-2` plus a 1px transparent border, so its label sits **9px
+inside its own box**. Align the chip's box with the column under it — the
+default, and what four cards were doing — and the label lands 9px right of
+every plain-text line beneath it.
+
+On a Movers tile that put the `$` of `$BMNR` 9px right of the `$` of
+`$23.56`, while the two figures down the right-hand side lined up
+perfectly, because those are plain text aligned to each other. One side of
+the card looked set and the other looked nudged, which is exactly how it
+was reported.
+
+`.chip-hang` pulls the chip back by its own inset so the **ink** is what
+aligns, on both sides. This is hanging punctuation: an opening quote sits
+in the margin so the sentence still starts on the line. The chip's
+background is decoration and may sit outside the text column; its label may
+not.
+
+Measured after, at 390px and 1440px: chip ink, price ink and the card's
+content edge all land on the same x, drift 0.0px, across every hung chip on
+every page.
+
+Three rules come with it:
+
+- **Opt-in, never on `Badge` itself.** A chip in a *row* of chips has no
+  column to align to, and hanging it would just push it off the edge.
+- **The container needs room.** A hung chip reaches into the padding, so
+  anything drawn there has to be cleared by the container's own inline
+  padding. The Movers tile carries a `w-1` accent bar at its left edge, so
+  it takes `pl-4` rather than `p-3` — the chip clears the bar by 3px on a
+  phone and 11px on desktop.
+- **It is the one sanctioned exception to "nothing outside the padding
+  box".** A layout audit written to the rule above will flag hung chips;
+  skip `.chip-hang` rather than "fixing" them.
+
+The 9px tracks `Badge`'s own geometry. If that padding changes, this has to
+change with it.
+
 ### Every tap target, not just the buttons
 
 Three earlier passes grew touch targets to the 44pt/48dp minimum and all
