@@ -58,10 +58,15 @@ import {
  *   Radius     shell rounded-xl · nested muted rounded-lg · control rounded-lg
  *   Shell      black field, lifted cards. Primary is warm yellow. Nested is muted.
  *              Green is an up number, not a wash.
- *   Stack      field is bg-background. A box on the field is bg-card.
- *              Floating menus are bg-popover, never muted (muted is hover).
- *              Nested is bg-muted. Never a card inside a card.
- *   Card       ring-1 ring-foreground/20. Nested boxes are muted, no second ring.
+ *   Stack      field is bg-background (true black, and the ambient glow
+ *              lives on it). A box on the field is .glass -- translucent
+ *              bg-card plus blur, so the glow reads through the pane.
+ *              Never a flat opaque bg-card there; that punches a hole in
+ *              the field. Floating menus are bg-popover, never muted
+ *              (muted is hover). Nested is .glass-well. Never a card
+ *              inside a card.
+ *   Card       ring-1 ring-foreground/20. Nested wells carry their own
+ *              inset hairline from .glass-well, so no second ring.
  *              Static facts are not nested pills. Use Item, Table, or
  *              SwatchLegend. A filled rounded box reads as a button.
  *   Type scale, the only sizes a person should see. Down a block they
@@ -77,11 +82,20 @@ import {
  *              which scales with the viewBox and blows up on a wide screen.
  *              No text-[Npx]. No sm:text-xl jumps on titles.
  *              No text-4xl. The logo lockup is the exception.
- *   Headings   text-lg font-semibold tracking-tight (hero: text-2xl) · sentence case
+ *   Headings   text-lg font-semibold, hero text-2xl · sentence case.
+ *              Tracking is a scale, not a constant: -0.035em on the hero,
+ *              -0.028em on a panel title. Bigger type needs more negative
+ *              tracking to hold the same optical rhythm.
  *   Type       Geist for titles, body, and labels. Geist Mono for money.
- *   Micro      text-sm font-medium text-muted-foreground · sentence case
- *              Caps stay on the logo only. Micro sits above a figure,
- *              never above a paragraph.
+ *   Micro      MicroLabel: font-mono text-xs font-medium uppercase
+ *              tracking-[0.1em] text-muted-foreground. Mono caps are the
+ *              scaffolding voice -- the same one every table header uses --
+ *              and they read as structure rather than as something to
+ *              read. Micro sits above a figure, never above a paragraph.
+ *              NoteRows is the same voice one tier up in emphasis:
+ *              text-[11px] and text-primary, for a label beside prose.
+ *              Caps are those two plus the logo, and nothing else: never
+ *              a sentence, a button, or a heading.
  *   Metrics    A row of numbers is separate cards (Scoreboard) with air
  *              between them (Score, gap-6). Do not nest four Stat tiles in a panel.
  *              Stat is the same cell, used alone. Figures are text-2xl.

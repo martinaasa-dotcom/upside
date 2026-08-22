@@ -311,12 +311,19 @@ body {
   z-index: -1;
   pointer-events: none;
   /*
-   * Two small corner lobes on a black field — warm off the top-left, teal
-   * off the bottom-right, and *real black* between them. The black is the
-   * design, not the leftover: it is what separates the two lights and
-   * keeps them reading as corners of a dark room rather than as a tint
-   * laid over the whole page. Roughly three quarters of the field
-   * measures under 2/255.
+   * Two corner lobes on a black field — warm off the top-left, blue off
+   * the bottom-right (hue 250; the teal this started as is long gone, and
+   * is only mentioned further down as the reason the two alphas differ).
+   * What separates them is the dark middle, and that is the design rather
+   * than the leftover: it is what keeps the two lights reading as corners
+   * of a dark room instead of a tint laid over the whole page.
+   *
+   * The lobes are now wide enough that almost no pixel is pure black —
+   * 0.1% of the field measures under 2/255. That number used to be about
+   * three quarters, and reading it as "the black is gone" is the mistake
+   * this comment exists to prevent: what makes the page read dark at this
+   * reach is the *middle* sitting near 7/255 against lit corners at 43 and
+   * 55, not the count of untouched pixels. See the last paragraph.
    *
    * Sized in `vw`/`vh`, not `px`, and that is the mobile fix. At a fixed
    * 1250x1000 the lobe was wider than a phone, so both lights flooded the
@@ -328,35 +335,37 @@ body {
    * exactly as it does on a desktop. The check for that is the other two
    * corners: top-right and bottom-left both measure 0 at both sizes.
    *
-   * Anchored just off-screen (-6%/-8%, 106%/108%) so the brightest point
+   * Anchored just off-screen (-8%/-10%, 108%/110%) so the brightest point
    * of each lobe is outside the frame and only its falloff is visible.
    * Anchored exactly on the corner instead, the hottest pixel sits in the
    * frame and reads as a lamp rather than as spill.
    *
-   * Four stops each, not two. A single colour-to-transparent ramp drops
+   * Five stops each, not two. A single colour-to-transparent ramp drops
    * off in a way you can see the edge of — the lobe reads as a shape
-   * sitting on the page rather than as light. Falling 28 → 13 → 5.5 → 2 → 0
-   * spends most of the distance in the very dim end, so it thins out into
-   * the black with no boundary anywhere.
+   * sitting on the page rather than as light. Falling 28 → 15 → 7.5 → 3.2
+   * → 1.4 → 0 spends most of the distance in the very dim end, so it thins
+   * out into the black with no boundary anywhere. A stop was added at each
+   * widening; that is what buys reach without a visible edge.
    *
    * Reach is what those tail stops buy. Each lobe covers 170vw × 112vh —
    * far wider than the frame — but the peak alpha has never moved across
    * four separate widenings, so the corners are as bright as they ever
    * were and only the *area* grew: lit field (≥ 4/255) 27% → 44% → 60% →
-   * 97%.
+   * 99.9%.
    *
    * Brightness and coverage are separate dials. Keep them separate. Almost
    * the whole frame now carries some light, but the page middle measures
-   * about 8/255 against 42 and 54 in the lit corners and 4–5 in the two
-   * opposite ones, so it still reads as a dark room lit from two corners
-   * rather than a tinted page. What went wrong the one time this was got
-   * badly wrong was *alpha*: 60%/34% put the middle at 32/255 and the
-   * corners at 111.
+   * 7/255 against 43 and 55 in the lit corners and 5–6 in the two opposite
+   * ones, so it still reads as a dark room lit from two corners rather
+   * than a tinted page. What went wrong the one time this was got badly
+   * wrong was *alpha*: 60%/34% put the middle at 32/255 and the corners at
+   * 111.
    *
-   * Deliberately dim: peaks land near 40/255 warm and 35/255 blue, below
-   * the 94/255 this had before it was ever touched. Warm stays the
-   * stronger of the two — one key light plus a counter-lobe, not two
-   * lamps.
+   * Deliberately dim: peaks land at 43/255 warm and 55/255 blue, below the
+   * 94/255 this had before it was ever touched. The blue reads higher only
+   * because that figure is the brightest channel of `rgb(22,38,55)`; by
+   * eye the warm corner is still the key light and the blue is the
+   * counter-lobe, which is the point — one lamp plus a bounce, not two.
    *
    * The two alphas differ (28% warm, 31% cool) because sRGB is not
    * symmetrical: its blue primary carries roughly a fourteenth of the
@@ -365,18 +374,25 @@ body {
    * being written the same. Changing the cool hue means re-solving this
    * alpha — the old teal at hue 200 sat at 25% for the same result.
    *
-   * Every number above is measurable, so re-measure rather than eyeball if
+   * Every number here is measurable, so re-measure rather than eyeball if
    * these change: corner peaks, the two *opposite* corners staying far
-   * below the lit pair (which is what makes it diagonal), and the share of
-   * the field under 2/255 (which is what keeps the black). Brightening
-   * this is the easy mistake — an earlier pass at 60%/34% with 1700px
-   * lobes lit 99% of the field *and* put the middle at 32/255, which is
-   * the failure. Coverage alone is not: at this reach the share of field
-   * under 2/255 is near zero and the page still reads dark, because the
-   * middle sits at 8. Judge it on the middle and the corner spread, not on
-   * the black share, once the lobes are this wide. One more size step
-   * (190vw × 126vh) gains 3 points of coverage and lifts the middle to
-   * 9.8 — nothing left to win.
+   * below the lit pair (which is what makes it diagonal), and the page
+   * middle. Brightening this is the easy mistake — an earlier pass at
+   * 60%/34% with 1700px lobes lit 99% of the field *and* put the middle at
+   * 32/255, which is the failure. Coverage alone is not: the field is
+   * effectively 100% lit now and still reads dark, because the middle sits
+   * at 7. Judge it on the middle and the corner spread, not on the black
+   * share, once the lobes are this wide — the black share stopped being
+   * informative two widenings ago. One more size step (190vw × 126vh)
+   * gains nothing measurable in coverage and lifts the middle, so there is
+   * nothing left to win.
+   *
+   * How to take these numbers, since the method changes them: render the
+   * field alone (hide the frame's children and the chrome), and exclude
+   * the scrollbar gutter down the right edge — it is compositor paint, not
+   * field, and sampling it reports a false black corner. Measured that way
+   * at 1440x900 and at 390x844 the corners come out identical, which is
+   * the check that the vw/vh sizing is doing its job.
    */
   background-image:
     radial-gradient(

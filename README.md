@@ -39,17 +39,21 @@ UPSIDE_CANONICAL_HOST=upsidelab.app
 NEXT_PUBLIC_SITE_URL=https://upsidelab.app
 ```
 
-See `.env.example` for the full list. Market data uses Yahoo first, then optional Twelve Data / Finnhub keys. If every provider misses a ticker, the last cached price stays on screen. We do not invent a mark.
+See `.env.example` for the full list. Market data uses Yahoo first, then optional Twelve Data / Finnhub keys. If every provider misses a ticker, the last cached price stays on screen. We never make a price up.
 
 ## Scripts
 
 ```bash
 npm run lint
 npm run typecheck
+npm run test
 npm run test:invariants
 npm run dr:export
 npm run dr:restore
-npm run migrate:online -- --lint supabase/migrations/054_example.sql
+npm run migrate:online -- --lint supabase/migrations/20260821160000_example.sql
 ```
+
+New migrations are timestamp-named (`YYYYMMDDHHMMSS_name.sql`). The numbered
+`001_`–`054_` files are the earlier convention and stay as they are.
 
 Ops: `docs/DISASTER_RECOVERY.md`, `docs/ZERO_DOWNTIME_MIGRATIONS.md`.
